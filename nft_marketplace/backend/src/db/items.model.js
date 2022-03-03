@@ -1,0 +1,54 @@
+module.exports = (mongoose) => {
+  const Item = mongoose.model(
+    "Item",
+    mongoose.Schema(
+      {
+        name: String,
+        logoURL: String,
+        description: String,
+        collection_id: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "collection"
+        },
+        size: Number,
+        creator: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "User"
+        },
+        owner: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "User"
+        },
+        property: String,
+        royalty: Number,
+        price: { type: Number, default: 0 },
+        type: Number,
+        auctionPrice: { type: Number, default: 0 },
+        auctionPeriod: Number,
+        isSale: { type: Number, default: 0 },     //0: not, 1: Buy now, 2: On Auction 
+
+        bids: [
+          {
+            user_id:
+            {
+              type: mongoose.Schema.Types.ObjectId,
+              ref: "User"
+            },
+            price: Number,
+            Time: String
+          }
+        ],
+
+        likes: [
+          {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User"
+          }
+        ]
+      },
+      { timestamps: true }
+    )
+  );
+
+  return Item;
+};
