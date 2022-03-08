@@ -29,7 +29,9 @@ const Cards = ({ className, items, onSelectCollection}) => {
   return (
     <div className={(className, styles.cards)} style={{
       flexWrap : "wrap"}}>
-      {items.map((x, index) => (
+      {
+        (items && items.length> 0) && 
+      items.map((x, index) => (
         <div key={index} id={x._id} onClick={() =>onSelectCard(x._id)}
           style={{
             width:"30%",

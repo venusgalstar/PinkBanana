@@ -9,12 +9,13 @@ import { getNotifiesByFilter, getNotifiesByLimt } from "../../store/actions/noti
 import { useDispatch } from "react-redux";
 import { useSelector } from "react-redux";
 import { markAllAsRead } from "../../store/actions/notify.action";
+import config from "../../config";
 // import config from "../../config";
 
-const breadcrumbs = [
+const _breadcrumbs = [
   {
     title: "Profile",
-    url: "/",
+    url: "/profile",
   },
   {
     title: "Activity",
@@ -45,39 +46,41 @@ const filters = [
 
 const navLinks = ["My activity", "Following", "All activity"];
 
-const Activity = () => 
-{
+const Activity = () => {
   const [activeIndex, setActiveIndex] = useState(0);
   const [selectedFilters, setSelectedFilters] = useState([]);
   const [visible, setVisible] = useState(0);
   const notifiesList = useSelector(state => state.notify.list);
   const currentUsr = useSelector(state => state.auth.user);
+
+  const [breadcrumbs, setBreadCrumbs] = useState(_breadcrumbs);
+
+  useEffect(() => {
+    var temp = breadcrumbs;
+    temp[0].url += `/${currentUsr._id}`;
+    setBreadCrumbs(temp);
+  }, [currentUsr])
+
+
   const dispatch = useDispatch();
 
-  useEffect(() => 
-  {
+  useEffect(() => {
     dispatch(getNotifiesByLimt(50))
   }, []);
- 
-  const onClickMarkAllAsRead = () =>
-  {
-    if(notifiesList && notifiesList.length > 0)
-    {
+
+  const onClickMarkAllAsRead = () => {
+    if (notifiesList && notifiesList.length > 0) {
       let idList = []; let j;
-      for(j=0; j<notifiesList.length; j++) idList.push(notifiesList[j]._id);
+      for (j = 0; j < notifiesList.length; j++) idList.push(notifiesList[j]._id);
       dispatch(markAllAsRead(idList, currentUsr._id));
     }
   }
 
-  useEffect(() =>
-  {
-    if(selectedFilters && selectedFilters.length>0)
-    {
+  useEffect(() => {
+    if (selectedFilters && selectedFilters.length > 0) {
       var reshapedFilters = []; let j;
-      for(j=0; j<selectedFilters.length; j++)
-      {
-        switch(selectedFilters[j])
-        {
+      for (j = 0; j < selectedFilters.length; j++) {
+        switch (selectedFilters[j]) {
           default: break;
           case "Sales":
             reshapedFilters.push(1);
@@ -99,20 +102,20 @@ const Activity = () =>
             break;
           case "Purchase":
             reshapedFilters.push(7);
-            break;          
+            break;
           case "Transfers":
             reshapedFilters.push(8);
-            break;          
+            break;
         }
       }
       dispatch(getNotifiesByFilter(reshapedFilters, currentUsr._id));
     }
-    else{
-      dispatch(getNotifiesByLimt(50, currentUsr._id))      
+    else {
+      dispatch(getNotifiesByLimt(50, currentUsr._id))
     }
   }, [selectedFilters])
 
-  console.log("selectedFilters = ", selectedFilters);
+
 
   return (
     <div className={styles.page}>
@@ -126,7 +129,7 @@ const Activity = () =>
                 "button-stroke button-small mobile-hide",
                 styles.button
               )}
-              onClick = {() => onClickMarkAllAsRead()}
+              onClick={() => onClickMarkAllAsRead()}
             >
               Mark all as read
             </button>
@@ -145,42 +148,44 @@ const Activity = () =>
           <div className={styles.row}>
             <div className={styles.wrapper}>
               <div className={styles.nav}>
-                {navLinks.map((x, index) => (
-                  <button
-                    className={cn(styles.link, {
-                      [styles.active]: index === activeIndex,
-                    })}
-                    onClick={() => setActiveIndex(index)}
-                    key={index}
-                  >
-                    {x}
-                  </button>
-                ))}
+                {
+                  (navLinks && navLinks.length > 0) &&
+                  navLinks.map((x, index) => (
+                    <button
+                      className={cn(styles.link, {
+                        [styles.active]: index === activeIndex,
+                      })}
+                      onClick={() => setActiveIndex(index)}
+                      key={index}
+                    >
+                      {x}
+                    </button>
+                  ))}
               </div>
               <div className={styles.list}>
-              {
-                (notifiesList  && notifiesList.length> 0) ?
-                notifiesList.map((x, index) => (
-                  <div className={styles.item} key={index}>
-                    <div className={styles.preview}>
-                      <img src={x.imgUrl} alt="Notification" />
-                      <div
-                        className={styles.icon}
-                        style={{ backgroundColor: "#000000" }}
-                      >
-                        <img src={items[0].icon} alt="Icon notification" />
+                {
+                  (notifiesList && notifiesList.length > 0) ?
+                    notifiesList.map((x, index) => (
+                      <div className={styles.item} key={index}>
+                        <div className={styles.preview}>
+                          <img src={config.imgUrl + x.imgUrl} alt="Notification" />
+                          <div
+                            className={styles.icon}
+                            style={{ backgroundColor: "#000000" }}
+                          >
+                            <img src={items[0].icon} alt="Icon notification" />
+                          </div>
+                        </div>
+                        <div className={styles.details}>
+                          <div className={styles.subtitle}>{x.subTitle}</div>
+                          <div className={styles.description}>{x.description}</div>
+                          <div className={styles.date}>{x.date}</div>
+                        </div>
                       </div>
-                    </div>
-                    <div className={styles.details}>
-                      <div className={styles.subtitle}>{x.subTitle}</div>
-                      <div className={styles.description}>{x.description}</div>
-                      <div className={styles.date}>{x.date}</div>
-                    </div>
-                  </div>
-                ))
-                :
-                <></>
-              }
+                    ))
+                    :
+                    <></>
+                }
               </div>
               <Loader className={styles.loader} />
             </div>
@@ -189,7 +194,7 @@ const Activity = () =>
                 "button-stroke button-small mobile-show",
                 styles.button
               )}
-              onClick = {() => onClickMarkAllAsRead()}
+              onClick={() => onClickMarkAllAsRead()}
             >
               Mark all as read
             </button>

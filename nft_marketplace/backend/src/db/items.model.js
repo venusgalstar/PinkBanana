@@ -8,7 +8,7 @@ module.exports = (mongoose) => {
         description: String,
         collection_id: {
           type: mongoose.Schema.Types.ObjectId,
-          ref: "collection"
+          ref: "Collection"
         },
         size: Number,
         creator: {
@@ -26,6 +26,7 @@ module.exports = (mongoose) => {
         auctionPrice: { type: Number, default: 0 },
         auctionPeriod: Number,
         isSale: { type: Number, default: 0 },     //0: not, 1: Buy now, 2: On Auction 
+        metaData: String,
 
         bids: [
           {

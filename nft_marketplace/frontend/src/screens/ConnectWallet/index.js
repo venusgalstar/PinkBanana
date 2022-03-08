@@ -39,7 +39,9 @@ const Connect = () => {
         </div>
         <div className={styles.body}>
           <div className={styles.menu}>
-            {menu.map((x, index) => (
+            {
+              (menu && menu.length > 0) && 
+              menu.map((x, index) => (
               <div
                 className={cn({ [styles.active]: index === 1 }, styles.link)}
                 key={index}

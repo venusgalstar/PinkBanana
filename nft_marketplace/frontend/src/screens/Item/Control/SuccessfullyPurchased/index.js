@@ -46,7 +46,9 @@ const SuccessfullyPurchased = ({ className }) => {
       </div>
       <div className={styles.stage}>Time to show-off</div>
       <div className={styles.socials}>
-        {socials.map((x, index) => (
+        {
+          (socials && socials.length>0) && 
+        socials.map((x, index) => (
           <a
             className={styles.social}
             href={x.url}

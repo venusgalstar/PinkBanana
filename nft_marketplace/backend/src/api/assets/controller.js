@@ -13,7 +13,7 @@ exports.create = (req, res) => {
         size: Number(reqItem.itemSize),
         property: reqItem.itemProperty,
     });
-    console.log(reqItem);
+    // console.log(reqItem);
     item
         .save()
         .then((data) => {
@@ -37,14 +37,14 @@ exports.deleteAll = (req, res) => {
 
 exports.get = (req, res) => {
 	Assets.findOne({ _id: req.params.id }, function (err, docs) {
-		console.log("err : " + err);
+		// console.log("err : " + err);
 		if (err) {
 			console.log("Author doesn't exisit" + err.message);
-			return res.status(500).send({ success: false, message: "Internal server Error" });
+			 res.status(500).send({ success: false, message: "Internal server Error" });
 		}
 		else {
-			if (docs !== null && docs !== undefined) return res.status(200).send({ success: true, data: docs, message: "success" });
-			else return res.status(404).send({ success: false, data: [], message: "Can't find such asset." });
+			if (docs !== null && docs !== undefined)  res.status(200).send({ success: true, data: docs, message: "success" });
+			else  res.status(404).send({ success: false, data: [], message: "Can't find such asset." });
 		}
 	});
 };

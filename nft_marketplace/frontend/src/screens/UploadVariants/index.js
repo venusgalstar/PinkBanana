@@ -46,12 +46,13 @@ const Upload = () => {
             </div>
           </div>
           <div className={styles.list}>
-            {items.map((x, index) => (
+            {
+              (items && items.length> 0) && 
+            items.map((x, index) => (
               <div className={styles.item} key={index}>
                 <div className={styles.preview}>
                   <img srcSet={`${x.image2x} 2x`} src={x.image} alt="Upload" />
                 </div>
-                <Link className={cn("button-stroke", styles.button)} to={x.url} />
                 <Link className={cn("button-stroke", styles.button)} to={x.url} >
                   {x.buttonText}
                 </Link>

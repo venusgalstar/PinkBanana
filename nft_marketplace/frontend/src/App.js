@@ -142,7 +142,7 @@ function App() {
         />
         <Route
           exact
-          path="/profile-edit"
+          path="/profile-edit/:userId"
           render={() => (
             <Page>
               <ProfileEdit />

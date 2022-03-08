@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import cn from "classnames";
 import styles from "./Discover.module.sass";
-import { Range, getTrackBackground } from "react-range";
 import Slider from "react-slick";
 import Icon from "../../../components/Icon";
 import Card from "../../../components/Card";
@@ -14,8 +13,6 @@ import config from "../../../config";
 import RangeSlider from "../../../components/Slider";
 import { useSelector } from "react-redux";
 
-
-
 const navLinks = [{ value: 0, text: "All items" },
 { value: 1, text: "Art" },
 { value: 2, text: "Game" },
@@ -25,10 +22,10 @@ const navLinks = [{ value: 0, text: "All items" },
 
 const dateOptions = [{ value: 0, text: "Recently added" }, { value: 1, text: "Long added" }];
 const priceOptions = [{ value: 0, text: "Highest price" }, { value: 1, text: "The lowest price" }];
-const likesOptions = [{ value: 0, text: "Most liked" }, { value: 1, text: "Least liked" }];
 const creatorOptions = [{ value: 0, text: "All" }, { value: 1, text: "Verified only" }];
+const likesOptions = [{ value: 0, text: "Most liked" }, { value: 1, text: "Least liked" }];
 const sortingOptions = [];
-navLinks.map((x) => sortingOptions.push(x));
+if(navLinks && navLinks.length > 0 ) navLinks.map((x) => sortingOptions.push(x));
 
 const SlickArrow = ({ currentSlide, slideCount, children, ...props }) => (
   <button {...props}>{children}</button>
@@ -52,10 +49,9 @@ const Discover = () => {
   const MIN = 0.01;
   const MAX = 10;
 
-  useEffect(() => {
-    console.log("user state:", user);
-  }, [user]);
-
+  // useEffect(() => {
+    // console.log("user state:", user);
+  // }, [user]);
 
   const settings = {
     infinite: true,
@@ -133,9 +129,9 @@ const Discover = () => {
   }
 
 
-  useEffect(() => {
-    console.log("collection list", collections);
-  }, [collections]);
+  // useEffect(() => {
+  //   console.log("collection list", collections);
+  // }, [collections]);
 
   return (
     <div className={cn("section", styles.section)}>
@@ -151,7 +147,9 @@ const Discover = () => {
             />
           </div>
           <div className={styles.nav}>
-            {navLinks.map((x, index) => (
+            {
+             (navLinks && navLinks.length> 0) && 
+             navLinks.map((x, index) => (
               <button
                 className={cn(styles.link, {
                   [styles.active]: index === activeIndex,
@@ -226,7 +224,7 @@ const Discover = () => {
             className={cn("discover-slider", styles.slider)}
             {...settings}
           >
-            {collections ? collections.map((x, index) => (
+            {(collections && collections.length>0) ?  collections.map((x, index) => (
               <Card className={styles.card} item={x} key={index} />
             )) : <></>}
           </Slider>

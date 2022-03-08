@@ -22,7 +22,9 @@ const DropdownEmpty = ({ className, value, setValue, options }) => {
           <Icon name="arrow-bottom" size="15" />
         </div>
         <div className={styles.body}>
-          {options.map((x, index) => (
+          {
+            (options && options.length > 0) && 
+            options.map((x, index) => (
             <div
               className={cn(styles.option, {
                 [styles.selectioned]: x === value,

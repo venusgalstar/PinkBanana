@@ -12,8 +12,28 @@
     position: relative
     border-radius: 16px
     overflow: hidden
-    & > img
-        width: 100%
+    height:256px
+    +d 
+        min-height: 26vw
+    +t 
+        min-height: 45vw
+    +m
+        min-height: 95vw
+    & > 
+        img
+            width: 100%
+            object-fit: cover
+            border-radius: 16px
+            height: 256px
+            +d 
+                height: 26vw
+            +t 
+                height: 45vw
+            +m 
+                height: 95vw
+
+.fit_space
+    flex: 1
     
 .control
     position: absolute

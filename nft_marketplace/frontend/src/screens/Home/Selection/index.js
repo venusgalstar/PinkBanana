@@ -91,8 +91,10 @@ const Selection = () => {
         var temp = [];
         var list = result.data.list;
         for (var i = 0; i < list.length; i++) {
-          if (list[i].uploader_info && list[i].uploader_info[0]) {
-            temp.push(list[i].uploader_info[0]);
+          if (list[i].uploader) {
+            var item = list[i].uploader;
+            item.count = list[i].count;
+            temp.push(item);
           }
         }
         setUserList(temp);
@@ -107,7 +109,7 @@ const Selection = () => {
         <div className={styles.row}>
           <div className={styles.col}>
             {/* {items.map( */}
-            {itemList && itemList.map(
+            {itemList && itemList.length > 0 && itemList.map(
               (x, index) =>
                 index === 0 && (
                   // <Link className={styles.card} to={x.url} key={index}>
@@ -142,7 +144,7 @@ const Selection = () => {
           </div>
           <div className={styles.col}>
             {/* {items.map( */}
-            {itemList && itemList.map(
+            {itemList && itemList.length > 0 && itemList.map(
               (x, index) =>
                 index > 0 && (
                   // <Link className={styles.item} to={x.url} key={index}>
@@ -187,13 +189,13 @@ const Selection = () => {
           </div>
           <div className={styles.list}>
             {/* {users.map((x, index) => ( */}
-            {userList && userList.map((x, index) => (
+            {userList && userList.length > 0 && userList.map((x, index) => (
 
-              <Link to={"/profile/"+ x._id}>
+              <Link key={index} to={"/profile/" + x._id}>
                 <div className={styles.user} key={index}>
                   <div className={styles.avatar}>
                     <img src={x.avatar ? config.imgUrl + x.avatar : ""} alt="Avatar" />
-                    <div className={styles.number}>{x.counter}</div>
+                    <div className={styles.number}>{x.count ? x.count : 1}</div>
                   </div>
                   <div className={styles.description}>
                     <div className={styles.name}>{x.username}</div>

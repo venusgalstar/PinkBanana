@@ -64,7 +64,9 @@ const PutSale = ({ className, onOk, onCancel }) => {
             </div>
             : <></>
         }
-        {items.map((x, index) => (
+        {
+        (items && items.length>0) &&  
+        items.map((x, index) => (
           <div className={styles.row} key={index}>
             <div className={styles.col}>{x.title}</div>
             <div className={styles.col}>{x.value}</div>

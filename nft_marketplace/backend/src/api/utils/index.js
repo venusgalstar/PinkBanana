@@ -10,4 +10,6 @@ router.post('/upload_file', utils.uploadFile);
 router.post('/upload_multiple_file', utils.uploadMultipleFile);
 router.get('/view_file/:filename', utils.viewFile);
 
+utils.makeUploadDir();
+
 module.exports = router;

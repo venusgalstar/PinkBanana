@@ -17,7 +17,7 @@ const FolowSteps = ({ className, state, navigate2Next}) => {
               <Icon name="upload-file" size="24" />
             </div>
             <div className={styles.details}>
-              <div className={styles.info}>Create Item</div>
+              <div className={styles.info}>Create User</div>
               <div className={styles.text}>Created successfully.</div>
             </div>
           </div>
@@ -30,7 +30,7 @@ const FolowSteps = ({ className, state, navigate2Next}) => {
               <LoaderCircle className={styles.loader} />
             </div>
             <div className={styles.details}>
-              <div className={styles.info}>Create Item</div>
+              <div className={styles.info}>Create User</div>
               <div className={styles.text}>
                 Create and sell your item
               </div>
@@ -47,7 +47,7 @@ const FolowSteps = ({ className, state, navigate2Next}) => {
               <Icon name="pencil" size="24" />
             </div>
             <div className={styles.details}>
-              <div className={styles.info}>Create Item</div>
+              <div className={styles.info}>Create User</div>
               <div className={styles.text}>
                 Please select a collection and try again.
               </div>
@@ -77,7 +77,7 @@ const FolowSteps = ({ className, state, navigate2Next}) => {
               <Icon name="pencil" size="24" />
             </div>
             <div className={styles.details}>
-              <div className={styles.info}>Create Item</div>
+              <div className={styles.info}>Create User</div>
               <div className={styles.text}>
                 Failed to create.
               </div>

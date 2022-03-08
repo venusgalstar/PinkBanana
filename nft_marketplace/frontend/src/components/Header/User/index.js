@@ -9,7 +9,8 @@ import { useDispatch, useSelector } from "react-redux";
 import config from "../../../config";
 import { authLogout } from "../../../store/actions/auth.actions";
 import { useHistory } from "react-router-dom";
-import { getCurrentWallet } from "../../../InteractWithSmartContract/interact";
+import { getBalanceOfAccount } from "../../../InteractWithSmartContract/interact";
+import { getDetailedUserInfo } from "../../../store/actions/auth.actions";
 
 const User = ({ className }) => {
   const [visible, setVisible] = useState(false);
@@ -17,18 +18,33 @@ const User = ({ className }) => {
   const dispatch = useDispatch();
   const history = useHistory();
   const [balance, setBalance] = useState(0);
+  const [compressedAddress, setCompressedAddress] = useState("");
+  const detailedUserInfo = useSelector(state => state.auth.detail);
 
-  useEffect( async () =>
+  useEffect(() =>
   {
-    if(currentUsr && currentUsr.address !== undefined && currentUsr.address !== "")
+    if(currentUsr && currentUsr.address)
     {
-      let bal = 0;
-      bal  = await getCurrentWallet();
-      setBalance(bal.balance);
+      let address = currentUsr.address;
+      address = address.toString();
+      address = address.substring(0, 10)+"..."+address.substring(36, 42);
+      setCompressedAddress(address);
+      dispatch(getDetailedUserInfo(currentUsr._id));
     }
-  }, [currentUsr]);
+  }, [currentUsr])
 
-  console.log("balance = ", balance);
+  useEffect(  () =>
+  {
+    setTimeout(async () =>{
+      if(currentUsr.address )
+      {
+        let bal = 0;
+        bal  = await  getBalanceOfAccount(currentUsr.address);
+        setBalance(bal.balance);   
+        console.log("balance = ", balance);   
+      }
+    }, 1000);
+  }, [currentUsr]);
 
   const items = [
     {
@@ -54,6 +70,7 @@ const User = ({ className }) => {
   const onDisconnect = () =>
   {
     dispatch(authLogout({}));
+    localStorage.removeItem("jwtToken");
     history.push("/");
   }
 
@@ -77,7 +94,7 @@ const User = ({ className }) => {
           <div className={styles.body}>
             <div className={styles.name}>{currentUsr.username}</div>
             <div className={styles.code}>
-              <div className={styles.number}>{currentUsr && currentUsr.address}</div>
+              <div className={styles.number}>{compressedAddress && compressedAddress}</div>
               <button className={styles.copy}>
                 <Icon name="copy" size="16" />
               </button>
@@ -102,7 +119,9 @@ const User = ({ className }) => {
               </button>
             </div>
             <div className={styles.menu}>
-              {items.map((x, index) =>
+              {
+                (items && items.length > 0) && 
+                items.map((x, index) =>
                 x.url ? (
                   x.url.startsWith("http") ? (
                     <a
@@ -132,7 +151,7 @@ const User = ({ className }) => {
                 ) 
                 : x.title=="Disconnect"?
                 (
-                  <div className={styles.item} key={index}>
+                  <div className={styles.item}  style={{cursor:"pointer"}} key={index}>
                     <div className={styles.icon}>
                       <Icon name={x.icon} size="20" />
                     </div>
@@ -140,7 +159,7 @@ const User = ({ className }) => {
                   </div>
                 )
                 :(
-                  <div className={styles.item} key={index}>
+                  <div className={styles.item} style={{cursor:"pointer"}} key={index}>
                     <div className={styles.icon}>
                       <Icon name={x.icon} size="20" />
                     </div>

@@ -166,7 +166,9 @@ const ItemsOfCollection = () =>
                             className={cn("discover-slider", styles.slider)}
                             {...settings}
                         >
-                            {items ? items.map((x, index) => (
+                            {
+                              (items && items.length >0 ) && 
+                            items ? items.map((x, index) => (
                             <Card className={styles.card} item={x} key={index} />
                             )) : <></>}                           
                         </Slider>

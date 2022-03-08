@@ -7,7 +7,7 @@ export const getNotifiesByLimt = (limit, userId) => dispatch =>
     axios.post(`${config.baseUrl}notify/getlist`, {limit, userId}, {
         headers:
         {
-            "x-access-token": sessionStorage.getItem("jwtToken")
+            "x-access-token": localStorage.getItem("jwtToken")
         }
     }).then((result) => {
         // console.log("[UPDATE_NOTIFY_LIST action ] result.data.data  = ", result.data.data );
@@ -24,7 +24,7 @@ export const markAllAsRead = (notifyIds, userId) => dispatch =>
     axios.post(`${config.baseUrl}notify/markAllAsRead`, {notifyIds, userId }, {
         headers:
         {
-            "x-access-token": sessionStorage.getItem("jwtToken")
+            "x-access-token": localStorage.getItem("jwtToken")
         }
     }).then((result) => {
         console.log("[MARK_ALL_NOTIFIES_AS_READ action ] result.data.success  = ", result.data.success );
@@ -42,7 +42,7 @@ export const getNotifiesByFilter = (filters, userId) => dispatch =>
     axios.post(`${config.baseUrl}notify/filtering`, {filters, userId}, {
         headers:
         {
-            "x-access-token": sessionStorage.getItem("jwtToken")
+            "x-access-token": localStorage.getItem("jwtToken")
         }
     }).then((result) => {
         

@@ -7,7 +7,7 @@ export const toggleFollow = (my_id, target_id) => dispatch => {
     axios.post(`${config.baseUrl}follow/toggle_follow`, { my_id, target_id }, {
         headers:
         {
-            "x-access-token": sessionStorage.getItem("jwtToken")
+            "x-access-token": localStorage.getItem("jwtToken")
         }
     }).then((result) => {
         dispatch({
@@ -27,7 +27,7 @@ export const getFollowList = (user_id, limit) => dispatch => {
         { limit: limit, my_id: user_id}, {
             headers:
             {
-                "x-access-token": sessionStorage.getItem("jwtToken")
+                "x-access-token": localStorage.getItem("jwtToken")
             }
         })
         .then((result) => {
@@ -46,7 +46,7 @@ export const getFollowingList = (user_id, limit) => dispatch => {
         { limit: limit , my_id: user_id}, {
             headers:
             {
-                "x-access-token": sessionStorage.getItem("jwtToken")
+                "x-access-token": localStorage.getItem("jwtToken")
             }
         })
         .then((result) => {
@@ -66,7 +66,7 @@ export const getIsExists = (user_id, target_id) => dispatch =>
         { user_id, target_id}, {
             headers:
             {
-                "x-access-token": sessionStorage.getItem("jwtToken")
+                "x-access-token": localStorage.getItem("jwtToken")
             }
         })
         .then((result) => {

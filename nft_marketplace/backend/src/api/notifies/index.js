@@ -6,7 +6,7 @@ router.post('/', notifies.CreateNotify);
 router.post('/markAllAsRead', notifies.markAllAsRead);
 router.post('/filtering', notifies.getNotifiesByFilter);
 router.get('/', notifies.FindNotify);
-router.get('/getlist/:limit', notifies.getNotifiesByLimt);
+router.post('/getlist', notifies.getNotifiesByLimt);
 router.get('/:id', notifies.FindOneNotify);
 router.put('/:id', notifies.UpdateNotify);
 router.delete('/:id', notifies.DeleteNotify);

@@ -9,6 +9,7 @@ module.exports = (mongoose) => {
           description: String,
           category: Number,
           price: Number,
+          metaData: String,
           owner: 
           {
             type: mongoose.Schema.Types.ObjectId,

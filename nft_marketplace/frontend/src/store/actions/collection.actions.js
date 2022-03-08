@@ -6,7 +6,7 @@ export const getCollectionBannerList = (limit) => dispatch => {
     axios.post(`${config.baseUrl}collection/get_banner_list`, { limit: limit }, {
         headers:
         {
-            "x-access-token": sessionStorage.getItem("jwtToken")
+            "x-access-token": localStorage.getItem("jwtToken")
         }
     }).then((result) => {
         dispatch({
@@ -22,7 +22,7 @@ export const getCollectionDetail = (id) => dispatch => {
     axios.get(`${config.baseUrl}collection/${id}`, {}, {
         headers:
         {
-            "x-access-token": sessionStorage.getItem("jwtToken")
+            "x-access-token": localStorage.getItem("jwtToken")
         }
     }).then((result) => {
         dispatch({
@@ -40,7 +40,7 @@ export const buyCollection = (item_id, price, owner, buyer) => dispatch => {
         {
             headers:
             {
-                "x-access-token": sessionStorage.getItem("jwtToken")
+                "x-access-token": localStorage.getItem("jwtToken")
             }
         })
         .then((result) => {
@@ -57,7 +57,7 @@ export const getCollections = (limit, currentUserId) => dispatch => {
     axios.post(`${config.baseUrl}collection/getUserCollections/${currentUserId}`, { limit: limit }, {
         headers:
         {
-            "x-access-token": sessionStorage.getItem("jwtToken")
+            "x-access-token": localStorage.getItem("jwtToken")
         }
     }).then((result) => {
         dispatch({

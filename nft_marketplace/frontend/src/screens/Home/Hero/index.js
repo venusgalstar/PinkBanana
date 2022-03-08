@@ -16,6 +16,7 @@ import config from "../../../config";
 import { setBid } from "../../../store/actions/bid.actions";
 
 
+
 const items = [
   {
     title: "the creator network®",
@@ -87,6 +88,9 @@ const Hero = () => {
   const [bidPrice, setBidPrice] = useState();
   const [activeIndex, setActiveIndex] = useState(0);
   const auth = useSelector(state => state.auth.user);
+  const curTime = useSelector(state => state.bid.system_time);
+
+  const avax = useSelector(state => state.user.avax);
 
   const onChangeBidPrice = (value) => {
     setBidPrice(value);
@@ -107,6 +111,38 @@ const Hero = () => {
     }
   }, [nft]);
 
+  const getLeftDuration = (created, period, curTime) => {
+
+    var createdTime = (new Date(created)).getTime();
+    var diff = createdTime + period * 24 * 3600 * 1000 - curTime;
+    diff = diff / 1000;
+
+    var hr = 0;
+    var min = 0;
+    var sec = 0;
+
+    if (diff > 0) {
+      hr = Math.floor(diff / 3600);
+      min = Math.floor((diff - 3600 * hr) / 60);
+      sec = Math.floor(diff - 3600 * hr - 60 * min);
+    } else if (!isNaN(diff) && diff <= 0){
+      // update banner list when this item's auction time is ended
+      getNftBannerList(5)(dispatch);
+    }
+
+    const hours = () => {
+      return hr;
+    }
+    const minutes = () => {
+      return min;
+    }
+    const seconds = () => {
+      return sec;
+    }
+    return { hours, minutes, seconds }
+  }
+
+
 
   return (
     <>
@@ -126,73 +162,78 @@ const Hero = () => {
           <div className={styles.wrapper}>
             <Slider className="creative-slider" {...settings}>
               {/* {items.map((x, index) => ( */}
-              {itemList.map((x, index) => (
-                <div className={styles.slide} key={index}>
-                  <div className={styles.row}>
-                    <Player className={styles.player} item={x} />
-                    <div className={styles.details}>
-                      <div className={cn("h1", styles.subtitle)}>{x.name}</div>
-                      <div className={styles.line}>
-                        <div className={styles.item}>
-                          <div className={styles.avatar}>
-                            <img src={x.creator ? config.imgUrl + x.creator.avatar : ""} alt="Avatar" />
+              {
+                (itemList && itemList.length > 0) &&
+                itemList.map((x, index) => (
+                  <div className={styles.slide} key={index}>
+                    <div className={styles.row}>
+                      <Player className={styles.player} item={x} />
+                      <div className={styles.details}>
+                        <div className={cn("h1", styles.subtitle)}>{x.name}</div>
+                        <div className={styles.line}>
+                          <div className={styles.item}>
+                            <div className={styles.avatar}>
+                              <img src={x.owner ? config.imgUrl + x.owner.avatar : ""} alt="Avatar" />
+                            </div>
+                            <div className={styles.description}>
+                              <div className={styles.category}>Owner</div>
+                              <div className={styles.text}>{x.owner ? x.owner.username : ""}</div>
+                            </div>
                           </div>
-                          <div className={styles.description}>
-                            <div className={styles.category}>Creator</div>
-                            <div className={styles.text}>{x.creator ? x.creator.username : ""}</div>
-                          </div>
-                        </div>
-                        <div className={styles.item}>
-                          <div className={styles.icon}>
-                            <Icon name="stop" size="24" />
-                          </div>
-                          <div className={styles.description}>
-                            <div className={styles.category}>Instant price</div>
-                            <div className={styles.text}>{x.auctionPrice ? x.auctionPrice : ""}AVAX</div>
-                          </div>
-                        </div>
-                      </div>
-                      <div className={styles.wrap}>
-                        <div className={styles.info}>Current Bid</div>
-                        <div className={styles.currency}>
-                          {/* {x.currency} */}
-                          {x.bids && x.bids.length > 0 ? x.bids[x.bids.length - 1].price? x.bids[x.bids.length - 1].price : 0 : 0} AVAX
-                        </div>
-                        <div className={styles.price}>${x.price ? x.price : ""}</div>
-                        <div className={styles.info}>Auction ending in</div>
-                        <div className={styles.timer}>
-                          <div className={styles.box}>
-                            <div className={styles.number}>19</div>
-                            <div className={styles.time}>Hrs</div>
-                          </div>
-                          <div className={styles.box}>
-                            <div className={styles.number}>24</div>
-                            <div className={styles.time}>mins</div>
-                          </div>
-                          <div className={styles.box}>
-                            <div className={styles.number}>19</div>
-                            <div className={styles.time}>secs</div>
+                          <div className={styles.item}>
+                            <div className={styles.icon}>
+                              <Icon name="stop" size="24" />
+                            </div>
+                            <div className={styles.description}>
+                              <div className={styles.category}>Auction Price</div>
+                              <div className={styles.text}>{x.auctionPrice ? x.auctionPrice : ""}AVAX</div>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                      <div className={styles.btns}>
-                        <button
-                          className={cn("button", styles.button)}
-                          onClick={() => { setVisibleModalBid(true); setActiveIndex(index) }}
-                        >
-                          Place a bid
-                        </button>
-                        <Link
-                          className={cn("button-stroke", styles.button)}
-                          to={`/item/${x._id}`}
-                        >
-                          View item
-                        </Link>
+                        <div className={styles.wrap}>
+                          <div className={styles.info}>Current Bid</div>
+                          <div className={styles.currency}>
+                            {/* {x.currency} */}
+                            {x.bids && x.bids.length > 0 ? x.bids[x.bids.length - 1].price ? x.bids[x.bids.length - 1].price : 0 : 0} AVAX
+                          </div>
+                          <div className={styles.price}>
+                            $
+                            {x.bids && x.bids.length > 0 ? x.bids[x.bids.length - 1].price ? Number(avax * x.bids[x.bids.length - 1].price).toFixed(1) : 0 : 0}                          
+                          </div>
+                          <div className={styles.info}>Auction ending in</div>
+                          <div className={styles.timer}>
+                            <div className={styles.box}>
+                              <div className={styles.number}>{getLeftDuration(x.updatedAt, x.auctionPeriod, curTime).hours()}</div>
+                              <div className={styles.time}>Hrs</div>
+                            </div>
+                            <div className={styles.box}>
+                              <div className={styles.number}>{getLeftDuration(x.updatedAt, x.auctionPeriod, curTime).minutes()}</div>
+                              <div className={styles.time}>mins</div>
+                            </div>
+                            <div className={styles.box}>
+                              <div className={styles.number}>{getLeftDuration(x.updatedAt, x.auctionPeriod, curTime).seconds()}</div>
+                              <div className={styles.time}>secs</div>
+                            </div>
+                          </div>
+                        </div>
+                        <div className={styles.btns}>
+                          <button
+                            className={cn("button", styles.button)}
+                            onClick={() => { setVisibleModalBid(true); setActiveIndex(index) }}
+                          >
+                            Place a bid
+                          </button>
+                          <Link
+                            className={cn("button-stroke", styles.button)}
+                            to={`/item/${x._id}`}
+                          >
+                            View item
+                          </Link>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))}
             </Slider>
           </div>
         </div>

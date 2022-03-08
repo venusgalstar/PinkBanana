@@ -113,15 +113,16 @@ const Profile = () =>
     reader.readAsDataURL(file);
     reader.onload = () => {
       setImgBanner(reader.result);
+      document.getElementById("coverImageArea").style.background = `url(${reader.result})`;
     };
     reader.onerror = function (error) {
     }
   }
 
-  const saveItem = (params) => {
-    axios({
+  const saveItem = async (params) => {
+    await axios({
       method: "put",
-      url: `${config.baseUrl}users/${detailedUserInfo.address}`,
+      url: `${config.baseUrl}users/${userId}`,
       data: params
     })
     .then(function (response) {
@@ -135,7 +136,7 @@ const Profile = () =>
     });
   }
 
-  const onUpdateUserImg = () =>
+  const onUpdateUserImg = async () =>
   {
     setVisibleModal(true);    
     if(selectedFile == null) 
@@ -143,7 +144,7 @@ const Profile = () =>
       const params = {};
       params.banner = imgBanner;
       setCreateState(1);
-      saveItem(params);
+      await saveItem(params);
       return;
     }
     const formData = new FormData();
@@ -152,18 +153,18 @@ const Profile = () =>
     console.log(selectedFile);
     
     setCreateState(1);
-    axios({
+    await axios({
       method: "post",
       url: `${config.baseUrl}utils/upload_file`,
       data: formData,
       headers: { "Content-Type": "multipart/form-data" },
     })
-    .then(function (response) {
+    .then(async function (response) {
       console.log("response = ", response);
       const params = {};
-      params.userImg = response.data.path;
+      params.banner = response.data.path;
       setCreateState(1);
-      saveItem(params);
+      await saveItem(params);
     })
     .catch(function (error) {
       console.log(error);
@@ -198,12 +199,12 @@ const Profile = () =>
 
   const onGotoProfile = () =>
   {
-    history.push("/profile-edit");
+    history.push(`/profile-edit/${currentUsr._id}`);
   }
 
   return (
     <div className={styles.profile}>
-        <div  className={cn(styles.head, { [styles.active]: visible })}
+        <div id="coverImageArea" className={cn(styles.head, { [styles.active]: visible })}
           style={
             (detailedUserInfo && detailedUserInfo.banner) ?
             {backgroundImage: `url(${config.imgUrl}${detailedUserInfo.banner})`} 
@@ -252,7 +253,9 @@ const Profile = () =>
           <User className={styles.user} item={socials} />
           <div className={styles.wrapper}>
             <div className={styles.nav}>
-              {navLinks.map((x, index) => (
+              {
+                (navLinks && navLinks.length> 0 ) && 
+              navLinks.map((x, index) => (
                 <button
                   className={cn(styles.link, {
                     [styles.active]: index === activeIndex,

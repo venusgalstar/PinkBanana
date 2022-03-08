@@ -26,7 +26,7 @@ const Accept = ({ className, onOk, onCancel }) =>
       </div>
       <div className={styles.stage}>1.46 AVAX for 1 edition</div>
       <div className={styles.table}>
-        {items.map((x, index) => (
+        {items && items.length>0 && items.map((x, index) => (
           <div className={styles.row} key={index}>
             <div className={styles.col}>{x.title}</div>
             <div className={styles.col}>{x.value}</div>

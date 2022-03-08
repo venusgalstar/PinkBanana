@@ -1,4 +1,4 @@
-import React, {useEffect, useState}from "react";
+import React, {createElement, useEffect, useState}from "react";
 // import { Link } from "react-router-dom";
 import cn from "classnames";
 import styles from "./ProfileEdit.module.sass";
@@ -16,6 +16,9 @@ import { authSet } from "../../store/actions/auth.actions";
 import { useDispatch, useSelector } from 'react-redux';
 import jwt_decode from "jwt-decode";
 import { signString } from "../../InteractWithSmartContract/interact";
+import Dropdown from "../../components/Dropdown";
+import { useParams } from "react-router-dom";
+import { getDetailedUserInfo } from "../../store/actions/auth.actions";
 
 const breadcrumbs = [
   {
@@ -43,15 +46,51 @@ const ProfileEdit = () => {
   let dispatch = useDispatch();
   const currentUsr = useSelector(state => state.auth.user);
   const [signedString, setSignedString] = useState("");
+  const [addSocial, setAddSocial] = useState(false);
+  const [socialAccount, setSocialAccount] = useState("");
+  const [socialType, setSocialType] = useState("");
+  const [socials, setSocials] = useState("");
+  const {userId} = useParams();  //taget_id in making follow
+  const detailedUserInfo = useSelector(state => state.auth.detail);
+  const [saveMode, setSaveMode] = useState(0); //0: new, 1: update
+  const [socialInputs, setSocialInputs]  = useState([]);
+  const currentWalletAddress = useSelector(state => state.auth.currentWallet);
+
+  const socialTypes = [{ value: 1, text: "Email" }, { value: 2, text: "Discord" }, { value: 3, text: "Phone" },
+  { value: 4, text: "Yutube" } ];
+
+  console.log("userId = ", userId, "currentWalletAddress = ", currentWalletAddress);
+
+  useEffect( () =>
+  {
+    if(userId !== "new") 
+    {
+      setSaveMode(1);
+      dispatch(getDetailedUserInfo(userId));
+    }
+    else
+    {
+      setSaveMode(0);
+    }
+  }, [userId])
   
   useEffect(() =>
   {
-    if(currentUsr && currentUsr.address)
+    if(userId !== "new" && detailedUserInfo)
     {
-      setAddress(currentUsr.address);
-      console.log("[in the useEffect] address = " , currentUsr.address);
+      setAddress(detailedUserInfo.address);
+      setLogoImg(config.imgUrl+detailedUserInfo.avatar)
+      setNameText(detailedUserInfo.username);
+      setUrlText(detailedUserInfo.customURL);
+      setWebsiteText(detailedUserInfo.websiteURL);
+      setTwitterText(detailedUserInfo.twitter);
+      setBioText(detailedUserInfo.userBio);      
+      setSocials(detailedUserInfo.socials);
+      console.log("[in the useEffect] address = " , detailedUserInfo.address);
+    }else{
+      setAddress(currentWalletAddress);
     }
-  }, [currentUsr])
+  }, [detailedUserInfo])
 
   console.log("[out of useEffect] currentUsr = " , currentUsr);
   console.log("[out of useEffect] address = " , currentUsr.address);
@@ -93,11 +132,12 @@ const ProfileEdit = () => {
       { 
         //set the token to sessionStroage   
         const token = response.data.token;   
-        sessionStorage.setItem("jwtToken", response.data.token);
+        localStorage.setItem("jwtToken", response.data.token);
         const decoded = jwt_decode(token);
         console.log(decoded);
         dispatch(authSet(decoded._doc));
         setCreateState(0);      
+        history.push("/");
       }
     })
     .catch(function (error) {
@@ -106,21 +146,41 @@ const ProfileEdit = () => {
     });
   }
 
-  const saveItem = (params) => {
-    axios({
-      method: "post",
-      url: `${config.baseUrl}users/create`,
-      data: params
-    })
-    .then(function (response) {
-      console.log(response);      
-      setCreateState(0);
-      doLogin(params.address, params.password);
-    })
-    .catch(function (error) {
-      console.log(error);
-      setCreateState(2);
-    });
+  const saveItem = async (params) => 
+  {
+    if(saveMode === 0)
+    {
+      await axios({
+        method: "post",
+        url: `${config.baseUrl}users/create`,
+        data: params
+      })
+      .then(function (response) {
+        console.log(response);      
+        setCreateState(0);
+        doLogin(params.address, params.password);
+      })
+      .catch(function (error) {
+        console.log(error);
+        setCreateState(2);
+      });
+    }else if(saveMode === 1)
+    {      
+      await axios({
+        method: "put",
+        url: `${config.baseUrl}users/${detailedUserInfo._id}`,
+        data: params
+      })
+      .then(function (response) {
+        console.log(response);      
+        setCreateState(0);
+        history.push("/");
+      })
+      .catch(function (error) {
+        console.log(error);
+        setCreateState(2);
+      });
+    }
   }
 
   const onClickUpdate = async () =>
@@ -136,12 +196,14 @@ const ProfileEdit = () => {
         params.address = address;
         params.username = nameText;
         params.customURL = urlText;
-        params.profilePhoto = logoImg;
+        params.avatar = logoImg;
         params.userBio = bioText;
         params.websiteURL = websiteText;
         params.verified = true;
         params.userImg = "";
         params.password = signedString;
+        params.twitter = twitterText;
+        params.socials = socials;
         setCreateState(1);
         saveItem(params);
         return;
@@ -152,7 +214,7 @@ const ProfileEdit = () => {
       console.log(selectedAvatarFile);
       
       setCreateState(1);
-      axios({
+      await axios({
         method: "post",
         url: `${config.baseUrl}utils/upload_file`,
         data: formData,
@@ -171,6 +233,8 @@ const ProfileEdit = () => {
         params.verified = true;
         params.banner = "";
         params.password = signedString;
+        params.twitter = twitterText;
+        params.socials = socials;
         setCreateState(1);
         saveItem(params);
       })
@@ -180,7 +244,41 @@ const ProfileEdit = () => {
       });
     }
   }
+
+  const onAddSocial = () =>
+  {
+    setAddSocial(false);
+    let socs = [];
+    socs = socialInputs;
+    socs.push({type : socialType.text, value : socialAccount});
+    let i; let socialsString = "";
+    for(i=0; i<socs.length; i++) 
+    {
+      if(i === socs.length - 1) socialsString += socs[i].type + " : " + socs[i].value;
+      else socialsString += socs[i].type + " : " + socs[i].value + ", ";
+    }
+    setSocials(socialsString);
+    setSocialInputs(socs);
+    console.log("socialInputs = ", socialInputs);
+    setSocialAccount("");
+  }
   
+  const onRemoveSocialInput = (index) =>
+  {
+    let socs = [];
+    socs = socialInputs;
+    socs.splice(index, 1);
+    setSocialInputs(socs);
+    let i; let socialsString = "";
+    for(i=0; i<socs.length; i++) 
+    {
+      if(i === socs.length - 1) socialsString += socs[i].type + " : " + socs[i].value;
+      else socialsString += socs[i].type + " : " + socs[i].value + ", ";
+    }
+    setSocials(socialsString);
+    console.log("socs = ", socs);
+  }
+
   const navigate2Next = () =>
   {
     history.push("/")
@@ -197,7 +295,9 @@ const ProfileEdit = () => {
     setBioText("");
     setVisibleModal(false);
     setCreateState(1);
+    setSocials("");
   }
+
 
   return (
     <div className={styles.page}>
@@ -205,7 +305,7 @@ const ProfileEdit = () => {
       <div className={cn("section-pt80", styles.section)}>
         <div className={cn("container", styles.container)}>
           <div className={styles.top}>
-            <h1 className={cn("h2", styles.title)}>Edit profile</h1>
+            <h1 className={cn("h2", styles.title)}>{ userId !== "new"? "Edit profile" : "Sign Up"}</h1>
             <div className={styles.info}>
               You can set preferred display name, create{" "}
               <strong>your profile URL</strong> and manage other personal
@@ -319,12 +419,51 @@ const ProfileEdit = () => {
                         Verify account
                       </button>
                     </div>
+                    <div className={styles.box} style={{marginTop: "2rem"}}>
+                    <div className={styles.fieldset} > 
+                      {
+                        (socialInputs && socialInputs.length > 0) && 
+                        socialInputs.map((socialInfo, index) => (                                        
+                          <div className="row">     
+                            <div style={{
+                              width: "92%",
+                              display: "inline-block"
+                            }}>
+                              <TextInput
+                                className={styles.field}
+                                label={socialInfo.type}
+                                key={index}
+                                name={socialInfo.type+index}
+                                type="text"
+                                value={socialInfo.value}
+                                disabled
+                              />                  
+                            </div>
+                            <div 
+                              style={{
+                                width: "10%",
+                                display: "inline",
+                                paddingLeft: "5px"
+                              }}
+                            >                                                                  
+                              <button 
+                                onClick={() => onRemoveSocialInput(index)}
+                              >
+                                <Icon name="close-circle" size="16" />
+                              </button>           
+                            </div>          
+                          </div>
+                        ))          
+                      }    
+                      </div>
+                      </div>
                   </div>
                   <button
                     className={cn("button-stroke button-small", styles.button)}
+                    onClick = {() => setAddSocial(!addSocial)}
                   >
                     <Icon name="plus-circle" size="16" />
-                    <span>Add more social account</span>
+                    <span>Add more social accounts</span>
                   </button>
                 </div>
               </div>
@@ -349,6 +488,37 @@ const ProfileEdit = () => {
       </div>      
       <Modal visible={visibleModal} onClose={() => setVisibleModal(false)}>
         <FolowSteps className={styles.steps} state={createState} navigate2Next={navigate2Next}/>
+      </Modal>
+      <Modal visible={addSocial} onClose={() => setAddSocial(false)} >               
+        <div className={styles.field}>
+          <div className={styles.label} style={{marginTop:"2rem"}}>Type</div>
+            <Dropdown
+              className={styles.dropdown}
+              value={socialType}
+              setValue={setSocialType}
+              options={socialTypes}
+            />
+        </div>
+        <div className={styles.fieldset}>
+          <TextInput
+            className={styles.field}
+            label="portfolio or website"
+            name="Portfolio"
+            type="text"
+            placeholder="Enter URL"
+            value={socialAccount}
+            onChange={(e)=>setSocialAccount(e.target.value)}
+            required
+          />
+        </div>        
+        <button  className={cn("button", styles.button)} 
+          style={{
+            width: "-webkit-fill-available",
+            marginTop: "1rem"
+          }} 
+          onClick={()=>onAddSocial()}>
+          Add
+        </button>
       </Modal>
     </div>
   );

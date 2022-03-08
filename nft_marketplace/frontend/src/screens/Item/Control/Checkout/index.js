@@ -34,7 +34,9 @@ const Checkout = ({ className , onOk, items}) => {
         <strong>UI8</strong>
       </div>
       <div className={styles.table}>
-        {items.map((x, index) => (
+        {
+        (items && items.length > 0) && 
+        items.map((x, index) => (
           <div className={styles.row} key={index}>
             <div className={styles.col}>{x.title}</div>
             <div className={styles.col}>{x.value}</div>

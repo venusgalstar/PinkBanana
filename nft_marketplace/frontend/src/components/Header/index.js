@@ -14,6 +14,10 @@ import jwt_decode from "jwt-decode";
 import { useHistory } from "react-router-dom";
 import { connectWallet, signString } from "../../InteractWithSmartContract/interact";
 import { setConnectedWalletAddress } from "../../store/actions/auth.actions";
+import Modal from "../../components/Modal";
+import { useEffect } from "react";
+import { getDetailedUserInfo } from "../../store/actions/auth.actions";
+import { authLogout } from "../../store/actions/auth.actions";
 
 const nav = [
   {
@@ -39,50 +43,80 @@ const Headers = () => {
   const [search, setSearch] = useState("");
   const currentUsr  = useSelector(state=>state.auth.user);
   const [createState, setCreateState] = useState(1);
-  const history = useHistory();
+  const history = useHistory(); 
+  const [showVerifyModal, setShowVerifyModal] = useState(false);
+  const detailedUserInfo = useSelector(state => state.auth.detail);
+  const currentAddr = useSelector(state=> state.auth.currentWallet);
+
+  useEffect(async () =>
+  {
+    //login with this wallet
+    if(currentAddr === 0 || currentAddr === undefined)
+    {
+      //do logout      
+      dispatch(authLogout({}));
+    }
+    else if(currentAddr !== "") 
+    {   
+      if (localStorage.jwtToken !== undefined &&
+        localStorage.jwtToken !== "" &&
+        localStorage.jwtToken !== null) 
+      {
+        const decoded = jwt_decode(localStorage.jwtToken);
+        const currTime = Date.now() / 1000;
+        console.log(currentAddr,decoded._doc.address);
+        if (currentAddr && currentAddr.toString() === decoded._doc.address.toString().toLowerCase()) 
+        {
+          if (decoded.app < currTime ) 
+          {
+            dispatch(authLogout());
+            localStorage.removeItem("jwtToken");
+            alert("Session timeouted. Plese sign in again.")           
+          }
+          else {
+            console.log("decoded = ", decoded);
+            dispatch(authSet(decoded._doc));
+            window.location.href = "/";
+            return;
+          }
+        }else 
+        {
+          console.log("differnt addr");
+          dispatch(authLogout({})) 
+        }
+      }else dispatch(authLogout({}))
+    }
+  }, [currentAddr])
+
+  useEffect(() =>
+  {
+    if(currentUsr && currentUsr._id) dispatch(getDetailedUserInfo(currentUsr._id));
+  }, [currentUsr])
 
   const handleSubmit = (e) => {
     
   };
-// function makeid(length) {
-//     var result           = '';
-//     var characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-//     var charactersLength = characters.length;
-//     for ( var i = 0; i < length; i++ ) {
-//       result += characters.charAt(Math.floor(Math.random() * 
-//  charactersLength));
-//    }
-//    return result;
-// }
 
   const dispatch = useDispatch();
 
-  const onClickSign = async () =>
+  const onClickSignIn = async () =>
   {    
-    if(currentUsr.address === undefined || currentUsr.password === undefined)
+    // dispatch(setConnectedWalletAddress(connection.address));
+     
+    let connection = await connectWallet();    
+    if(connection.success === true)
     {
-      let connection = await connectWallet();    
-      if(connection.success === true)
-      {
-        dispatch(setConnectedWalletAddress(connection.address));   
-        let signedString = "";   
-        signedString =  await signString(connection.address);
-        if(signedString !== "")
-        {     
-          const params = {};
-          params.address= connection.address;
-          params.password = signedString;
-          setCreateState(1);
-          Login(params);
-        }
-      }
-      return;
+      let signedString = "";   
+      signedString =  await signString(connection.address);
+      if(signedString !== "")
+      {     
+        const params = {};
+        params.address= connection.address;
+        params.password = signedString;
+        setCreateState(1);
+        Login(params);
+      }    
     }
-    const params = {};
-    params.address= currentUsr.address;
-    params.password= currentUsr.password;
-    setCreateState(1);
-    Login(params);
   }
   
   const Login = (params) =>
@@ -97,15 +131,17 @@ const Headers = () => {
       { 
         //set the token to sessionStroage   
         const token = response.data.token;   
-        sessionStorage.setItem("jwtToken", response.data.token);
+        localStorage.setItem("jwtToken", response.data.token);
         const decoded = jwt_decode(token);
         console.log(decoded);
         dispatch(authSet(decoded._doc));
         setCreateState(0);      
+        history.push("/");
       }
     })
     .catch(function (error) {
-      console.log(error);
+      // console.log(error);
+      alert("Login failed, Please sign up. : ", error.message);
       setCreateState(2);
     });
   }
@@ -116,7 +152,18 @@ const Headers = () => {
     if(connection.success === true)
     {
       dispatch(setConnectedWalletAddress(connection.address));
-      history.push("/profile-edit");
+      // history.push("/profile-edit/new");
+      history.push({pathname:  "/profile-edit/new"});
+    }
+  }
+
+  const onClickUpload =  () =>
+  {
+    if(detailedUserInfo && detailedUserInfo.verified === true)       
+      history.push({pathname:  "/upload-variants" });
+    else {
+      //show warning modal      
+      setShowVerifyModal(true);
     }
   }
 
@@ -133,7 +180,9 @@ const Headers = () => {
         </Link>
         <div className={cn(styles.wrapper, { [styles.active]: visibleNav })}>
           <nav className={styles.nav}>
-            {nav.map((x, index) => (
+            {
+              (nav && nav.length > 0) && 
+              nav.map((x, index) => (
               <Link
                 className={styles.link}
                 // activeClassName={styles.active}
@@ -164,43 +213,35 @@ const Headers = () => {
           </form>
           {
             (currentUsr && currentUsr._id !== undefined) &&
-            <Link
+            <button
               className={cn("button-small", styles.button)}
-              to="/upload-variants"
+              onClick={() => onClickUpload()}
             >
               Upload
-            </Link>
+            </button>
           }
         </div>
         <Notification className={styles.notification} />
         {
           (currentUsr && currentUsr._id !== undefined) &&
-          <Link
+          <button
             className={cn("button-small", styles.button)}
-            to="/upload-variants"
+            onClick={() => onClickUpload()}
           >
             Upload
-          </Link>
+          </button>
         }
-        {/* <Link
-          className={cn("button-stroke button-small", styles.button)}
-          to="/connect-wallet"
-        >
-          Connect Wallet
-        </Link> */}
         {
           (currentUsr && currentUsr._id === undefined)?          
           <>
             <button
               className={cn("button-small", styles.button)}
-              to="/upload-variants"
-              onClick={() => onClickSign()}
+              onClick={() => onClickSignIn()}
             >
               Sign in
             </button>
             <button
               className={cn("button-small", styles.button)}
-              to="/upload-variants"
               onClick={() => onClickSignUp()}
             >
               Sign up
@@ -215,6 +256,20 @@ const Headers = () => {
           onClick={() => setVisibleNav(!visibleNav)}
         ></button>
       </div>
+      
+      <Modal visible={showVerifyModal} onClose={() => setShowVerifyModal(false)} >               
+        <div className={styles.field}>
+            <h3>You are not verified. Please contact the manager.</h3>
+        </div>
+        <button  className={cn("button", styles.button)} 
+          style={{
+            width: "-webkit-fill-available",
+            marginTop: "1rem"
+          }} 
+          onClick={()=>setShowVerifyModal(false)}>
+          Yes
+        </button>
+      </Modal>
     </header>
   );
 };

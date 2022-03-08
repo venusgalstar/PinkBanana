@@ -14,6 +14,7 @@ import config from "../../config";
 import { useHistory } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { getCollections } from "../../store/actions/collection.actions";
+import { batchMintOnSale } from "../../InteractWithSmartContract/interact";
 // const royaltiesOptions = ["10%", "20%", "30%"];
 const royaltiesOptions = [{value:10, text: "10%"}, {value:20, text: "20%"}, {value:30, text: "30%"}];
 
@@ -65,8 +66,8 @@ const Upload = ({asset_id = null}) => {
   const getConsideringCollectionId = useSelector(state => state.collection.consideringId);
   const [instant, setInstant] = useState(false);
   const [period, setPeriod] = useState(7);
-
   const [colls, setColls] = useState([]);
+  const [collectionName, setCollectionName] = useState("");
 
   useEffect(() => {
     if (collections && collections.length > 0) {
@@ -115,8 +116,8 @@ const Upload = ({asset_id = null}) => {
       if(collId === 0)
       {
         //create new collection
-        sessionStorage.setItem("isNewItemCreating", "true");
-        sessionStorage.setItem("previousPageURL", "/upload-multiple/0");
+        localStorage.setItem("isNewItemCreating", "true");
+        localStorage.setItem("previousPageURL", "/upload-multiple/0");
         history.push("/createCollection")
       }
       else if(collId>0){
@@ -129,16 +130,17 @@ const Upload = ({asset_id = null}) => {
   useEffect(() => 
   {    
     setCollectionId(selectedColl.value);
+    setCollectionName(selectedColl.text);
   }, [selectedColl])
 
   useEffect(() =>
   {    
     let flag = "";
-    flag = sessionStorage.getItem("isNewItemCreating");
+    flag = localStorage.getItem("isNewItemCreating");
     if(flag)
     {
       setCollectionId(getConsideringCollectionId);
-      sessionStorage.removeItem("isNewItemCreating"); 
+      localStorage.removeItem("isNewItemCreating"); 
     }
   }, [])
 
@@ -184,10 +186,29 @@ const Upload = ({asset_id = null}) => {
       url: `${config.baseUrl}item/multiple_create`,
       data: {params, names, paths}
     })
-    .then(function (response) 
+    .then(async function (response) 
     {
-      console.log(response);      
-      setCreateState(0);
+      console.log("response = ", response);
+      if(response.status === 200)
+      {
+        var aucperiod = (params.isSale === 1 ? 0 : params.auctionPeriod) ;
+        var price = (params.isSale === 1  ? params.price :  params.auctionPrice)
+        let ret = await batchMintOnSale(
+          currentUsr.address, 
+          response.data, 
+          aucperiod*24*3600 , 
+          price,
+          0);
+        if (ret.success === true) 
+        {
+          console.log("succeed in put on sale") ;         
+        }
+        else {
+          console.log("failed in put on sale : ", ret.status);
+        }
+      }
+        setCreateState(0); 
+        history.push("/");
     })
     .catch(function (error) {
       console.log(error);
@@ -203,29 +224,10 @@ const Upload = ({asset_id = null}) => {
       console.log("Invalid collection id.");
       return;
     }
-    if(selectedFile === null) {
-      let params = {};
-      // params.itemId = itemId;
-      params.itemName = textName;
-      params.itemLogoURL = logoImg;
-      params.itemDescription = textDescription;
-      params.itemProperty = textProperty;
-      params.itemSize = textSize;
-      params.itemRoyalty = royalties.value;
-      params.collectionId = collectionId;
-      params.owner = currentUsr._id;
-      params.creator = currentUsr._id;
-      params.isSale = !sale? 0 : (instant? 1: 2);
-      if(instant) {
-        params.price = !sale? 0 : price;
-        params.auctionPrice = 0;
-      }else {
-        params.auctionPrice = !sale? 0 : price;
-        params.price = 0;
-      }
-      params.auctionPeriod = !sale? 0 : period;
-      setCreateState(1);
-      saveItem(params);
+    if(selectedFile === null) 
+    {
+      setCreateState(5);
+      console.log("Invalid file.");
       return;
     }
     if(sel_files.length >0 && sel_files.length<100) 
@@ -239,6 +241,7 @@ const Upload = ({asset_id = null}) => {
       })
       formData.append("fileArryLength", sel_files.length);
       formData.append("authorId", "hch");
+      formData.append("collectionName", collectionName);
       console.log("uploading multiple files...");
     
       axios({
@@ -256,8 +259,8 @@ const Upload = ({asset_id = null}) => {
         params.itemSize = textSize;
         params.itemRoyalty = royalties.value;
         params.collectionId = collectionId;
-        params.owner = currentUsr._id;
         params.creator = currentUsr._id;
+        params.owner = currentUsr._id;
         params.isSale = !sale? 0 : (instant? 1: 2);
         if(instant) {
           params.price = !sale? 0 : price;
@@ -294,7 +297,7 @@ const Upload = ({asset_id = null}) => {
           <div className={styles.wrapper}>
             <div className={styles.head}>
               <div className={cn("h2", styles.title)}>
-                Create multiple collectible
+                Create multiple items
               </div>
               <button
                 className={cn("button-stroke button-small", styles.button)}

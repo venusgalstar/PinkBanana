@@ -14,7 +14,7 @@ import config from "../../config";
 import { useHistory } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { getCollections } from "../../store/actions/collection.actions";
-
+import { singleMintOnSale } from "../../InteractWithSmartContract/interact";
 
 // const royaltiesOptions = ["10%", "20%", "30%"];
 const royaltiesOptions = [{ value: 10, text: "10%" }, { value: 20, text: "20%" }, { value: 30, text: "30%" }];
@@ -68,6 +68,7 @@ const Upload = ({ asset_id = null }) => {
   const getConsideringCollectionId = useSelector(state => state.collection.consideringId);
   const [instant, setInstant] = useState(false);
   const [period, setPeriod] = useState(7);
+  const [collectionName, setCollectionName] = useState("");
 
   useEffect(() => {
     if (collections && collections.length > 0) {
@@ -117,8 +118,8 @@ const Upload = ({ asset_id = null }) => {
       if (collId === 0) 
       {
         //create new collection
-        sessionStorage.setItem("isNewItemCreating", true);
-        sessionStorage.setItem("previousPageURL", "/upload-details/0");
+        localStorage.setItem("isNewItemCreating", true);
+        localStorage.setItem("previousPageURL", "/upload-details/0");
         history.push("/createCollection")
       }
       else {
@@ -131,16 +132,17 @@ const Upload = ({ asset_id = null }) => {
   useEffect(() =>
   {
     setCollectionId(selectedColl.value);
+    setCollectionName(selectedColl.text);
   }, [selectedColl])
 
   useEffect(() => {
     let flag = "";
-    flag = sessionStorage.getItem("isNewItemCreating");
+    flag = localStorage.getItem("isNewItemCreating");
     console.log("flag : ", flag)
     if(flag)
     {
       setCollectionId(getConsideringCollectionId);
-      sessionStorage.removeItem("isNewItemCreating"); 
+      localStorage.removeItem("isNewItemCreating"); 
     }
   }, [])
 
@@ -165,14 +167,34 @@ const Upload = ({ asset_id = null }) => {
       url: `${config.baseUrl}item/create`,
       data: params
     })
-      .then(function (response) {
-        console.log(response);
-        setCreateState(0);
+      .then(async function (response) {
+        console.log("response = ", response);
+        if(response.status === 200)
+        {
+          var aucperiod = (response.data.isSale === 1 ? 0 : response.data.auctionPeriod) ;
+          var price = (response.data.isSale === 1  ? response.data.price :  response.data.auctionPrice)
+          let ret = await singleMintOnSale(
+            currentUsr.address, 
+            response.data._id, 
+            aucperiod*24*3600 , 
+            price,
+            0);
+          if (ret.success === true) 
+          {
+            console.log("succeed in put on sale") ;         
+          }
+          else {
+            console.log("failed in put on sale : ", ret.status);
+          }
+        }
+        setCreateState(0); 
+        history.push("/");
       })
       .catch(function (error) {
         console.log(error);
         setCreateState(2);
       });
+      
   }
 
   console.log("getConsideringCollectionId = ", getConsideringCollectionId);
@@ -188,33 +210,14 @@ const Upload = ({ asset_id = null }) => {
     }
     if (selectedFile == null) 
     {
-      const params = {};
-      // params.itemId = itemId;
-      params.itemName = textName;
-      params.itemLogoURL = logoImg;
-      params.itemDescription = textDescription;
-      params.itemProperty = textProperty;
-      params.itemSize = textSize;
-      params.itemRoyalty = royalties.value;
-      params.collectionId = collectionId;
-      params.owner = currentUsr._id;
-      params.creator = currentUsr._id;
-      params.isSale = !sale? 0 : (instant? 1: 2);
-      if(instant) {
-        params.price = !sale? 0 : price;
-        params.auctionPrice = 0;
-      }else {
-        params.auctionPrice = !sale? 0 : price;
-        params.price = 0;
-      }
-      params.auctionPeriod = !sale? 0 : period;
-      setCreateState(1);
-      saveItem(params);
+      setCreateState(5);
+      console.log("Invalid file.");
       return;
     }
     const formData = new FormData();
     formData.append("itemFile", selectedFile);
     formData.append("authorId", "hch");
+    formData.append("collectionName", collectionName);
     console.log(selectedFile);
 
     setCreateState(1);
@@ -227,7 +230,6 @@ const Upload = ({ asset_id = null }) => {
       .then(function (response) {
         // console.log(response);
         const params = {};
-        // params.itemId = itemId;
         params.itemName = textName;
         params.itemLogoURL = response.data.path;
         params.itemDescription = textDescription;
@@ -235,8 +237,8 @@ const Upload = ({ asset_id = null }) => {
         params.itemSize = textSize;
         params.itemRoyalty = royalties.value;
         params.collectionId = collectionId;
-        params.owner = currentUsr._id;
         params.creator = currentUsr._id;
+        params.owner = currentUsr._id;
         params.isSale = !sale? 0 : (instant? 1: 2);
         if(instant) {
           params.price = !sale? 0 : price;
@@ -272,7 +274,7 @@ const Upload = ({ asset_id = null }) => {
           <div className={styles.wrapper}>
             <div className={styles.head}>
               <div className={cn("h2", styles.title)}>
-                Create single collectible
+                Create single item
               </div>
               <button
                 className={cn("button-stroke button-small", styles.button)}

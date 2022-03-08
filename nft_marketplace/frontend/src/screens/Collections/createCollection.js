@@ -13,6 +13,7 @@ import TextInput from "../../components/TextInput";
 import { useDispatch, useSelector } from "react-redux";
 import Dropdown from "../../components/Dropdown";
 import { setConsideringCollectionId } from "../../store/actions/collection.actions";
+import MultipleInput from "../../components/MultipleInput";
 
 const CreateCollection = () => 
 {
@@ -38,6 +39,13 @@ const CreateCollection = () =>
   let history = useHistory(); let dispatch = useDispatch();
   const currentUsr  = useSelector(state=>state.auth.user);
   const [floorPrice, setFloorPrice] = useState(0);
+  const [metaFieldInput, setMetaFieldInput] = useState("");
+  const [metaFields, setMetaFields] = useState([]);
+  const [metaFieldDatas, setMetaFieldDatas] = useState([]);
+  const [metaString, setMetaSting] = useState("");
+  const [removeField, setRemoveField] = useState(false);
+  const [consideringField, setConsideringField] = useState("");
+  const [consideringFieldIndex, setConsideringFieldIndex] = useState(0);
 
   const changeBanner = (event) => 
   {
@@ -79,27 +87,27 @@ const CreateCollection = () =>
     })
     .then(function (response) {
       console.log("response.data._id : ", response.data._id);  
-      newCollectionId = response.data._id.toString();      
+      newCollectionId = response.data._id;      
 
-      let isCreatingNewItem = sessionStorage.getItem("isNewItemCreating");
-      if(isCreatingNewItem) sessionStorage.setItem("newCollectionId", newCollectionId); 
+      let isCreatingNewItem = localStorage.getItem("isNewItemCreating");
+      if(isCreatingNewItem) localStorage.setItem("newCollectionId", newCollectionId); 
       
       dispatch(setConsideringCollectionId(newCollectionId));
       setCreateState(0);      
     })
     .catch(function (error) {
       console.log(error);
-      setCreateState(2);
+      //setCreateState(2);
     });  
   }
 
   const navigate2Next = () =>
   { 
 
-    let isCreatingNewItem = sessionStorage.getItem("isNewItemCreating");
+    let isCreatingNewItem = localStorage.getItem("isNewItemCreating");
     if(isCreatingNewItem === "true")
     {
-      let previoueLink = sessionStorage.getItem("previousPageURL");
+      let previoueLink = localStorage.getItem("previousPageURL");
       history.push(previoueLink);
     }
     else{
@@ -109,24 +117,10 @@ const CreateCollection = () =>
 
   const createCollection = async () => {
     setVisibleModal(true);
-    if( currentUsr  == null || currentUsr == undefined)
+    if( currentUsr  == null || currentUsr == undefined || selectedAvatarFile == null)
     {
       setCreateState(3);
       console.log("Invalid user :  currentUsr = ", currentUsr);
-      return;
-    }
-    if(selectedAvatarFile == null) 
-    {
-      const params = {};
-      params.collectionName = textName;
-      params.collectionLogoURL = logoImg;
-      params.collectionBannerURL = bannerImg;
-      params.collectionDescription = textDescription;
-      params.collectionCategory = categories.value;
-      params.price = floorPrice;
-      params.owner = currentUsr._id;   
-      console.log("collectionCategory = ", categories.value);  
-      saveCollection(params);
       return;
     }
     var formData = new FormData();
@@ -163,7 +157,8 @@ const CreateCollection = () =>
         params.collectionDescription = textDescription;
         params.collectionCategory = categories.value;
         params.price = floorPrice;
-        params.owner = currentUsr._id;      
+        params.owner = currentUsr._id;   
+        params.metaData = metaString;   
         saveCollection(params);
       })
       .catch(function (error) {
@@ -171,6 +166,79 @@ const CreateCollection = () =>
         setCreateState(2);
       });
   }
+
+  const setAddMetaField  = () =>
+  {
+    let mfs = metaFields;
+    mfs.push(metaFieldInput);
+    setMetaFields(mfs);
+    setMetaFieldInput("");
+
+  }
+
+  const onRemoveMetaFieldInput = (index) =>
+  {
+    let socs1 = [];
+    socs1 = metaFields;
+    socs1.splice(index, 1);
+    setMetaFields(socs1);
+
+    let socs2 = [];
+    socs2 = metaFieldDatas;
+    socs2.splice(index, 1);
+    setMetaFieldDatas(socs2);
+
+    let i; let metaStr = "{";
+    for(i=0; i<socs1.length; i++) 
+    {
+      if(i === socs1.length - 1) metaStr += "\""+socs1[i] + "\" : " + socs2[i]+"}";
+      else metaStr += "\""+socs1[i] + "\" : " + socs2[i] + ", ";
+    }
+    setMetaSting(metaStr);
+
+    console.log("metaStr = ", metaStr);
+  } 
+
+  const onChangeMetaFieldValue = (data, metaIndex) =>
+  {
+    // console.log(metaIndex+" : "+data);
+    if(data !=="" && data !== undefined)
+    {
+      let mfds = metaFieldDatas;
+      mfds[metaIndex] = JSON.stringify(data);
+      setMetaFieldDatas(mfds);
+            
+      let socs1 = [];
+      socs1 = metaFields;
+      let socs2 = [];
+      socs2 = metaFieldDatas;
+
+      let i; let metaStr = "{";
+      for(i=0; i<socs1.length; i++) 
+      {
+        if(i === socs1.length - 1) metaStr += "\""+socs1[i] + "\" : " + socs2[i]+"}";
+        else metaStr += "\""+socs1[i] + "\" : " + socs2[i] + ", ";
+      }
+      setMetaSting(metaStr);
+
+      console.log("metaStr = ", metaStr);
+    }
+  }
+
+  const onClickRemoveField = (index) =>
+  {
+    setRemoveField(false);
+    onRemoveMetaFieldInput(index);
+  }
+
+  const doRemovingModal = (index, field) => 
+  {
+    setConsideringFieldIndex(index);
+    setConsideringField(field);
+    setRemoveField(true);
+  }
+  
+  // console.log("metaFields = ", metaFields);
 
   return (
     <div className="container">
@@ -275,7 +343,66 @@ const CreateCollection = () =>
               setValue={setCategories}
               options={categoriesOptions}
             />
+          </div>                                               
+          <div className="row">     
+            <div style={{
+              width: "80%",
+              display: "inline-block"
+            }}>
+              <TextInput
+                className={styles.field}
+                label="Input new name of metadata"
+                // key={index}
+                name={metaFieldInput}
+                type="text"
+                value={metaFieldInput}
+                onChange={(e) => setMetaFieldInput(e.target.value)}
+              />                  
+            </div>
+            <div 
+              style={{
+                width: "10%",
+                display: "inline",
+                paddingLeft: "5px"
+              }}
+            >         
+             <button
+              className={cn("button-stroke button-small", styles.button)}
+              onClick = {() => setAddMetaField()}
+            >
+              <Icon name="plus-circle" size="16" />
+              <span>Add field</span>
+            </button>         
+            </div>          
           </div>
+          {
+            metaFields && metaFields.length > 0 && 
+            metaFields.map((field, index) =>(
+              <div className="row" key={index}>     
+                <div style={{
+                  width: "70%",
+                  display: "inline-block"
+                }}> 
+                  <MultipleInput label={field} metaIndex={index} onChange={onChangeMetaFieldValue}/>           
+                </div>
+                <div 
+                  style={{
+                    width: "20%",
+                    display: "inline",
+                    paddingLeft: "5px"
+                  }}
+                >         
+                  <button
+                  className={cn("button-stroke button-small", styles.button)}
+                  onClick = {() => doRemovingModal(index, field)}
+                >
+                  <Icon name="close-circle" size="16" />
+                  <span>Remove field</span>
+                </button>         
+                </div>          
+              </div>
+            ))
+          }
         </div>        
         <div className={styles2.foot} style={{
           marginTop:"1rem",
@@ -294,6 +421,19 @@ const CreateCollection = () =>
       </div>
       <Modal visible={visibleModal} onClose={() => setVisibleModal(false)}>
         <FolowSteps className={styles2.steps} state={createState} navigate2Next={navigate2Next}/>
+      </Modal>
+      <Modal visible={removeField} onClose={() => setRemoveField(false)} >               
+        <div className={styles.field}>
+          Are you going to delete {consideringField} field?
+        </div>
+        <button  className={cn("button", styles.button)} 
+          style={{
+            width: "-webkit-fill-available",
+            marginTop: "1rem"
+          }} 
+          onClick={()=>onClickRemoveField(consideringFieldIndex)}>
+          Add
+        </button>
       </Modal>
     </div>
   );

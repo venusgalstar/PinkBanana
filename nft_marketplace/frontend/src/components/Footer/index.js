@@ -40,7 +40,7 @@ const Footers = () => {
   const [email, setEmail] = useState("");
 
   const handleSubmit = (e) => {
-    alert();
+    
   };
 
   return (
@@ -63,7 +63,9 @@ const Footers = () => {
             </div>
           </div>
           <div className={styles.col}>
-            {items.map((x, index) => (
+            {
+              (items && items.length > 0) && 
+              items.map((x, index) => (
               <Group className={styles.group} item={x} key={index} />
             ))}
           </div>

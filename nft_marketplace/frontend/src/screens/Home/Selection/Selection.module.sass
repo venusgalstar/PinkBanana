@@ -57,6 +57,15 @@
     overflow: hidden
     img
         width: 100%
+        object-fit: cover
+        max-height: 500px
+        +d
+            max-height: 500px
+        +t  
+            max-height: 400px
+        +m
+            max-height: 300px
+        
     &:before
         content: ""
         position: absolute

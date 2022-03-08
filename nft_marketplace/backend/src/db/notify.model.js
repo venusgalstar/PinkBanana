@@ -18,7 +18,7 @@ module.exports = (mongoose) => {
               type: mongoose.Schema.Types.ObjectId,
               ref: "User"
             }
-          ], //if null broadcast
+          ], //if [] broadcast
           Type: { type: Number, default: 0 },  //1: sales, 2: listings, 3: bids, 4: burns, 5: followings, 6:likes, 7: purchase, 8: transfer
         },
         { timestamps: true }

@@ -126,3 +126,26 @@
     margin-top: 40px
     +m
         margin-top: 32px
+
+
+
+.timer
+    display: flex
+    justify-content: center
+    margin-top: 8px
+
+.box
+    flex-shrink: 0
+    width: 64px
+    &:not(:last-child)
+        margin-right: 20px
+    
+.number
+    +dm-sans
+    font-size: 32px
+    line-height: (40/32)
+    letter-spacing: -.01em
+
+.time
+    +body-bold-2
+    color: $neutrals4

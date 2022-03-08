@@ -42,7 +42,9 @@ const Bid = ({ className , onChange, onOk, onCancel}) => {
             onChange={(e) => onChange(e.target.value)}
           />
         </div>
-        {items.map((x, index) => (
+        {
+        (items  && items.length >0) && 
+        items.map((x, index) => (
           <div className={styles.row} key={index}>
             <div className={styles.col}>{x.title}</div>
             <div className={styles.col}>{x.value}</div>

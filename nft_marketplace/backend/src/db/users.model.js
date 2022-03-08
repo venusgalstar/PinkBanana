@@ -12,6 +12,8 @@ module.exports = (mongoose) => {
         banner: String,
         verified: Boolean,
         customURL: String,
+        twitter: String,
+        socials: String,
         password : String
       },
       { timestamps: true }

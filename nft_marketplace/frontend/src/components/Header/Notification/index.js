@@ -1,9 +1,12 @@
-import React, { useState } from "react";
+import React, { useState , useEffect } from "react";
 import { Link } from "react-router-dom";
 import cn from "classnames";
 import OutsideClickHandler from "react-outside-click-handler";
 import styles from "./Notification.module.sass";
 import Icon from "../../Icon";
+import {useSelector, useDispatch} from "react-redux";
+import {getNotifiesByLimt} from "../../../store/actions/notify.action";
+import config from "../../../config";
 
 const items = [
   {
@@ -42,6 +45,13 @@ const items = [
 
 const Notification = ({ className }) => {
   const [visible, setVisible] = useState(false);
+  const notifiesList = useSelector(state => state.notify.list);
+  const dispatch = useDispatch();
+
+  useEffect(() => 
+  {
+    dispatch(getNotifiesByLimt(4))
+  }, []);
 
   return (
     <OutsideClickHandler onOutsideClick={() => setVisible(false)}>
@@ -56,24 +66,26 @@ const Notification = ({ className }) => {
           <div className={styles.body}>
             <div className={cn("h4", styles.title)}>Notification</div>
             <div className={styles.list}>
-              {items.map((x, index) => (
+              {
+                (notifiesList && notifiesList.length > 0) && 
+                notifiesList.slice(0, 4).map((x, index) => (
                 <Link
                   className={styles.item}
-                  to={x.url}
+                  to="/activity"
                   onClick={() => setVisible(!visible)}
                   key={index}
                 >
                   <div className={styles.preview}>
-                    <img src={x.image} alt="Notification" />
+                    <img src={config.imgUrl + x.imgUrl} alt="Notification" />
                   </div>
                   <div className={styles.details}>
-                    <div className={styles.subtitle}>{x.title}</div>
-                    <div className={styles.price}>{x.price}</div>
+                    <div className={styles.subtitle}>{x.subTitle}</div>
+                    <div className={styles.description}>{x.description}</div>
                     <div className={styles.date}>{x.date}</div>
                   </div>
                   <div
                     className={styles.status}
-                    style={{ backgroundColor: x.color }}
+                    style={{ backgroundColor: "#000000" }}
                   ></div>
                 </Link>
               ))}

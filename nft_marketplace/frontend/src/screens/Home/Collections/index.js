@@ -108,7 +108,7 @@ const Collections = () => {
 
 
   useEffect(() => {
-    console.log("hots state: ", collection.hots);
+    // console.log("hots state: ", collection.hots);
     if (collection.hots != undefined) {
 
       var hots = collection.hots;
@@ -142,9 +142,9 @@ const Collections = () => {
     }
   }, [collection]);
 
-  useEffect(() => {
-    console.log("hots: ", hots);
-  }, [hots])
+  // useEffect(() => {
+  //   console.log("hots: ", hots);
+  // }, [hots])
 
 
 
@@ -158,7 +158,9 @@ const Collections = () => {
               {hots && hots.map((x, index) => (
                 <Link className={styles.item} to={x.url} key={index}>
                   <div className={styles.gallery}>
-                    {x.gallery.map((x, index) => (
+                    {
+                      (x && x.gallery && x.gallery.length > 0) && 
+                      x.gallery.map((x, index) => (
                       <div className={styles.preview} key={index}>
                         <img src={x} alt="Collection" />
                       </div>
@@ -168,7 +170,7 @@ const Collections = () => {
                   <div className={styles.line}>
                     <div className={styles.user}>
                       <div className={styles.avatar}>
-                        <img src={x.avatar} alt="Avatar" />
+                        <img src={x.avatar} alt="Avatar"/>
                       </div>
                       <div className={styles.author}>
                         By <span>{x.author}</span>

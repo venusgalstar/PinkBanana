@@ -8,7 +8,7 @@ export const setBid = (item_id, user_id, price) => dispatch => {
     axios.post(`${config.baseUrl}bid/set_bid`, { item_id, user_id, price }, {
         headers:
         {
-            "x-access-token": sessionStorage.getItem("jwtToken")
+            "x-access-token": localStorage.getItem("jwtToken")
         }
     }).then((result) => {
         dispatch({
@@ -32,7 +32,7 @@ export const getHotBidList = (limit) => dispatch => {
         { limit: limit }, {
             headers:
             {
-                "x-access-token": sessionStorage.getItem("jwtToken")
+                "x-access-token": localStorage.getItem("jwtToken")
             }
         })
         .then((result) => {
@@ -50,7 +50,7 @@ export const acceptBid = (item_id) => dispatch => {
         { item_id: item_id }, {
             headers:
             {
-                "x-access-token": sessionStorage.getItem("jwtToken")
+                "x-access-token": localStorage.getItem("jwtToken")
             }
         })
         .then((result) => {

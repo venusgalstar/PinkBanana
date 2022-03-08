@@ -114,7 +114,7 @@ exports.findOne = (req, res) => {
 
 exports.update = (req, res) => {
     if (!req.body) {
-        return res.status(400).send({
+         res.status(400).send({
             message: "Data to update can not be empty!",
         });
     }

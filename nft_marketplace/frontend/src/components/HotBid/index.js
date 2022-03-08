@@ -63,13 +63,13 @@ const Hot = ({ classSection }) => {
 
   const getHotBids = () => {
     axios.post(`${config.baseUrl}bid/get_hot_bids`, { limit: 8 }).then((data) => {
-      console.log("data:", data.data.list);
+      // console.log("data:", data.data.list);
       var list = [];
       for (var i = 0; i < data.data.list.length; i++) {
         list.push(data.data.list[i].info[0]);
       }
 
-      console.log("list:", list);
+      // console.log("list:", list);
       setItems(list);
     })
   };
@@ -86,7 +86,9 @@ const Hot = ({ classSection }) => {
               {/* {bids.map((x, index) => (
                 <Card key={index} className={styles.card} item={x} />
               ))} */}
-              {items.map((x, index) => (
+              {
+                (items && items.length > 0) && 
+              items.map((x, index) => (
                 <Card key={index} className={styles.card} item={x} />
               ))}
 

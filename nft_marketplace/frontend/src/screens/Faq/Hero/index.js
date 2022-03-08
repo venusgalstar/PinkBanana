@@ -54,7 +54,7 @@ const items = [
 
 const Hero = () => {
   const options = [];
-  items.map((x) => options.push(x.title));
+  if(items && items.length>0) items.map((x) => options.push(x.title));
 
   const [direction, setDirection] = useState(options[0]);
 
@@ -81,7 +81,9 @@ const Hero = () => {
         <div className={styles.row}>
           <div className={styles.col}>
             <div className={styles.nav}>
-              {items.map((x, index) => (
+              {
+                (items && items.length>0) && 
+                items.map((x, index) => (
                 <div
                   className={cn(styles.link, {
                     [styles.active]: x.title === direction,
@@ -96,7 +98,9 @@ const Hero = () => {
             </div>
           </div>
           <div className={styles.col}>
-            {items
+            {
+              (items && items.length>0) && 
+              items
               .find((x) => x.title === direction)
               .items.map((x, index) => (
                 <Item className={styles.item} item={x} key={index} />

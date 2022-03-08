@@ -15,29 +15,46 @@ exports.toggleFollow = (req, res) =>
     }).then((data) => {
         if(data.length === 0)
         {
-            console.log("now creating...")
+            // console.log("now creating...")
             //no pair, so create it
             var follow = new Follow({
                 user_id: ObjectId(my_id),
                 target_id: ObjectId(target_id)
             })
             follow.save().then((data) => {
-                return res.status(200).send({ success: true, data: data, message: "Creating new follow succeed." });        
+                // const new_notify = new Notify(
+                // {
+                //     imgUrl : data.logoURL,
+                //     subTitle : "New collection is created.",
+                //     description: "Item "+data.name+" is created",
+                //     date : new Date(),
+                //     readers: [],
+                //     target_ids : [],
+                //     Type : 2
+                // });
+                // await new_notify.save(function(err)
+                // {
+                //     if(!err)
+                //     {
+                //         io.sockets.emit("Notification");
+                //     }
+                // });    
+                 res.status(200).send({ success: true, data: data, message: "Creating new follow succeed." });        
             }).catch((error) => {
                 console.log("Creating new follow : error = ", error);
-                return res.status(500).send({ success: false, message: "Internal server error" });
+                 res.status(500).send({ success: false, message: "Internal server error" });
             });
         }
         else {
-            console.log("now deleting...")
+            // console.log("now deleting...")
             //pair exiists, delete it
             Follow.deleteMany({
                 user_id: ObjectId(my_id)
             }).then(() => {
-                return res.status(200).send({ success: true, message: "Deleting a follow succeed." });        
+                 res.status(200).send({ success: true, message: "Deleting a follow succeed." });        
             }).catch((error) => {
                 console.log("Deleting a follow : error = ", error);
-                return res.status(500).send({ success: false, message: "Internal server error" });
+                 res.status(500).send({ success: false, message: "Internal server error" });
             });
         }
     }).catch((err) => {        
@@ -98,14 +115,14 @@ exports.getFollows = (req, res) =>
                 })
                 resultObjectArry.push(resultObject);
             }
-            return res.status(200).send({ success: true, data: resultObjectArry, message: "success" });
+             res.status(200).send({ success: true, data: resultObjectArry, message: "success" });
         }
-        else return res.status(404).send({ success: false, data: [], message: "Can't find such follow." });
+        else  res.status(404).send({ success: false, data: [], message: "Can't find such follow." });
     })
     .catch((err) =>
     {
         console.log("Follow doesn't exisit" + err.message);
-        return res.status(500).send({ success: false, message: "Internal server Error" });
+         res.status(500).send({ success: false, message: "Internal server Error" });
     })
 }
 
@@ -160,14 +177,14 @@ exports.getFollowings = (req, res) =>
                 })
                 resultObjectArry.push(resultObject);
             }
-            return res.status(200).send({ success: true, data: resultObjectArry, message: "success" });
+             res.status(200).send({ success: true, data: resultObjectArry, message: "success" });
         }
-        else return res.status(404).send({ success: false, data: [], message: "Can't find such follow." });
+        else  res.status(404).send({ success: false, data: [], message: "Can't find such follow." });
     })
     .catch((err) =>
     {
         console.log("Follow doesn't exisit" + err.message);
-        return res.status(500).send({ success: false, message: "Internal server Error" });
+         res.status(500).send({ success: false, message: "Internal server Error" });
     })
 }
 
@@ -175,7 +192,7 @@ exports.isExists = (req, res) =>
 {
     var user_id = req.body.user_id;
     var target_id = req.body.target_id;
-    console.log(user_id, target_id);
+    // console.log(user_id, target_id);
     Follow.find(
         {
             $or:
@@ -186,7 +203,7 @@ exports.isExists = (req, res) =>
         }
     )
     .then((docs) => {
-        console.log("docs = ", docs);
+        // console.log("docs = ", docs);
         if(docs.length>0)
             res.status(200).send({
                 success: true, data: true, message:"Pair exists"

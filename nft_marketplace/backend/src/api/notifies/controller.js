@@ -2,7 +2,7 @@ const { Notify } = require("../../db");
 const db = require("../../db");
 var ObjectId = require('mongodb').ObjectID;
 
-exports.CreateNotify = async(req, res) =>
+exports.CreateNotify = async (req, res) =>
 {
     // console.log("CreateNotify post accept"); 
     const new_notify = new Notify(
@@ -47,7 +47,7 @@ exports.markAllAsRead = async (req, res) =>
                 });        
                 if (index == -1) {
                     readers.push(new ObjectId(userId));
-                    console.log("push: ", readers, "index:", index);
+                    // console.log("push: ", readers, "index:", index);
                 } else {
                     //readers = readers.splice(index, 0);
                     //console.log("slice:", readers, "index:", index);
@@ -59,7 +59,7 @@ exports.markAllAsRead = async (req, res) =>
             }).then((ret)=>{
                 //res.send({code: 0, data: ret});
             }).catch((err)=>{
-                console.log("[markAllAsRead] 0 error : ", err);
+                // console.log("[markAllAsRead] 0 error : ", err);
                 res.status(500).send({
                     success:false, message:"Internal Server Error"
                 });
@@ -126,7 +126,7 @@ exports.FindNotify = (req, res) =>
       }
       else
       {        
-        return res.status(200).send({success:true, data: docs, message:"success"});
+         res.status(200).send({success:true, data: docs, message:"success"});
       }
     });
 }
@@ -135,10 +135,10 @@ exports.getNotifiesByLimt = (req, res) =>
 {
     // console.log("getNotifiesByLimt 0");
     Notify.find({})
-    .skip(0).limit(req.params.limit)
+    .skip(0).limit(req.body.limit)
     .then((docs) =>
     {
-        return res.status(200).send({success:true, data: docs, message:"success"});
+         res.status(200).send({success:true, data: docs, message:"success"});
     })
     .catch((err) =>
       {
@@ -159,8 +159,8 @@ exports.FindOneNotify = (req, res) =>
       }
       else
       {        
-        if(docs !== null && docs !== undefined)  return res.status(200).send({success:true, data: docs, message:"success"});
-        else return res.status(404).send({success:true, data:[], message:"Can not find Notify"});      
+        if(docs !== null && docs !== undefined)   res.status(200).send({success:true, data: docs, message:"success"});
+        else  res.status(404).send({success:true, data:[], message:"Can not find Notify"});      
       }
     });
 }

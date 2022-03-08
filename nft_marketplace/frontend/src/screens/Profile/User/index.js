@@ -25,6 +25,7 @@ const User = ({ className, item }) => {
   const dispatch = useDispatch();
   const detailedUserInfo = useSelector(state => state.auth.detail);
   const isFollowPairExists = useSelector(state => state.follow.isExists);
+  const [compressedAddress, setCompressedAddress] = useState("");
 
   const onClickFollow = () =>
   {
@@ -42,7 +43,18 @@ const User = ({ className, item }) => {
     dispatch(getIsExists(currentUsr._id, userId));
   }, [userId])
 
+  useEffect(() =>
+  {
+    if(detailedUserInfo && detailedUserInfo.address)
+    {
+      let address = detailedUserInfo.address;
+      address = address.toString();
+      address = address.substring(0, 7)+"..."+address.substring(38, 42);
+      setCompressedAddress(address);
+    }
+  }, [detailedUserInfo])
   console.log("isFollowPairExists = ", isFollowPairExists);
+  console.log("detailedUserInfo = ", detailedUserInfo);
   
   return (
     <>
@@ -59,9 +71,8 @@ const User = ({ className, item }) => {
         <div className={styles.code}>
           <div className={styles.number}>
             {
-              detailedUserInfo && 
-              detailedUserInfo.address !== "" && 
-              detailedUserInfo.address            
+              compressedAddress && 
+              compressedAddress           
             }
           </div>
           <button className={styles.copy}>

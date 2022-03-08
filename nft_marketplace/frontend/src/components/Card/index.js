@@ -37,16 +37,19 @@ const Card = ({ className, item }) => {
           </button>
         </div>
       </div>
-      {/* <Link className={styles.link} to={item.url}> */}
+      <div className={styles.fit_space}>
+      </div>
       <Link className={styles.link} to={`/item/${item._id}`}>
         <div className={styles.body}>
           <div className={styles.line}>
             <div className={styles.title}>{item.name}</div>
-            <div className={styles.price}>{item.price ? item.price : 0}AVAX</div>
+            <div className={styles.price}>{item.price ? item.price : 0} AVAX</div>
           </div>
           <div className={styles.line}>
             <div className={styles.users}>
-              {item.users ? item.users.map((x, index) => (
+              {
+              (item && item.length >0 ) && 
+              item.users ? item.users.map((x, index) => (
                 <div className={styles.avatar} key={index}>
                   <img src={x.avatar? config.imgUrl + x.avatar : ""} alt="Avatar" />
                 </div>

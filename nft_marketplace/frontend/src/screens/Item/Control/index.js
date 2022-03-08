@@ -9,6 +9,8 @@ import Accept from "./Accept";
 import PutSale from "./PutSale";
 // import SuccessfullyPurchased from "./SuccessfullyPurchased";
 import Modal from "../../../components/Modal";
+import Backdrop from '@mui/material/Backdrop';
+import CircularProgress from '@mui/material/CircularProgress';
 
 import { getNftDetail, buyNft } from "../../../store/actions/nft.actions";
 import { useDispatch } from "react-redux";
@@ -16,14 +18,17 @@ import { useParams } from "react-router-dom";
 import { putSale } from "../../../store/actions/user.action";
 import config from "../../../config";
 import { setBid, acceptBid } from "../../../store/actions/bid.actions";
+import { singleMintOnSale, placeABid, buyNow, createSale, performBid } from "../../../InteractWithSmartContract/interact";
+import { checkNetworkById } from "../../../InteractWithSmartContract/interact";
 
-
-const Control = ({ className, id }) => 
-{
+const Control = ({ className, id }) => {
   const [visibleModalPurchase, setVisibleModalPurchase] = useState(false);
   const [visibleModalBid, setVisibleModalBid] = useState(false);
   const [visibleModalAccept, setVisibleModalAccept] = useState(false);
   const [visibleModalSale, setVisibleModalSale] = useState(false);
+  const currentWalletAddress = useSelector(state => state.auth.currentWallet);
+  const currentChainId = useSelector(state => state.auth.currentChainId);
+  const [processing, setProcessing] = useState(false);
 
   const [buyCheckList, setBuyCheckList] = useState([]);
 
@@ -34,13 +39,51 @@ const Control = ({ className, id }) =>
 
   const dispatch = useDispatch();
   const params = useParams();
+ 
+ 
   useEffect(() => {
     getNftDetail(params.id)(dispatch);
   }, [params, dispatch]);
 
-  const cofirmBuy = () => {
+  const checkWalletAddrAndChainId = async () => {
+    if (currentWalletAddress && auth && auth.address && currentWalletAddress.toLowerCase() !== auth.address.toLowerCase()) {
+      //alert("Wallet addresses are not equal. Please check current wallet to your registered wallet.");
+      return false;
+    }
+    var result = await checkNetworkById(currentChainId);
+    if (!result) {
+      //alert("Please connect to Avalanche network and try again.");
+      return false;
+    }
+    return true;
+  }
+
+  const cofirmBuy = async () => {
     setVisibleModalPurchase(false);
-    buyNft(params.id, nft.price, nft.owner._id, auth._id)(dispatch);
+    
+    setProcessing(true);
+    let checkResut = await checkWalletAddrAndChainId();
+    if (!checkResut) 
+    {
+      setProcessing(false);
+      return;
+    }
+
+    let ret = await buyNow(auth.address, params.id, nft.price);
+    if (ret.success === true) {
+      //buyNft(params.id, nft.price, nft.owner._id, auth._id)(dispatch);
+
+      //alert("Buying succeed.");
+      setTimeout(() => {
+        getNftDetail(params.id)(dispatch);
+      }, 1000);
+    }
+    else {
+      console.log("failed on buyNow : ", ret.status);
+      setProcessing(false);
+      //alert(ret.status);
+    }
+    setProcessing(false);
   }
 
   const changeBidPrice = (value) => {
@@ -48,23 +91,100 @@ const Control = ({ className, id }) =>
     console.log("bid value:", value);
   }
 
-  const onBid = () => {
+  const onBid = async () => {
     console.log("on bid");
     setVisibleModalBid(false);
-    setBid(nft._id, auth._id, bidPrice)(dispatch);
+
+    setProcessing(true);
+    let checkResut = await checkWalletAddrAndChainId();
+    if (!checkResut)
+    {
+      setProcessing(false);
+      return;
+    }
+
+    let ret = await placeABid(auth.address, params.id, bidPrice);
+    if (ret.success === true) {
+      //setBid(params.id, auth._id, bidPrice)(dispatch);
+
+      //alert("Bidding succeed.");
+      setTimeout(() => {
+        getNftDetail(params.id)(dispatch);
+      }, 1000);
+    }
+    else {
+      console.log("failed on place a bid : ", ret.status);
+      setProcessing(false);
+      //alert(ret.status);
+    }
+    setProcessing(false);
   }
 
-  const onPutSale = (price, instant, period) => {
+  const onPutSale = async (price, instant, period) => {
     console.log("put sale:", price, "instant:", instant, "period:", period);
     setVisibleModalSale(false);
-    putSale(params.id, auth._id, price, instant, period)(dispatch);
+    setProcessing(true);
+    let checkResut = await checkWalletAddrAndChainId();
+    if (!checkResut) 
+    {
+      setProcessing(false);
+      return;
+    }
+
+    // //alert("checkResut = "+checkResut);
+
+    var aucperiod = instant === true ? 0 : period;
+
+    let ret = await singleMintOnSale(auth.address, params.id, aucperiod*24*3600 , price, 0);
+    if (ret.success === true) 
+    {
+      //putSale(params.id, auth._id, price, instant, period)(dispatch); 
+
+      //alert("Putting on sale succeed.");
+      setTimeout(() => {
+        getNftDetail(params.id)(dispatch);
+      }, 1000);
+    }
+    else {
+      console.log("failed on put on sale : ", ret.status);
+      setProcessing(false);
+      //alert(ret.status);
+    }
+    setProcessing(false);
   }
 
-  const onAccept = () => {
+  const onAccept = async () => {
     setVisibleModalAccept(false);
-    acceptBid(params.id)(dispatch);
-  }
+    setProcessing(true);
+    let checkResut = await checkWalletAddrAndChainId();
+    if (!checkResut) 
+    {
+      setProcessing(false);
+      return;
+    }
 
+    let ret;
+    if (params.id) ret = await performBid(auth.address, params.id);
+    else {
+      //alert("Incorrect token ID");
+      return;
+    }
+
+    if (ret.success === true) {
+      //acceptBid( params.id)(dispatch);   
+
+      //alert("Accepting succeed.");
+      setTimeout(() => {
+        getNftDetail(params.id)(dispatch);
+      }, 1000);
+    }
+    else {
+      console.log("failed on place accept : ", ret.status);
+      setProcessing(false);
+      //alert(ret.status);
+    }
+    setProcessing(false);
+  }
 
   const purchaseNow = () => {
     const items = [
@@ -130,7 +250,7 @@ const Control = ({ className, id }) =>
               </button> : <></>
           }
           {
-            nft && auth && nft.isSale == 2 && nft.owner._id != auth._id?
+            nft && auth && nft.isSale == 2 && nft.owner._id != auth._id ?
               <button
                 className={cn("button-stroke", styles.button)}
                 onClick={() => setVisibleModalBid(true)}
@@ -167,7 +287,7 @@ const Control = ({ className, id }) =>
           Service fee <span className={styles.percent}>1.5%</span>{" "}
           <span>2.563 AVAX</span> <span>$4,540.62</span>
         </div>
-        {nft && nft.isSale == 0 && nft.owner._id == auth._id ? //"621c330d0b33ba73438c3c03"? //auth._id
+        {nft && nft.isSale == 0 && nft.owner._id == auth._id ?
           <div className={styles.foot}>
             <button
               className={cn("button", styles.button)}
@@ -198,8 +318,8 @@ const Control = ({ className, id }) =>
       <Modal
         visible={visibleModalAccept}
         onClose={() => setVisibleModalAccept(false)} >
-    
-        <Accept onOk={onAccept} onCancel={()=>{setVisibleModalAccept(false)}}/>
+
+        <Accept onOk={onAccept} onCancel={() => { setVisibleModalAccept(false) }} />
       </Modal>
       <Modal
         visible={visibleModalSale}
@@ -207,6 +327,12 @@ const Control = ({ className, id }) =>
       >
         <PutSale onOk={onPutSale} onCancel={() => setVisibleModalSale(false)} />
       </Modal>
+      {<Backdrop
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={processing}
+      >
+        <CircularProgress color="inherit" />
+      </Backdrop>}
     </>
   );
 };

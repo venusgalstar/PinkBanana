@@ -23,7 +23,7 @@ const CollectionList = () =>
   {
     // go to the item list of this collection
     dispatch(setConsideringCollectionId(id));
-    sessionStorage.setItem("collectionId", id);
+    localStorage.setItem("collectionId", id);
     history.push("/collectionItems/"+id);
   }
 

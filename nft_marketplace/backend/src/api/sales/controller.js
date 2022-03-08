@@ -1,5 +1,7 @@
 const db = require("../../db");
 const Sale = db.Sale;
+const ItemControllers  = require("../items/controller");
+const changeItemsOwner = ItemControllers.changeItemsOwner;
 var ObjectId = require('mongodb').ObjectID;
 
 exports.buy = (req, res) => {
@@ -14,7 +16,8 @@ exports.buy = (req, res) => {
         buyer: ObjectId(buyer),
         price: price
     });
-    saleInfo.save().then((data) => {
+    saleInfo.save().then(async (data) => {
+        await changeItemsOwner(item, owner);
         res.send({ code: 0, data: data });
     }).catch((err) => {
         res.status(500).send({ code: 1, data: {} });

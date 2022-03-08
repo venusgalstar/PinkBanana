@@ -6,7 +6,7 @@ export const getNftBannerList = (limit) => dispatch => {
     axios.post(`${config.baseUrl}item/get_banner_list`, { limit: limit }, {
         headers:
         {
-            "x-access-token": sessionStorage.getItem("jwtToken")
+            "x-access-token": localStorage.getItem("jwtToken")
         }
     }).then((result) => {
         dispatch({
@@ -22,7 +22,7 @@ export const getNftDetail = (id) => dispatch => {
     axios.post(`${config.baseUrl}item/get_detail`, { id: id }, {
         headers:
         {
-            "x-access-token": sessionStorage.getItem("jwtToken")
+            "x-access-token": localStorage.getItem("jwtToken")
         }
     }).then((result) => {
         dispatch({
@@ -36,7 +36,7 @@ export const getNftDetail = (id) => dispatch => {
     axios.post(`${config.baseUrl}item/get_owner_history`, { item_id: id }, {
         headers:
         {
-            "x-access-token": sessionStorage.getItem("jwtToken")
+            "x-access-token": localStorage.getItem("jwtToken")
         }
     }).then((result) => {
         dispatch({
@@ -53,7 +53,7 @@ export const buyNft = (item_id, price, owner, buyer) => dispatch => {
         { item_id: item_id, price: price, owner: owner, buyer: buyer }, {
             headers:
             {
-                "x-access-token": sessionStorage.getItem("jwtToken")
+                "x-access-token": localStorage.getItem("jwtToken")
             }
         })
         .then((result) => {
@@ -81,7 +81,7 @@ export const getItemsOfCollection = (params, colllectionId) => dispatch => {
     axios.post(`${config.baseUrl}item/get_items_of_collection/${colllectionId}`, params, {
         headers:
         {
-            "x-access-token": sessionStorage.getItem("jwtToken")
+            "x-access-token": localStorage.getItem("jwtToken")
         }
     }).then((result) => {
         console.log("reducer UPDATE_ITEMS_OF_COLLECTION", "result.data : ", result.data.data)
@@ -100,7 +100,7 @@ export const getItemsOfUserByConditions = (params, userId) => dispatch => {
     axios.post(`${config.baseUrl}item/get_items_of_user/${userId}`, params, {
         headers:
         {
-            "x-access-token": sessionStorage.getItem("jwtToken")
+            "x-access-token": localStorage.getItem("jwtToken")
         }
     }).then((result) => {
         // console.log("reducer UPDATE_ITEMS_OF_USER_BY_CONDITION", "result.data : ", result.data.data)

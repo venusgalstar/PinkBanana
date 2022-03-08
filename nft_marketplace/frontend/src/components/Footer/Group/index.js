@@ -14,7 +14,9 @@ const Group = ({ className, item }) => {
         <Icon name="arrow-bottom" size="10" />
       </div>
       <div className={styles.menu}>
-        {item.menu.map((x, index) =>
+        {
+          (item && item.length > 0 ) && 
+          item.menu.map((x, index) =>
           x.url.startsWith("http") ? (
             <a
               className={styles.link}

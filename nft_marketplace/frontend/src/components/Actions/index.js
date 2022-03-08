@@ -24,9 +24,6 @@ const Actions = ({ className }) => {
   const nft = useSelector(state => state.nft);
   const dispatch = useDispatch();
 
-
-
-
   const items = [
     {
       title: "Change price",
@@ -84,7 +81,9 @@ const Actions = ({ className }) => {
             <Icon name="more" size="24" />
           </button>
           <div className={styles.body}>
-            {items.map((x, index) => (
+            {
+            (items && items.length > 0) && 
+            items.map((x, index) => (
               <div className={styles.item} key={index} onClick={x.action}>
                 <Icon name={x.icon} size="20" />
                 <span>{x.title}</span>

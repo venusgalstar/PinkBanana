@@ -2,6 +2,7 @@ import React from "react";
 import cn from "classnames";
 import styles from "./Filters.module.sass";
 import Checkbox from "../../../components/Checkbox";
+import config from "../../../config";
 
 const Filters = ({
   className,
@@ -32,7 +33,9 @@ const Filters = ({
     <div className={cn(styles.filters, className)}>
       <div className={styles.info}>Filters</div>
       <div className={styles.group}>
-        {filters.map((x, index) => (
+        {
+          (filters && filters.length> 0) && 
+          filters.map((x, index) => (
           <Checkbox
             className={styles.checkbox}
             content={x}
