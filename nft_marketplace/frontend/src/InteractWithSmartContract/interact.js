@@ -1,11 +1,6 @@
 import Web3 from 'web3/dist/web3.min.js';
-import { create } from 'ipfs-http-client';
 import config from "../config";
 import store from "../store";
-// require("dotenv").config();
-// const Axios = require('axios');
-// const nftContractAddressABI = require("./nftContract-abi.json");
-// const nftContractAddress = "0x8541c4c3147781A1A745184d0fc5c2718fA11a36";
 const pinkBananaFactoryABI = config.pinkContractAbi;
 const pinkBananaFactoryAddress = config.pinkContractAddress;
 
@@ -150,7 +145,7 @@ export const signString = async (data) =>
   var address = data;
   var msgHash = window.web3.utils.keccak256(data);
   var signedString = "";
-  await window.web3.eth.sign(msgHash, address, function (err, result) 
+  await window.web3.eth.personal.sign(window.web3.utils.toHex(msgHash), address, function (err, result) 
   {
     if (err) return console.error(err)
     signedString = result;
@@ -411,7 +406,7 @@ export const buyNow = async (currentAddr, tokenId, price) =>
   try 
   {
     let item_price = web3.utils.toWei(price !== null ? price.toString() : '0', 'ether');
-     alert("tokenHash = " +  tokenId + ", price=" + item_price);
+    //alert("tokenHash = " +  tokenId + ", price=" + item_price);
     let tx = await window.contract.methods.buyNow(tokenId).send({ from: currentAddr, value: item_price});
 
     return {

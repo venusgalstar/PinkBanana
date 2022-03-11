@@ -173,7 +173,6 @@ const CreateCollection = () =>
     mfs.push(metaFieldInput);
     setMetaFields(mfs);
     setMetaFieldInput("");
-
   }
 
   const onRemoveMetaFieldInput = (index) =>

@@ -18,13 +18,6 @@ socket.on("ServerTime", data => {
   store.dispatch({ type: UPDATE_SERVER_TIME, payload: data });
 })
 
-socket.on("UpdateAuctionStatus", data => {
-  console.log("update auction status");
-});
-
-socket.on("UpdateNotify", data => {
-  console.log("update notify");
-});
 
 
 socket.emit("hello", { data: "hello emit" });

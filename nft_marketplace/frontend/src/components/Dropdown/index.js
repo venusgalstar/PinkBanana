@@ -7,8 +7,8 @@ import Icon from "../Icon";
 const Dropdown = ({ className, value, setValue, options }) => {
   const [visible, setVisible] = useState(false);
 
-  const handleClick = (value) => {
-    setValue(value);
+  const handleClick = (value, index) => {
+    setValue(value, index);
     setVisible(false);
   };
 

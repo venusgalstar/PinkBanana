@@ -21,6 +21,7 @@ exports.create = (req, res) => {
         isSale: reqItem.isSale,
         auctionPrice: reqItem.auctionPrice,
         auctionPeriod: reqItem.auctionPeriod,
+        metaData: reqItem.metaData,
         collection_id: ObjectId(reqItem.collectionId),
         creator: ObjectId(reqItem.creator),
         owner: ObjectId(reqItem.owner)
@@ -114,6 +115,7 @@ exports.multipleCreate = async (req, res) => {
             royalty: reqItem.params.itemRoyalty,
             size: reqItem.params.itemSize,
             property: reqItem.params.itemProperty,
+            metaData: reqItem.params.metaData,
             collection_id: ObjectId(reqItem.params.collectionId),
             creator: ObjectId(reqItem.params.creator),
             owner: ObjectId(reqItem.params.owner)

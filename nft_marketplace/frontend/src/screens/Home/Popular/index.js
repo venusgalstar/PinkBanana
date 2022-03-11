@@ -15,92 +15,14 @@ import { Popper } from "@mui/material";
 
 import { toggleFollow } from "../../../store/actions/follow.actions";
 
+import { io } from 'socket.io-client';
+const socket = io(`${config.socketUrl}`);
+
+
+
 
 const colors = ["#3772FF", "#9757D7", "#45B26B", "#23262F", "#777E90", "#3772FF", "#9757D7", "#45B26B"];
 
-
-// const items = [
-//   {
-//     name: "Edd Harris",
-//     sign: "/images/content/cup.svg",
-//     number: "1",
-//     url: "/profile",
-//     color: "#3772FF",
-//     avatar: "/images/content/avatar-5.jpg",
-//     reward: "/images/content/reward-1.svg",
-//     price: "<span>2.456</span> AVAX",
-//   },
-//   {
-//     name: "Odell Hane",
-//     sign: "/images/content/donut.svg",
-//     number: "2",
-//     url: "/profile",
-//     color: "#9757D7",
-//     avatar: "/images/content/avatar-6.jpg",
-//     reward: "/images/content/reward-1.svg",
-//     price: "<span>2.456</span> AVAX",
-//   },
-//   {
-//     name: "Marlee Kuphal",
-//     sign: "/images/content/lightning.svg",
-//     number: "3",
-//     url: "/profile",
-//     color: "#45B26B",
-//     avatar: "/images/content/avatar-7.jpg",
-//     reward: "/images/content/reward-1.svg",
-//     price: "<span>2.456</span> AVAX",
-//   },
-//   {
-//     name: "Payton Kunde",
-//     sign: "/images/content/donut.svg",
-//     number: "4",
-//     url: "/profile",
-//     color: "#23262F",
-//     avatar: "/images/content/avatar-8.jpg",
-//     reward: "/images/content/reward-1.svg",
-//     price: "<span>2.456</span> AVAX",
-//   },
-//   {
-//     name: "Payton Buckridge",
-//     sign: "/images/content/donut.svg",
-//     number: "5",
-//     url: "/profile",
-//     color: "#777E90",
-//     avatar: "/images/content/avatar-9.jpg",
-//     reward: "/images/content/reward-1.svg",
-//     price: "<span>2.456</span> AVAX",
-//   },
-//   {
-//     name: "Edd Harris",
-//     sign: "/images/content/cup.svg",
-//     number: "1",
-//     url: "/profile",
-//     color: "#3772FF",
-//     avatar: "/images/content/avatar-5.jpg",
-//     reward: "/images/content/reward-1.svg",
-//     price: "<span>2.456</span> AVAX",
-//   },
-//   {
-//     name: "Odell Hane",
-//     sign: "/images/content/donut.svg",
-//     number: "2",
-//     url: "/profile",
-//     color: "#9757D7",
-//     avatar: "/images/content/avatar-6.jpg",
-//     reward: "/images/content/reward-1.svg",
-//     price: "<span>2.456</span> AVAX",
-//   },
-//   {
-//     name: "Marlee Kuphal",
-//     sign: "/images/content/lightning.svg",
-//     number: "3",
-//     url: "/profile",
-//     color: "#45B26B",
-//     avatar: "/images/content/avatar-7.jpg",
-//     reward: "/images/content/reward-1.svg",
-//     price: "<span>2.456</span> AVAX",
-//   },
-// ];
 
 const SlickArrow = ({ currentSlide, slideCount, children, ...props }) => (
   <button {...props}>{children}</button>
@@ -163,6 +85,14 @@ const Popular = () => {
   useEffect(() => {
     dispatch(getPopularUserList(date, 20));
   }, [date, dispatch]);
+
+  useEffect(()=>{
+    socket.on("UpdateStatus", data=>{
+      console.log("update status:", data);
+      dispatch(getPopularUserList(date, 20));
+    });
+  }, [])
+
 
   useEffect(() => {
     setUserList();

@@ -108,7 +108,6 @@ const Discover = () => {
         for (var i = 0; i < result.data.list.length; i++) {
           var item = result.data.list[i].item_info;
           item.users = [{avatar: result.data.list[i].creator_info.avatar}];
-          console.log("users:", item);
           list.push(item);
         }
         if (start == 0) {

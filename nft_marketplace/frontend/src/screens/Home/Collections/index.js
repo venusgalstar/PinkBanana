@@ -9,56 +9,9 @@ import { getHotCollections } from "../../../store/actions/collection.actions";
 import { useDispatch, useSelector } from "react-redux";
 import config from "../../../config";
 
-const items = [
-  {
-    title: "Awesome collection",
-    author: "Kennith Olson",
-    counter: "28",
-    avatar: "/images/content/avatar-1.jpg",
-    gallery: [
-      "/images/content/photo-1.1.jpg",
-      "/images/content/photo-1.2.jpg",
-      "/images/content/photo-1.3.jpg",
-      "/images/content/photo-1.4.jpg",
-    ],
-  },
-  {
-    title: "Awesome collection",
-    author: "Willie Barton",
-    counter: "28",
-    avatar: "/images/content/avatar-3.jpg",
-    gallery: [
-      "/images/content/photo-2.1.jpg",
-      "/images/content/photo-2.2.jpg",
-      "/images/content/photo-2.3.jpg",
-      "/images/content/photo-2.4.jpg",
-    ],
-  },
-  {
-    title: "Awesome collection",
-    author: "Halle Jakubowski",
-    counter: "28",
-    avatar: "/images/content/avatar-4.jpg",
-    gallery: [
-      "/images/content/photo-3.1.jpg",
-      "/images/content/photo-3.2.jpg",
-      "/images/content/photo-3.3.jpg",
-      "/images/content/photo-3.4.jpg",
-    ],
-  },
-  {
-    title: "Awesome collection",
-    author: "Halle Jakubowski",
-    counter: "28",
-    avatar: "/images/content/avatar-4.jpg",
-    gallery: [
-      "/images/content/photo-3.1.jpg",
-      "/images/content/photo-3.2.jpg",
-      "/images/content/photo-3.3.jpg",
-      "/images/content/photo-3.4.jpg",
-    ],
-  },
-];
+import { io } from 'socket.io-client';
+const socket = io(`${config.socketUrl}`);
+
 
 const SlickArrow = ({ currentSlide, slideCount, children, ...props }) => (
   <button {...props}>{children}</button>
@@ -105,6 +58,14 @@ const Collections = () => {
   useEffect(() => {
     getHotCollections(5)(dispatch);
   }, []);
+
+  useEffect(()=>{
+    socket.on("UpdateStatus", data=>{
+      console.log('update status', data);
+      getHotCollections(5)(dispatch);
+    })
+  }, [])
+
 
 
   useEffect(() => {

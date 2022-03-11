@@ -198,8 +198,6 @@ exports.deleteAll = (req, res) => {
         });
 };
 
-
-
 exports.getPopularUserList = async (req, res) => {
     var limit = req.body.limit ? req.body.limit : 10;
     var time = req.body.time ? req.body.time : 0;
@@ -380,21 +378,21 @@ exports.login = (req, res) => {
                 res.status(500).send({ success: false, message: "No registered password" });
             }
             else {
-                bcrypt.compare(req.body.password, docs.password).then(ismatch => {
-                    if (ismatch) {
+                // bcrypt.compare(req.body.password, docs.password).then(ismatch => {
+                //     if (ismatch) {
                         const jwtToken = jwt.sign(
                             { id: docs._id, isAdmin: (docs.address === admin_address) ? 1 : 0, ...docs },
                             jwt_enc_key,
                             { expiresIn: signIn_break_timeout }
                         );
                         res.status(200).send({ success: true, token: jwtToken });
-                    } else {
-                        res.status(500).send({ success: false, message: "Password Wrong" });
-                    }
-                }).catch((err) => {
-                    res.status(500).send({ success: false, message: "Internal server Error" });
-                    return;
-                })
+                //     } else {
+                //         res.status(500).send({ success: false, message: "Password Wrong" });
+                //     }
+                // }).catch((err) => {
+                //     res.status(500).send({ success: false, message: "Internal server Error" });
+                //     return;
+                // })
             }
 
             // console.log("docs.password = ", docs.password);

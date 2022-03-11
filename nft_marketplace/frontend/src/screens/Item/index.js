@@ -12,7 +12,6 @@ import 'react-perfect-scrollbar/dist/css/styles.css';
 import PerfectScrollbar from 'react-perfect-scrollbar'
 
 
-
 const navLinks = ["Info", "History", "Bids"];
 
 const categories = [
@@ -54,6 +53,7 @@ const Item = () => {
   const avax = useSelector(state => state.user.avax);
   const curTime = useSelector(state => state.bid.system_time);
 
+
   useEffect(() => {
     var list = [];
     if (activeIndex == 0) {
@@ -82,19 +82,16 @@ const Item = () => {
           })
         }
       }
-    } else if (activeIndex == 2) 
-    {
+    } else if (activeIndex == 2) {
       if (itemDetail) {
         list = [];
-        var bids = itemDetail.bids;
+        var bids = [...itemDetail.bids];
         bids = bids.reverse();
-
-
         for (var i = 0; i < itemDetail.bids.length; i++) {
           list.push({
-            name: itemDetail.bids[i].username,
-            position: itemDetail.bids[i].price + "AVAX",
-            avatar: config.imgUrl + itemDetail.bids[i].user_id.avatar,
+            name: bids[i].username,
+            position: bids[i].price + "AVAX",
+            avatar: config.imgUrl + bids[i].user_id.avatar,
             reward: "",
           })
         }
@@ -107,7 +104,6 @@ const Item = () => {
   useEffect(() => {
     if (nft && nft.detail) {
       setItemDetail(nft.detail);
-      // console.log("nft detail", nft.detail);
     }
   }, [nft])
 
@@ -183,7 +179,7 @@ const Item = () => {
                 alt="Item"
               /> */}
 
-              
+
               <img
                 // srcSet="/images/content/item-pic@2x.jpg 2x"
                 src={itemDetail ? config.imgUrl + itemDetail.logoURL : ""}
@@ -202,8 +198,8 @@ const Item = () => {
                 $
                 {itemDetail && avax &&
                   (itemDetail.isSale === 1 ?
-                    getFormatString(Math.floor(itemDetail.price * avax)) :
-                    getFormatString(Math.floor(itemDetail.auctionPrice * avax)))
+                    Number(itemDetail.price * avax).toFixed(2) :
+                    Number(itemDetail.auctionPrice * avax).toFixed(2))
                 }
               </div>
               {/* <div className={styles.counter}>10 in stock</div> */}

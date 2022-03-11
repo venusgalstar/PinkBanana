@@ -5,73 +5,9 @@ import styles from "./Selection.module.sass";
 import Icon from "../../../components/Icon";
 import axios from "axios";
 import config from "../../../config";
+import { io } from 'socket.io-client';
+const socket = io(`${config.socketUrl}`);
 
-const items = [
-  {
-    title: "The future of AVAX®",
-    content: "Highest bid",
-    counter: "18 in stock",
-    price: "1.125 AVAX",
-    url: "/item",
-    avatar: "/images/content/avatar-1.jpg",
-    image: "/images/content/selection-pic-1.jpg",
-    image2x: "/images/content/selection-pic-1@2x.jpg",
-  },
-  {
-    title: "AVAX never die",
-    content: "1 of 12",
-    price: "0.27 AVAX",
-    url: "/item",
-    avatar: "/images/content/avatar-4.jpg",
-    image: "/images/content/selection-pic-2.jpg",
-    image2x: "/images/content/selection-pic-2@2x.jpg",
-  },
-  {
-    title: "Future coming soon",
-    content: "1 of 3",
-    price: "0.27 AVAX",
-    url: "/item",
-    avatar: "/images/content/avatar-3.jpg",
-    image: "/images/content/selection-pic-1.jpg",
-    image2x: "/images/content/selection-pic-1@2x.jpg",
-  },
-  {
-    title: "Elon Musk silver coin 3d print",
-    content: "1 of 4",
-    price: "0.27 AVAX",
-    url: "/item",
-    avatar: "/images/content/avatar-4.jpg",
-    image: "/images/content/selection-pic-3.jpg",
-    image2x: "/images/content/selection-pic-3@2x.jpg",
-  },
-];
-
-const users = [
-  {
-    name: "Payton Harris",
-    price: "<span>2.456</span> AVAX",
-    counter: "6",
-    avatar: "/images/content/avatar-1.jpg",
-  },
-  {
-    name: "Anita Bins",
-    price: "<span>2.456</span> AVAX",
-    counter: "2",
-    avatar: "/images/content/avatar-2.jpg",
-  },
-  {
-    name: "Joana Wuckert",
-    price: "<span>2.456</span> AVAX",
-    counter: "3",
-    avatar: "/images/content/avatar-3.jpg",
-  },
-  {
-    name: "Lorena Ledner",
-    price: "<span>2.456</span> AVAX",
-    counter: "4",
-    avatar: "/images/content/avatar-4.jpg",
-  },
-];
 
 const Selection = () => {
 
@@ -79,6 +15,17 @@ const Selection = () => {
   const [userList, setUserList] = useState();
 
   useEffect(() => {
+    getData();
+  }, [])
+
+  useEffect(() => {
+    socket.on("UpdateStatus", data=>{
+      console.log("update status", data);
+      getData();
+    })
+  }, [])
+
+  const getData = () => {
     axios.post(`${config.baseUrl}collection/get_new_collection_list`)
       .then((result) => {
         setItemList(result.data.data);
@@ -100,8 +47,7 @@ const Selection = () => {
         setUserList(temp);
       }).catch(() => {
       });
-  }, [])
-
+  };
 
   return (
     <div className={cn("section-pb", styles.section)}>

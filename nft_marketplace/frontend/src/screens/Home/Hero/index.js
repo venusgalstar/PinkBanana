@@ -14,47 +14,9 @@ import { useDispatch, useSelector } from 'react-redux';
 import { getNftBannerList } from '../../../store/actions/nft.actions';
 import config from "../../../config";
 import { setBid } from "../../../store/actions/bid.actions";
+import { io } from 'socket.io-client';
+const socket = io(`${config.socketUrl}`);
 
-
-
-const items = [
-  {
-    title: "the creator network®",
-    creator: "Enrico Cole",
-    currency: "1.00 AVAX",
-    price: "$3,618.36",
-    avatar: "/images/content/avatar-creator.jpg",
-    image: "/images/content/video-preview.jpg",
-    image2x: "/images/content/video-preview@2x.jpg",
-  },
-  {
-    title: "Marco carrillo®",
-    creator: "Enrico Cole",
-    currency: "2.00 AVAX",
-    price: "$2,477.92",
-    avatar: "/images/content/avatar-creator.jpg",
-    image: "/images/content/video-preview.jpg",
-    image2x: "/images/content/video-preview@2x.jpg",
-  },
-  {
-    title: "the creator network®",
-    creator: "Enrico Cole",
-    currency: "1.00 AVAX",
-    price: "$3,618.36",
-    avatar: "/images/content/avatar-creator.jpg",
-    image: "/images/content/video-preview.jpg",
-    image2x: "/images/content/video-preview@2x.jpg",
-  },
-  {
-    title: "Marco carrillo®",
-    creator: "Enrico Cole",
-    currency: "2.00 AVAX",
-    price: "$2,477.92",
-    avatar: "/images/content/avatar-creator.jpg",
-    image: "/images/content/video-preview.jpg",
-    image2x: "/images/content/video-preview@2x.jpg",
-  },
-];
 
 const SlickArrow = ({ currentSlide, slideCount, children, ...props }) => (
   <button {...props}>{children}</button>
@@ -89,7 +51,6 @@ const Hero = () => {
   const [activeIndex, setActiveIndex] = useState(0);
   const auth = useSelector(state => state.auth.user);
   const curTime = useSelector(state => state.bid.system_time);
-
   const avax = useSelector(state => state.user.avax);
 
   const onChangeBidPrice = (value) => {
@@ -101,9 +62,18 @@ const Hero = () => {
     setVisibleModalBid(false);
   }
 
+  useEffect(()=>{
+    socket.on("UpdateStatus", data=>{
+      console.log("update status", data);
+      getNftBannerList(5)(dispatch);
+    })
+  }, []);
+
   useEffect(() => {
     getNftBannerList(5)(dispatch);
   }, [load, dispatch])
+
+
 
   useEffect(() => {
     if (nft != undefined && nft.banner !== undefined) {
@@ -125,7 +95,7 @@ const Hero = () => {
       hr = Math.floor(diff / 3600);
       min = Math.floor((diff - 3600 * hr) / 60);
       sec = Math.floor(diff - 3600 * hr - 60 * min);
-    } else if (!isNaN(diff) && diff <= 0){
+    } else if (!isNaN(diff) && diff <= 0) {
       // update banner list when this item's auction time is ended
       getNftBannerList(5)(dispatch);
     }
@@ -198,7 +168,7 @@ const Hero = () => {
                           </div>
                           <div className={styles.price}>
                             $
-                            {x.bids && x.bids.length > 0 ? x.bids[x.bids.length - 1].price ? Number(avax * x.bids[x.bids.length - 1].price).toFixed(1) : 0 : 0}                          
+                            {x.bids && x.bids.length > 0 ? x.bids[x.bids.length - 1].price ? Number(avax * x.bids[x.bids.length - 1].price).toFixed(2) : 0 : 0}
                           </div>
                           <div className={styles.info}>Auction ending in</div>
                           <div className={styles.timer}>
@@ -217,12 +187,15 @@ const Hero = () => {
                           </div>
                         </div>
                         <div className={styles.btns}>
-                          <button
-                            className={cn("button", styles.button)}
-                            onClick={() => { setVisibleModalBid(true); setActiveIndex(index) }}
-                          >
-                            Place a bid
-                          </button>
+                          {
+                            auth && x.owner._id && auth._id && x.owner._id.toLowerCase() == auth._id.toLowerCase()? <></> :
+                              <button
+                                className={cn("button", styles.button)}
+                                onClick={() => { setVisibleModalBid(true); setActiveIndex(index) }}
+                              >
+                                Place a bid
+                              </button>
+                          }
                           <Link
                             className={cn("button-stroke", styles.button)}
                             to={`/item/${x._id}`}

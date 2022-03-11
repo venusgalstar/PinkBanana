@@ -1,28 +1,40 @@
 var Web3 = require('web3');
 var ObjectId = require('mongodb').ObjectID;
 const { io } = require("./socket");
-const mainnet_ws_RPC = require("../env").mainnet_ws_RPC;
-const testnet_ws_RPC = require("../env").testnet_ws_RPC;
-const testnet_http_RPC = require("../env").testnet_http_RPC;
-const bsc_testnet_ws_RPC = require("../env").bsc_testnet_ws_RPC;
+const mainnet_http_RPC = require("../env").mainnet_http_RPC;
+const pinkBananaFactoryABI = require("../env").pinkBananaFactoryABI;
+const pinkBananaFactoryAddress = require("../env").pinkBananaFactoryAddress;
+
 const db = require("./db");
 const User = db.User;
 const Sale = db.Sale;
 const Item = db.Item;
 const Notify = db.Notify;
 
-const pinkBananaFactoryABI = require("./PinkBananFactory.json");
-const pinkBananaFactoryAddress = "0x66386374A9C090209efe26a8E86660FecC947504";
-
-var web3WS = new Web3("https://api.avax-test.network/ext/bc/C/rpc"); //testnet_ws_RPC);
+var web3WS = new Web3(mainnet_http_RPC);
 var myContract = new web3WS.eth.Contract(pinkBananaFactoryABI, pinkBananaFactoryAddress);
 
 var scanBlockNumber = 0;
-var maxBlockNumber = 7006157;
+var maxBlockNumber = 11845904;
 
+var CreateTemp = {};
+var DestroyTemp = {};
+var PlaceTemp = {};
+var AcceptTemp = {};
+var BuyTemp = {};
+var EndTemp = {};
+
+const compareObjects = (A, B) =>
+{
+    if(Object.keys(A).length === 0) return false;    
+    if(Object.keys(A).length !== Object.keys(B).length) return false;
+    else{
+        if(JSON.stringify(A) !== JSON.stringify(B)) return false;
+    }
+    return true;
+}
 
 const getBlockNumber = () => {
-    // while (1) {
     web3WS.eth.getBlockNumber()
         .then((number) => {
             if (maxBlockNumber < number) {
@@ -32,72 +44,69 @@ const getBlockNumber = () => {
                 }
                 console.log("max block number", number);
             }
-        }).catch((error) => { console.log("error:", error) });
-    // }
-    setTimeout(getBlockNumber, 100);
+        }).catch((error) => {
+            console.log("get blocknumber error");
+        });
+    setTimeout(getBlockNumber, 300);
 }
 
 getBlockNumber();
 
 const getData = async () => {
-    if (scanBlockNumber != 0) {
+    if (scanBlockNumber != 0 && scanBlockNumber <= maxBlockNumber) {
         console.log('scan block number', scanBlockNumber);
-       try {
-           await CreateSale_monitor(scanBlockNumber);
-           await DestroySale_monitor(scanBlockNumber);
-           await PlaceBid_monitor(scanBlockNumber);
-           await AcceptBid_monitor(scanBlockNumber);
-           await BuyNow_monitor(scanBlockNumber);
-           await EndBid_monitor(scanBlockNumber);
-           scanBlockNumber++;
-       } catch (e) {
+        try {
+            await CreateSale_monitor(scanBlockNumber);
+            await DestroySale_monitor(scanBlockNumber);
+            await PlaceBid_monitor(scanBlockNumber);
+            await AcceptBid_monitor(scanBlockNumber);
+            await BuyNow_monitor(scanBlockNumber);
+            await EndBid_monitor(scanBlockNumber);
+            scanBlockNumber++;
+        } catch (e) {
 
-       }
+        }
     }
-    setTimeout(getData, 500);
+    setTimeout(getData, 100);
 }
 
 getData();
 
 
-
-// CreateSale_monitor(number);
-
-
 const CreateSale_monitor = async (blockNumber) => {
-    try {
-        let oldReturnValues = {};
+    try {        
+        var event = await myContract.getPastEvents("CreateSale", { fromBlock: blockNumber });        
+        if (event.length > 0) {
+            let i;
+            for(i=0; i<event.length; i++)
+            {
+                let data = event[i];
+                if (compareObjects(CreateTemp, data.returnValues) === false) 
+                {
+                    CreateTemp = data.returnValues;
 
-        // while (1) {
-        var event = await myContract.getPastEvents("CreateSale", { fromBlock: blockNumber });
-        // console.log("create sale event: ", event);
-        if (event.length != 0) {
-            let data = event[0];
-            if (oldReturnValues !== data.returnValues) {
-                oldReturnValues = data.returnValues;
+                    console.log("---------------------- CreateSale event --------------------")
+                    console.log(data.returnValues);
 
-                console.log("---------------------- CreateSale event --------------------")
-                console.log(data.returnValues);
+                    var tokenHash = data.returnValues.tokenHash;
+                    var price = data.returnValues.price;
+                    var interval = Number(data.returnValues.interval) / (24 * 3600);
 
-                var tokenHash = data.returnValues.tokenHash;
-                var price = data.returnValues.price;
-                var interval = Number(data.returnValues.interval) / (24 * 3600) ;
+                    var param = { price: 0 };
+                    let item_price = web3WS.utils.fromWei(price !== null ? price.toString() : '0', 'ether');
 
-                var param = { price: 0 };
-                let item_price = web3WS.utils.fromWei(price !== null ? price.toString() : '0', 'ether');
-
-                if (interval == 0) {
-                    param.isSale = 1;
-                    param.price = item_price;
-                    param.auctionPeriod = 0;
-                    param.auctionPrice = 0;
-                } else {
-                    param.isSale = 2;
-                    param.auctionPrice = item_price;
-                    param.auctionPeriod = interval;
-                }
-                Item.findByIdAndUpdate(tokenHash, param).then(async (data) => {
-                    const new_notify = new Notify(
+                    if (interval == 0) {
+                        param.isSale = 1;
+                        param.price = item_price;
+                        param.auctionPeriod = 0;
+                        param.auctionPrice = 0;
+                    } else {
+                        param.isSale = 2;
+                        param.auctionPrice = item_price;
+                        param.auctionPeriod = interval;
+                    }
+                    Item.findByIdAndUpdate(tokenHash, param).then(async (data) => {
+                        const new_notify = new Notify(
                         {
                             imgUrl: data.logoURL,
                             subTitle: "New sale is opened",
@@ -108,22 +117,23 @@ const CreateSale_monitor = async (blockNumber) => {
                             target_ids: [],
                             Type: 1
                         });
-                    await new_notify.save(function (err) {
-                        if (!err) {
-                            io.sockets.emit("Notification");
-                        }
-                    });
-                }).catch(() => {
-                    ////res.send({ code: 1 });
-                });
+                        await new_notify.save(function (err) {
+                            if (!err) {
+                            }
+                        });
+                        io.sockets.emit("UpdateStatus", { type: "CREATE_SALE" });
 
-                console.log("---------------------- end of CreateSale event --------------------")
-                console.log("");
+                    }).catch(() => {
+                        ////res.send({ code: 1 });
+                    });
+
+                    console.log("---------------------- end of CreateSale event --------------------")
+                    console.log("");
+                }
             }
         } else {
             return;
         }
-        // }
 
     } catch (error) {
         return {
@@ -135,16 +145,16 @@ const CreateSale_monitor = async (blockNumber) => {
 
 const DestroySale_monitor = async (blockNumber) => {
     try {
-
-        let oldReturnValues = {};
-
-        // while (1) {
-            var event = await myContract.getPastEvents("DestroySale", { fromBlock: blockNumber });
-            // console.log("destroy event: ", event);
-            if (event.length != 0) {
-                let data = event[0];
-                if (oldReturnValues !== data.returnValues) {
-                    oldReturnValues = data.returnValues;
+        var event = await myContract.getPastEvents("DestroySale", { fromBlock: blockNumber });
+        if (event.length > 0) 
+        {
+            let i;
+            for(i=0; i<event.length; i++)
+            {
+                let data = event[i];
+                if (compareObjects(DestroyTemp, data.returnValues) === false) 
+                {
+                    DestroyTemp = data.returnValues;
 
                     console.log("----------------------DestroySale event--------------------")
                     console.log(data.returnValues);
@@ -162,20 +172,21 @@ const DestroySale_monitor = async (blockNumber) => {
                     }
                     Item.findByIdAndUpdate(tokenHash, param).then((data) => {
                         const new_notify = new Notify(
-                            {
-                                imgUrl: data.logoURL,
-                                subTitle: "A sale is cancelled.",
-                                description: "Item " + data.name + " is removed from sale.",
-                                date: new Date(),
-                                readers: [],
-                                target_ids: [],
-                                Type: 1
-                            });
+                        {
+                            imgUrl: data.logoURL,
+                            subTitle: "A sale is cancelled.",
+                            description: "Item " + data.name + " is removed from sale.",
+                            date: new Date(),
+                            readers: [],
+                            target_ids: [],
+                            Type: 1
+                        });
                         new_notify.save(function (err) {
                             if (!err) {
-                                io.sockets.emit("Notification");
                             }
                         });
+                        io.sockets.emit("UpdateStatus", { type: "DESTROY_SALE" });
+
                     }).catch(() => {
                         ////res.send({ code: 1 });
                     });
@@ -184,7 +195,7 @@ const DestroySale_monitor = async (blockNumber) => {
                     console.log("");
                 }
             }
-        // }
+        }
 
     } catch (error) {
         return {
@@ -195,17 +206,17 @@ const DestroySale_monitor = async (blockNumber) => {
 }
 
 const PlaceBid_monitor = async (blockNumber) => {
-    try {
-
-        let oldReturnValues = {};
-
-        // while (1) {
-            var event = await myContract.getPastEvents("PlaceBid", { fromBlock: blockNumber });
-            // console.log("place bid:", event);
-            if (event.length != 0) {
-                let data = event[0];
-                if (oldReturnValues !== data.returnValues) {
-                    oldReturnValues = data.returnValues;
+    try {       
+        var event = await myContract.getPastEvents("PlaceBid", { fromBlock: blockNumber });
+        if (event.length > 0) 
+        {
+            let i;
+            for(i=0; i<event.length; i++)
+            {
+                let data = event[i];
+                if (compareObjects(PlaceTemp, data.returnValues) === false) 
+                {
+                    PlaceTemp = data.returnValues;
 
                     console.log("---------------------- PlaceBid event --------------------")
                     console.log(data.returnValues);
@@ -215,7 +226,10 @@ const PlaceBid_monitor = async (blockNumber) => {
                     var price = data.returnValues.price;
                     let item_price = web3WS.utils.fromWei(price !== null ? price.toString() : '0', 'ether');
 
-                    var bidder_id = await User.find({ address: bidder }, { _id: 1 });
+                    var bidder_id = await User.find({
+                        address:
+                            { $regex: new RegExp("^" + bidder, "i") }
+                    }, { _id: 1 });
                     bidder_id = bidder_id[0]._id;
 
                     Item.findById(tokenHash).then(async (data) => {
@@ -223,22 +237,22 @@ const PlaceBid_monitor = async (blockNumber) => {
                         var bids = data.bids;
                         if (bids.length == 0 || bids[bids.length - 1].price < item_price) {
                             bids.push({ user_id: ObjectId(bidder_id), price: item_price, Time: Date.now() });
-                            await Item.findByIdAndUpdate(tokenHash, { bids: bids }).then(async (data) => {
+                            Item.findByIdAndUpdate(tokenHash, { bids: bids }).then(async (data) => {
                                 const new_notify = new Notify(
-                                    {
-                                        imgUrl: data.logoURL,
-                                        subTitle: "New Bid is placed.",
-                                        description: "Item " + data.name + " has new bid with price " + item_price,
-                                        date: new Date(),
-                                        readers: [],
-                                        target_ids: [],
-                                        Type: 3
-                                    });
-                                await new_notify.save(function (err) {
+                                {
+                                    imgUrl: data.logoURL,
+                                    subTitle: "New Bid is placed.",
+                                    description: "Item " + data.name + " has new bid with price " + item_price,
+                                    date: new Date(),
+                                    readers: [],
+                                    target_ids: [],
+                                    Type: 3
+                                });
+                                new_notify.save(function (err) {
                                     if (!err) {
-                                        io.sockets.emit("Notification");
                                     }
                                 });
+                                io.sockets.emit("UpdateStatus", { type: "PLACE_BID" });
                             }).catch(() => {
                             })
                         } else {
@@ -250,7 +264,7 @@ const PlaceBid_monitor = async (blockNumber) => {
                     console.log("");
                 }
             }
-        // }
+        }
 
     } catch (error) {
         return {
@@ -262,16 +276,16 @@ const PlaceBid_monitor = async (blockNumber) => {
 
 const AcceptBid_monitor = async (blockNumber) => {
     try {
-
-        let oldReturnValues = {};
-
-        // while (1) {
-            var event = await myContract.getPastEvents("AcceptBid", { fromBlock: blockNumber });
-            // console.log('accept bid: ', event);
-            if (event.length != 0) {
-                let data = event[0];
-                if (oldReturnValues !== data.returnValues) {
-                    oldReturnValues = data.returnValues;
+        var event = await myContract.getPastEvents("AcceptBid", { fromBlock: blockNumber });
+        if (event.length > 0) 
+        {
+            let i;
+            for(i=0; i<event.length; i++)
+            {
+                let data = event[i];
+                if (compareObjects(AcceptTemp, data.returnValues) === false)
+                {
+                    AcceptTemp = data.returnValues;
 
                     console.log("---------------------- AcceptBid event --------------------")
                     console.log(data.returnValues);
@@ -282,9 +296,15 @@ const AcceptBid_monitor = async (blockNumber) => {
                     var seller = data.returnValues.seller;
                     var buyer = data.returnValues.buyer;
 
-                    var buyer_id = await User.find({ address: buyer }, { _id: 1 });
+                    var buyer_id = await User.find({
+                        address:
+                            { $regex: new RegExp("^" + buyer, "i") }
+                    }, { _id: 1 });
                     buyer_id = buyer_id[0]._id;
-                    var seller_id = await User.find({ address: seller }, { _id: 1 });
+                    var seller_id = await User.find({
+                        address:
+                            { $regex: new RegExp("^" + seller, "i") }
+                    }, { _id: 1 });
                     seller_id = seller_id[0]._id;
 
                     Item.findById(tokenHash).then((data) => {
@@ -312,20 +332,20 @@ const AcceptBid_monitor = async (blockNumber) => {
                         promise.push(sale.save());
                         Promise.all(promise).then((result) => {
                             const new_notify = new Notify(
-                                {
-                                    imgUrl: "notify_icons/AVAX_logo.png",
-                                    subTitle: "Item is sold",
-                                    description: "Item " + result[0].name + " is sold with price " + item_price,
-                                    date: new Date(),
-                                    readers: [],
-                                    target_ids: [],
-                                    Type: 7
-                                });
+                            {
+                                imgUrl: "notify_icons/AVAX_logo.png",
+                                subTitle: "Item is sold",
+                                description: "Item " + result[0].name + " is sold with price " + item_price,
+                                date: new Date(),
+                                readers: [],
+                                target_ids: [],
+                                Type: 7
+                            });
                             new_notify.save(function (err) {
                                 if (!err) {
-                                    io.sockets.emit("Notification");
                                 }
                             });
+                            io.sockets.emit("UpdateStatus", { type: "ACCEPT_BID" });
                         });
                     }).catch(() => {
                         ////res.send({ code: 1 });
@@ -334,7 +354,7 @@ const AcceptBid_monitor = async (blockNumber) => {
                     console.log("");
                 }
             }
-        // }
+        }
 
     } catch (error) {
         return {
@@ -346,16 +366,16 @@ const AcceptBid_monitor = async (blockNumber) => {
 
 const BuyNow_monitor = async (blockNumber) => {
     try {
-
-        let oldReturnValues = {};
-
-        // while (1) {
-            var event = await myContract.getPastEvents("BuyNow", { fromBlock: blockNumber });
-            // console.log("buy now event", event);
-            if (event.length != 0) {
-                let data = event[0];
-                if (oldReturnValues !== data.returnValues) {
-                    oldReturnValues = data.returnValues;
+        var event = await myContract.getPastEvents("BuyNow", { fromBlock: blockNumber });
+        if (event.length > 0) 
+        {
+            let i;
+            for(i=0; i<event.length; i++)
+            {
+                let data = event[i];
+                if (compareObjects(BuyTemp, data.returnValues) === false) 
+                {
+                    BuyTemp = data.returnValues;
 
                     console.log("---------------------- BuyNow event --------------------")
                     console.log(data.returnValues);
@@ -366,11 +386,17 @@ const BuyNow_monitor = async (blockNumber) => {
                     var price = data.returnValues.price;
                     let item_price = web3WS.utils.fromWei(price !== null ? price.toString() : '0', 'ether');
 
-                    var buyer_id = await User.find({ address: buyer }, { _id: 1 });
+                    var buyer_id = await User.find({
+                        address:
+                            { $regex: new RegExp("^" + buyer, "i") }
+                    }, { _id: 1 });
                     buyer_id = buyer_id[0]._id;
-                    var seller_id = await User.find({ address: seller }, { _id: 1 });
+                    var seller_id = await User.find({
+                        address:
+                            { $regex: new RegExp("^" + seller, "i") }
+                    }, { _id: 1 });
                     seller_id = seller_id[0]._id;
-                    // console.log("buyer_id = ", buyer_id, ", seller_id = ", seller_id);
+                    console.log("buyer_id = ", buyer_id, ", seller_id = ", seller_id);
 
                     var promise = [];
                     var find_update = Item.findByIdAndUpdate(tokenHash, {
@@ -391,30 +417,30 @@ const BuyNow_monitor = async (blockNumber) => {
                     promise.push(sale.save());
                     await Promise.all(promise).then((result) => {
                         const new_notify = new Notify(
-                            {
-                                imgUrl: "notify_icons/AVAX_logo.png",
-                                subTitle: "Item is sold",
-                                description: "Item " + result[0].name + " is sold with price " + item_price,
-                                date: new Date(),
-                                readers: [],
-                                target_ids: [],
-                                Type: 7
-                            });
+                        {
+                            imgUrl: "notify_icons/AVAX_logo.png",
+                            subTitle: "Item is sold",
+                            description: "Item " + result[0].name + " is sold with price " + item_price,
+                            date: new Date(),
+                            readers: [],
+                            target_ids: [],
+                            Type: 7
+                        });
                         new_notify.save(function (err) {
                             if (!err) {
-                                io.sockets.emit("Notification");
                             }
                         });
+                        io.sockets.emit("UpdateStatus", { type: "BUY_NOW" });
                     })
-                        .catch((err) => {
-                            console.log("BuyNow error : ", err)
-                        })
+                    .catch((err) => {
+                        console.log("BuyNow error : ", err)
+                    })
 
                     console.log("---------------------- end of BuyNow event --------------------")
                     console.log("");
                 }
             }
-        // }
+        }
 
     } catch (error) {
         return {
@@ -427,15 +453,16 @@ const BuyNow_monitor = async (blockNumber) => {
 const EndBid_monitor = async (blockNumber) => {
 
     try {
-
-        let oldReturnValues = {};
-
-        // while (1) {
-            var event = await myContract.getPastEvents("EndBid", { fromBlock: blockNumber });
-            if (event.length != 0) {
-                let data = event[0];
-                if (JSON.stringify(oldReturnValues) !== JSON.stringify(data.returnValues)) {
-                    oldReturnValues = data.returnValues;
+        var event = await myContract.getPastEvents("EndBid", { fromBlock: blockNumber });
+        if (event.length > 0) 
+        {
+            let i;
+            for(i=0; i<event.length; i++)
+            {
+                let data = event[i];
+                if (compareObjects(EndTemp, data.returnValues) === false)
+                {
+                    EndTemp = data.returnValues;
 
                     console.log("---------------------- EndBid event --------------------")
                     console.log(data.returnValues);
@@ -445,10 +472,16 @@ const EndBid_monitor = async (blockNumber) => {
                     var buyer = data.returnValues.buyer;
                     var price = data.returnValues.price;
                     let item_price = web3WS.utils.fromWei(price !== null ? price.toString() : '0', 'ether');
-
-                    var buyer_id = await User.find({ address: buyer }, { _id: 1 });
+                
+                    var buyer_id = await User.find({
+                        address:
+                            { $regex: new RegExp("^" + buyer, "i") }
+                    }, { _id: 1 });
                     buyer_id = buyer_id[0]._id;
-                    var seller_id = await User.find({ address: seller }, { _id: 1 });
+                    var seller_id = await User.find({
+                        address:
+                            { $regex: new RegExp("^" + seller, "i") }
+                    }, { _id: 1 });
                     seller_id = seller_id[0]._id;
                     // console.log("buyer_id = ", buyer_id, ", seller_id = ", seller_id);
 
@@ -471,55 +504,37 @@ const EndBid_monitor = async (blockNumber) => {
                     promise.push(sale.save());
                     await Promise.all(promise).then((result) => {
                         const new_notify = new Notify(
-                            {
-                                imgUrl: "notify_icons/AVAX_logo.png",
-                                subTitle: "Item is sold",
-                                description: "Item " + result[0].name + " is sold with price " + item_price,
-                                date: new Date(),
-                                readers: [],
-                                target_ids: [],
-                                Type: 7
-                            });
+                        {
+                            imgUrl: "notify_icons/AVAX_logo.png",
+                            subTitle: "Item is sold",
+                            description: "Item " + result[0].name + " is sold with price " + item_price,
+                            date: new Date(),
+                            readers: [],
+                            target_ids: [],
+                            Type: 7
+                        });
                         new_notify.save(function (err) {
                             if (!err) {
-                                io.sockets.emit("Notification");
                             }
-                        });
+                        });                        
+                        io.sockets.emit("UpdateStatus", { type: "END_BID" });
                     })
-                        .catch((err) => {
-                            console.log("BuyNow error : ", err)
-                        })
+                    .catch((err) => {
+                        console.log("BuyNow error : ", err)
+                    })
 
                     console.log("---------------------- end of EndBid event --------------------")
                     console.log("");
                 }
             }
-        // }
+        }
+
     } catch (error) {
         return {
             success: false,
             status: "Something went wrong 1: " + error.message,
         };
     }
-}
-
-
-// CreateSale_monitor();
-// DestroySale_monitor();
-// PlaceBid_monitor();
-// AcceptBid_monitor();
-// BuyNow_monitor();
-// EndBid_monitor();
-
-
-
-module.exports = {
-    CreateSale_monitor,
-    DestroySale_monitor,
-    PlaceBid_monitor,
-    AcceptBid_monitor,
-    BuyNow_monitor,
-    EndBid_monitor
 }
 
 /*

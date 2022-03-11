@@ -21,6 +21,11 @@ import { setBid, acceptBid } from "../../../store/actions/bid.actions";
 import { singleMintOnSale, placeABid, buyNow, createSale, performBid } from "../../../InteractWithSmartContract/interact";
 import { checkNetworkById } from "../../../InteractWithSmartContract/interact";
 
+import { io } from 'socket.io-client';
+const socket = io(`${config.socketUrl}`);
+
+
+
 const Control = ({ className, id }) => {
   const [visibleModalPurchase, setVisibleModalPurchase] = useState(false);
   const [visibleModalBid, setVisibleModalBid] = useState(false);
@@ -36,11 +41,19 @@ const Control = ({ className, id }) => {
 
   const auth = useSelector(state => state.auth.user);
   const nft = useSelector(state => state.nft.detail);
+  const avax = useSelector(state => state.user.avax);
 
   const dispatch = useDispatch();
   const params = useParams();
- 
- 
+
+  useEffect(() => {
+    socket.on("UpdateStatus", data => {
+      console.log("status updated!:", data);
+      getNftDetail(params.id)(dispatch);
+    });
+  }, [])
+
+
   useEffect(() => {
     getNftDetail(params.id)(dispatch);
   }, [params, dispatch]);
@@ -60,11 +73,10 @@ const Control = ({ className, id }) => {
 
   const cofirmBuy = async () => {
     setVisibleModalPurchase(false);
-    
+
     setProcessing(true);
     let checkResut = await checkWalletAddrAndChainId();
-    if (!checkResut) 
-    {
+    if (!checkResut) {
       setProcessing(false);
       return;
     }
@@ -88,17 +100,14 @@ const Control = ({ className, id }) => {
 
   const changeBidPrice = (value) => {
     setBidPrice(value);
-    console.log("bid value:", value);
   }
 
   const onBid = async () => {
-    console.log("on bid");
     setVisibleModalBid(false);
 
     setProcessing(true);
     let checkResut = await checkWalletAddrAndChainId();
-    if (!checkResut)
-    {
+    if (!checkResut) {
       setProcessing(false);
       return;
     }
@@ -125,8 +134,7 @@ const Control = ({ className, id }) => {
     setVisibleModalSale(false);
     setProcessing(true);
     let checkResut = await checkWalletAddrAndChainId();
-    if (!checkResut) 
-    {
+    if (!checkResut) {
       setProcessing(false);
       return;
     }
@@ -135,9 +143,8 @@ const Control = ({ className, id }) => {
 
     var aucperiod = instant === true ? 0 : period;
 
-    let ret = await singleMintOnSale(auth.address, params.id, aucperiod*24*3600 , price, 0);
-    if (ret.success === true) 
-    {
+    let ret = await singleMintOnSale(auth.address, params.id, aucperiod * 24 * 3600, price, 0);
+    if (ret.success === true) {
       //putSale(params.id, auth._id, price, instant, period)(dispatch); 
 
       //alert("Putting on sale succeed.");
@@ -157,8 +164,7 @@ const Control = ({ className, id }) => {
     setVisibleModalAccept(false);
     setProcessing(true);
     let checkResut = await checkWalletAddrAndChainId();
-    if (!checkResut) 
-    {
+    if (!checkResut) {
       setProcessing(false);
       return;
     }
@@ -209,13 +215,6 @@ const Control = ({ className, id }) => {
     // setBuyCheckList(items);
   }
 
-  useEffect(() => {
-    console.log("control nft:", nft);
-  }, [nft])
-
-  useEffect(() => {
-    console.log("control auth:", auth);
-  }, [auth])
 
 
   return (
@@ -233,7 +232,7 @@ const Control = ({ className, id }) => {
                 </div>
                 <div className={styles.cost}>
                   <div className={styles.price}>{nft.bids[nft.bids.length - 1].price} AVAX</div>
-                  <div className={styles.price}>$2,764.89</div>
+                  <div className={styles.price}>${Number(nft.bids[nft.bids.length - 1].price * avax).toFixed(2)}</div>
                 </div>
               </div>
             </div> : <></>
@@ -252,7 +251,7 @@ const Control = ({ className, id }) => {
           {
             nft && auth && nft.isSale == 2 && nft.owner._id != auth._id ?
               <button
-                className={cn("button-stroke", styles.button)}
+                className={cn("button", styles.button)}
                 onClick={() => setVisibleModalBid(true)}
               >
                 Place a bid
@@ -273,7 +272,7 @@ const Control = ({ className, id }) => {
         </div>
         {nft && nft.owner == auth._id ?
           <div className={styles.btns}>
-            <button className={cn("button-stroke", styles.button)}>
+            <button className={cn("button", styles.button)}>
               View all
             </button>
             <button

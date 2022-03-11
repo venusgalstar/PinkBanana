@@ -15,6 +15,7 @@ import { useHistory } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { getCollections } from "../../store/actions/collection.actions";
 import { singleMintOnSale } from "../../InteractWithSmartContract/interact";
+import Checkbox from '@mui/material/Checkbox';
 
 // const royaltiesOptions = ["10%", "20%", "30%"];
 const royaltiesOptions = [{ value: 10, text: "10%" }, { value: 20, text: "20%" }, { value: 30, text: "30%" }];
@@ -69,6 +70,10 @@ const Upload = ({ asset_id = null }) => {
   const [instant, setInstant] = useState(false);
   const [period, setPeriod] = useState(7);
   const [collectionName, setCollectionName] = useState("");
+  const [metaTemplateFields, setMetaTemplateFields] = useState([]);
+  const [metaTemplateValues, setMetaTemplateValues] = useState([]);
+  const [checkedFields, setCheckedFields] = useState([]);
+  const [metaStr, setMetaStr] = useState("");
 
   useEffect(() => {
     if (collections && collections.length > 0) {
@@ -135,6 +140,48 @@ const Upload = ({ asset_id = null }) => {
     setCollectionName(selectedColl.text);
   }, [selectedColl])
 
+  useEffect(() =>
+  {
+    if(collectionId !== undefined &&  collections && collections.length>0)
+    {
+      // console.log("collections = ", collections);
+      var index = collections.findIndex((element) => {
+        return element._id == collectionId
+      });
+
+      if(collections[index] && collections[index].metaData)
+      {
+        let strMetaTemplate = collections[index].metaData.toString();
+        // console.log("meataDataTemplate = ", strMetaTemplate);
+
+        let templateFds = []; let i = 0;
+        let vals = []; let tempVals = [], tempChecks  = [];
+        JSON.parse(strMetaTemplate, function (key, value) {
+          // console.log("key = ", key, "value = ", value);
+          if(typeof value === "object" && key !== "") 
+          {
+            templateFds.push({index: i, key: key, values: vals});
+            tempVals.push("");
+            tempChecks.push(true);
+            vals = [];
+            i++;
+          }
+          else if(typeof value === "string")
+          {
+            vals.push({value, text:value});
+          }
+          
+        });
+
+        console.log("templateFds = ", templateFds);
+        
+        setMetaTemplateFields(templateFds);
+        setMetaTemplateValues(tempVals);
+        setCheckedFields(tempChecks);
+      }
+    }
+  }, [collectionId, collections]);
+
   useEffect(() => {
     let flag = "";
     flag = localStorage.getItem("isNewItemCreating");
@@ -169,7 +216,7 @@ const Upload = ({ asset_id = null }) => {
     })
       .then(async function (response) {
         console.log("response = ", response);
-        if(response.status === 200)
+        if(response.status === 200 && params.isSale !== 0)
         {
           var aucperiod = (response.data.isSale === 1 ? 0 : response.data.auctionPeriod) ;
           var price = (response.data.isSale === 1  ? response.data.price :  response.data.auctionPrice)
@@ -197,7 +244,7 @@ const Upload = ({ asset_id = null }) => {
       
   }
 
-  console.log("getConsideringCollectionId = ", getConsideringCollectionId);
+  // console.log("getConsideringCollectionId = ", getConsideringCollectionId);
 
   const createItem = () => 
   {
@@ -248,6 +295,7 @@ const Upload = ({ asset_id = null }) => {
           params.price = 0;
         }
         params.auctionPeriod = !sale? 0 : period;
+        params.metaData = metaStr;
         setCreateState(1);
         saveItem(params);
       })
@@ -266,6 +314,52 @@ const Upload = ({ asset_id = null }) => {
   const navigate2Next = () => {
     history.push("/")
   }
+  
+  const setSelectedMetaValue = (x, index) =>
+  {
+    // console.log(x);
+
+    let valsforDisplay  = metaTemplateValues;
+    valsforDisplay[index] = x;
+    setMetaTemplateValues(valsforDisplay);
+
+    let metaString = "{", i=0;    
+    for(i = 0; i<checkedFields.length; i++)
+    {
+      if(checkedFields[i] === true)
+      {
+        if(i === checkedFields.length - 1) metaString += "\""+metaTemplateFields[i].key + "\" : \"" + valsforDisplay[i].value+"\"}";
+        else metaString += "\""+metaTemplateFields[i].key + "\" : \"" + valsforDisplay[i].value + "\", ";      
+      }
+    }
+    setMetaStr(metaString);
+
+    console.log("metaString = ", metaString);
+  }
+
+  const handleCheckFieldChange = (event, index) => {
+
+    // console.log(event.target.checked)
+
+    let chFields = checkedFields;
+    chFields[index] = event.target.checked;
+    setCheckedFields(chFields);
+
+    // console.log("chFields = ", chFields);
+    let metaString = "{", i=0;    
+    for(i = 0; i<chFields.length; i++)
+    {
+      if(chFields[i] === true)
+      {
+        if(i === chFields.length - 1) metaString += "\""+metaTemplateFields[i].key + "\" : \"" + metaTemplateValues[i].value+"\"}";
+        else metaString += "\""+metaTemplateFields[i].key + "\" : \"" + metaTemplateValues[i].value + "\", ";      
+      }
+    }
+    setMetaStr(metaString);
+
+    console.log("metaString = ", metaString);
+
+  };
 
   return (
     <>
@@ -378,8 +472,51 @@ const Upload = ({ asset_id = null }) => {
                   </div>
                 </div>
               </div>
-              <div className={styles.options}>
-                <div className={styles.option}>
+              <div className={styles.options}>                
+              <div className={styles.category}>Choose collection</div>
+                <div className={styles.text}>
+                  Choose an exiting collection or create a new one
+                </div>
+                <div className="row" style={{display:"flex"}}>
+                    <div style={{flex: 1}}>
+                      <Dropdown
+                        className={styles.dropdown}
+                        value={selectedColl}
+                        setValue={setSelectedColl}
+                        options={colls}
+                      />
+                    </div>
+                    <button
+                      className={cn("button-stroke", styles.button)}
+                      onClick={() => onSelectCollection(0)}                     
+                    >
+                      New Collection
+                    </button>
+                </div>
+                {
+                  metaTemplateFields && metaTemplateFields.length>0 &&
+                  metaTemplateFields.map((metaField, index) => (
+                    <div className="row" key={index}  style={{marginTop: "1rem"}} >
+                      <div >
+                        <Checkbox
+                          checked={checkedFields[index]}
+                          onChange={(e) => handleCheckFieldChange(e, index)}
+                          inputProps={{ 'aria-label': 'controlled' }}
+                        />                        
+                        {metaField.key}
+                      </div>
+                      <div style={{flex: 1}}>
+                        <Dropdown
+                          className={styles.dropdown}                          
+                          value={ metaTemplateValues[index] }
+                          setValue={(x)=>{ setSelectedMetaValue(x, index) }}
+                          options={metaTemplateFields[index].values}
+                        />
+                      </div>
+                     </div>
+                  ))
+                }
+                <div className={styles.option}  style={{marginTop: "2rem"}}>
                   <div className={styles.box}>
                     <div className={styles.category}>Put on sale</div>
                     <div className={styles.text}>
@@ -437,26 +574,6 @@ const Upload = ({ asset_id = null }) => {
                   </div>
                   <Switch value={locking} setValue={setLocking} />
                 </div> */}
-                <div className={styles.category} style={{marginTop: "2rem"}}>Choose collection</div>
-                <div className={styles.text}>
-                  Choose an exiting collection or create a new one
-                </div>
-                <div className="row" style={{display:"flex"}}>
-                    <div style={{flex: 1}}>
-                      <Dropdown
-                        className={styles.dropdown}
-                        value={selectedColl}
-                        setValue={setSelectedColl}
-                        options={colls}
-                      />
-                    </div>
-                    <button
-                      className={cn("button-stroke", styles.button)}
-                      onClick={() => onSelectCollection(0)}                     
-                    >
-                      New Collection
-                    </button>
-                </div>
                 {/* <Cards items={collections} onSelectCollection={onSelectCollection}/> */}
               </div>
               <div className={styles.foot}>

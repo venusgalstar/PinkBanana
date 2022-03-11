@@ -16,7 +16,7 @@ const Card = ({ className, item }) => {
         <img
           // srcSet={`${item.image2x} 2x`} 
           src={item.logoURL ? config.imgUrl + item.logoURL : ""} alt="Card" />
-        <div className={styles.control}>
+        {/* <div className={styles.control}>
           <div
             className={cn(
               { "status-green": item.category === "green" },
@@ -35,7 +35,7 @@ const Card = ({ className, item }) => {
             <span>Place a bid</span>
             <Icon name="scatter-up" size="16" />
           </button>
-        </div>
+        </div> */}
       </div>
       <div className={styles.fit_space}>
       </div>
@@ -61,7 +61,7 @@ const Card = ({ className, item }) => {
         <div className={styles.foot}>
           <div className={styles.status}>
             <Icon name="candlesticks-up" size="20" />
-            Highest bid <span>{(item.bids && item.bids.length > 1) ? item.bids[item.bids.length - 1].price : 0}</span>
+            Highest bid <span>{(item.bids && item.bids.length > 1) ? item.bids[item.bids.length - 1].price : 0} AVAX</span>
           </div>
           <div
             className={styles.bid}
