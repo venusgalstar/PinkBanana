@@ -78,7 +78,7 @@ export const buyNft = (item_id, price, owner, buyer) => dispatch => {
 // }
 
 export const getItemsOfCollection = (params, colllectionId) => dispatch => {
-    axios.post(`${config.baseUrl}item/get_items_of_collection/${colllectionId}`, params, {
+    axios.post(`${config.baseUrl}item/get_items_of_collection`, {...params, colId : colllectionId}, {
         headers:
         {
             "x-access-token": localStorage.getItem("jwtToken")
@@ -97,7 +97,7 @@ export const getItemsOfCollection = (params, colllectionId) => dispatch => {
 
 
 export const getItemsOfUserByConditions = (params, userId) => dispatch => {
-    axios.post(`${config.baseUrl}item/get_items_of_user/${userId}`, params, {
+    axios.post(`${config.baseUrl}item/get_items_of_user`, {...params, userId : userId}, {
         headers:
         {
             "x-access-token": localStorage.getItem("jwtToken")

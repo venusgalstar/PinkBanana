@@ -5,11 +5,12 @@ import Control from "../../components/Control";
 import Loader from "../../components/Loader";
 import Icon from "../../components/Icon";
 import Filters from "./Filters";
-import { getNotifiesByFilter, getNotifiesByLimt } from "../../store/actions/notify.action";
+import { getNotifiesByFilter, getNotifiesByLimit } from "../../store/actions/notify.action";
 import { useDispatch } from "react-redux";
 import { useSelector } from "react-redux";
 import { markAllAsRead } from "../../store/actions/notify.action";
 import config from "../../config";
+import moment from "moment";
 // import config from "../../config";
 
 const _breadcrumbs = [
@@ -65,7 +66,7 @@ const Activity = () => {
   const dispatch = useDispatch();
 
   useEffect(() => {
-    dispatch(getNotifiesByLimt(50))
+    dispatch(getNotifiesByLimit(50, currentUsr._id))
   }, []);
 
   const onClickMarkAllAsRead = () => {
@@ -77,9 +78,9 @@ const Activity = () => {
   }
 
   useEffect(() => {
+    var reshapedFilters = [];
     if (selectedFilters && selectedFilters.length > 0) {
-      var reshapedFilters = []; let j;
-      for (j = 0; j < selectedFilters.length; j++) {
+      for (var j = 0; j < selectedFilters.length; j++) {
         switch (selectedFilters[j]) {
           default: break;
           case "Sales":
@@ -108,12 +109,17 @@ const Activity = () => {
             break;
         }
       }
-      dispatch(getNotifiesByFilter(reshapedFilters, currentUsr._id));
     }
-    else {
-      dispatch(getNotifiesByLimt(50, currentUsr._id))
+    dispatch(getNotifiesByLimit(50, currentUsr._id, reshapedFilters));
+  }, [selectedFilters]);
+
+  useEffect(() => {
+    if (activeIndex == 1) {
+      dispatch(getNotifiesByLimit(50, currentUsr._id, [5]));
+    } else {
+      dispatch(getNotifiesByLimit(50, currentUsr._id));
     }
-  }, [selectedFilters])
+  }, [activeIndex])
 
 
 
@@ -179,7 +185,7 @@ const Activity = () => {
                         <div className={styles.details}>
                           <div className={styles.subtitle}>{x.subTitle}</div>
                           <div className={styles.description}>{x.description}</div>
-                          <div className={styles.date}>{x.date}</div>
+                          <div className={styles.date}>{x.date ? moment(x.date).format("YYYY-MM-DD HH:mm:ss") : ""}</div>
                         </div>
                       </div>
                     ))

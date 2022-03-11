@@ -19,7 +19,8 @@ export const getCollectionBannerList = (limit) => dispatch => {
 }
 
 export const getCollectionDetail = (id) => dispatch => {
-    axios.get(`${config.baseUrl}collection/${id}`, {}, {
+    console.log("[getCollectionDetail] id = ", id);
+    axios.post(`${config.baseUrl}collection/detail`, {id}, {
         headers:
         {
             "x-access-token": localStorage.getItem("jwtToken")
@@ -54,7 +55,7 @@ export const buyCollection = (item_id, price, owner, buyer) => dispatch => {
 }
 
 export const getCollections = (limit, currentUserId) => dispatch => {
-    axios.post(`${config.baseUrl}collection/getUserCollections/${currentUserId}`, { limit: limit }, {
+    axios.post(`${config.baseUrl}collection/getUserCollections`, { limit: limit, userId: currentUserId}, {
         headers:
         {
             "x-access-token": localStorage.getItem("jwtToken")

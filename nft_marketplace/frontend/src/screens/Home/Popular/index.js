@@ -190,7 +190,7 @@ const Popular = () => {
                       <div className={styles.name}>{x && x.username ? x.username : ""}</div>
                       <div
                         className={styles.price}
-                        dangerouslySetInnerHTML={{ __html: x && x.totalPrice ? x.totalPrice + " AVAX" : "0 AVAX" }}
+                        dangerouslySetInnerHTML={{ __html: x && x.totalPrice ? Number(x.totalPrice).toFixed(3) + " AVAX" : "0 AVAX" }}
                       />
                     </div>
                   </div>

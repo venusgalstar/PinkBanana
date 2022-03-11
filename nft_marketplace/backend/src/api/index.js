@@ -13,12 +13,6 @@ const checkAuthentication = require('./private_router');
 
 const router = express.Router();
 
-router.get('/', (req, res) => {
-  console.log("testing now")
-  res.json({
-    message: 'This is backend right?'
-  });
-});
 
 router.use('/users', checkAuthentication, users);
 router.use('/item',  checkAuthentication, items);

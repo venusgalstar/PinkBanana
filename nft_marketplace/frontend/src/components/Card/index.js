@@ -43,7 +43,7 @@ const Card = ({ className, item }) => {
         <div className={styles.body}>
           <div className={styles.line}>
             <div className={styles.title}>{item.name}</div>
-            <div className={styles.price}>{item.price ? item.price : 0} AVAX</div>
+            <div className={styles.price}>{item.isSale === 0 ? 0: (item.isSale === 1? item.price : item.auctionPrice) } AVAX</div>
           </div>
           <div className={styles.line}>
             <div className={styles.users}>

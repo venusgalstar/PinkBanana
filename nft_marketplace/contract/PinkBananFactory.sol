@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^ 0.8.10;
+pragma solidity 0.8.12;
 
 import "./ERC1155Tradable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -7,31 +7,10 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Receiver.sol";
 
-contract DataRegistry {
-    struct SaleInfo {
-        uint256 tokenId;
-        string tokenHash;
-        address creator;
-        address currentOwner;
-        uint256 startPrice;
-        address maxBidder;
-        uint256 maxBid;
-        uint256 startTime;
-        uint256 interval;
-        uint8 kindOfCoin;
-        bool _isOnSale;
-    }
-
-    // mapping(address => Info) public proxies;
-    // function checkProxies(address _address) external view returns (Info memory) {
-    //     return proxies[_address];
-    // }
-}
-
 contract PinkBananaFactory is Ownable,ERC1155Receiver {
     using Counters for Counters.Counter;
     
-    // uint8 constant IS_USER = 0;
+    uint8 constant IS_USER = 0;
     uint8 constant IS_RESELLER = 1;
     uint8 constant IS_CREATOR = 2;
 
@@ -158,13 +137,13 @@ contract PinkBananaFactory is Ownable,ERC1155Receiver {
     }
 
     function _createOrMint(
-        address _erc1155Address,
+        address nftAddress,
         address _to,
         uint256 _id,
         uint256 _amount,
         bytes memory _data
     ) internal onlyCreator{
-        ERC1155Tradable tradable = ERC1155Tradable(_erc1155Address);
+        ERC1155Tradable tradable = ERC1155Tradable(nftAddress);
 
         require(!tradable.exists(_id), "Already exist id");
         tradable.create(address(this), _id, _amount, "", _data);
@@ -173,7 +152,7 @@ contract PinkBananaFactory is Ownable,ERC1155Receiver {
         ids[0] = _id;
         tradable.setCreator(_to, ids);
 
-        emit CreateToken(_to, _id, _amount, _erc1155Address);
+        emit CreateToken(_to, _id, _amount, nftAddress);
     }
 
     function mintSingleNFT(string memory _tokenHash) internal onlyAdmin{
@@ -215,9 +194,9 @@ contract PinkBananaFactory is Ownable,ERC1155Receiver {
         return true;
     }
 
-    function createBatchSale(string[] memory _tokenHashs, uint _price, uint8 _kind) public {
+    function createBatchSale(string[] memory _tokenHashs, uint _interval, uint _price, uint8 _kind) public {
         for (uint256 i = 0; i < _tokenHashs.length; i++) {
-            createSale(_tokenHashs[i], 0, _price, _kind);
+            createSale(_tokenHashs[i], _interval, _price, _kind);
         }
     }
 
@@ -230,9 +209,9 @@ contract PinkBananaFactory is Ownable,ERC1155Receiver {
         _isMinting = false;
     }
 
-    function batchMintOnSale(string[] memory _tokenHashs, uint _startPrice, uint8 _kind) external payable onlyAdmin {
-        mintMultipleNFT(_tokenHashs);
-        createBatchSale(_tokenHashs, _startPrice, _kind);
+    function batchMintOnSale(string[] memory _tokenHash, uint _interval, uint _price, uint8 _kind) external payable {
+        mintMultipleNFT(_tokenHash);
+        createBatchSale(_tokenHash, _interval, _price, _kind);
         _isMinting = false;
     }
 
@@ -253,8 +232,6 @@ contract PinkBananaFactory is Ownable,ERC1155Receiver {
 
     function placeBidReal(string memory _tokenHash) internal notOnlyNFTOwner(_tokenHash) returns(address bidder, uint256 price, string memory tokenHash, uint256 tokenId){
         require(_tokenHashExists[_tokenHash], "Non-Existing NFT hash value....");
-        require(getAuctionState(_tokenHash) == AuctionState.OPEN || getAuctionState(_tokenHash) == AuctionState.DIRECT_BUY, "Auction state is not open...");
-        require(msg.value >= _allSaleInfo[_getSaleId[_tokenHash]].startPrice, "Starting price is too high...");
 
         if (_allSaleInfo[_getSaleId[_tokenHash]].kindOfCoin > 0) {
             //_payToken.transferFrom(msg.sender, address(this), msg.value);
@@ -276,9 +253,22 @@ contract PinkBananaFactory is Ownable,ERC1155Receiver {
         uint256 price;
         string memory tokenHash;
         uint256 tokenId;
+        require(getAuctionState(_tokenHash) == AuctionState.OPEN, "Auction state is not open.");
+        require(msg.value > _allSaleInfo[_getSaleId[_tokenHash]].startPrice, "less than max bid price");
+        
         (bidder, price, tokenHash, tokenId) = placeBidReal(_tokenHash);
         emit PlaceBid(bidder, price, tokenHash, tokenId);
         return true;
+    }
+
+    function buyNow(string memory _tokenHash) payable external nonReentrant{
+        RoyaltyInfo memory royaltyInfo;
+        require(getAuctionState(_tokenHash) == AuctionState.DIRECT_BUY, "Auction state is not buy now");
+        require(msg.value >= _allSaleInfo[_getSaleId[_tokenHash]].startPrice, "less than purchase price");
+        placeBidReal(_tokenHash);
+        BidInfo memory bidInfo;
+        (bidInfo, royaltyInfo) = performBidReal(_tokenHash);
+        emit BuyNow(bidInfo.sender, bidInfo.seller, bidInfo.maxBidder, bidInfo.maxBidPrice, bidInfo.tokenHash, bidInfo.tokenId, royaltyInfo);
     }
 
     function performBidReal(string memory _tokenHash) internal returns(BidInfo memory bidInfos, RoyaltyInfo memory royaltyInfos){
@@ -295,12 +285,24 @@ contract PinkBananaFactory is Ownable,ERC1155Receiver {
 
         mkNFT.safeTransferFrom(address(this), saleInfo.maxBidder, _getNFTId[_tokenHash], 1, "");
 
-        customizedTransfer(payable(saleInfo.creator), royaltyInfo.artistAmount, saleInfo.kindOfCoin);
-        customizedTransfer(payable(royaltyInfo.pinkTokenAddress), royaltyInfo.pinkTokenAmount, saleInfo.kindOfCoin);
-        customizedTransfer(payable(royaltyInfo.pccTeamAddress), royaltyInfo.pccTeamAmount, saleInfo.kindOfCoin);
-        customizedTransfer(payable(royaltyInfo.pinkTeamAddress), royaltyInfo.pinkTeamAmount, saleInfo.kindOfCoin);
-        customizedTransfer(payable(royaltyInfo.devTeamAddress), royaltyInfo.devTeamAmount, saleInfo.kindOfCoin);
-        customizedTransfer(payable(saleInfo.currentOwner), royaltyInfo.sellerAmount, saleInfo.kindOfCoin);
+        if(royaltyInfo.artistAmount > 0) {
+            customizedTransfer(payable(saleInfo.creator), royaltyInfo.artistAmount, saleInfo.kindOfCoin);
+        }
+        if(royaltyInfo.pinkTokenAmount > 0) {
+            customizedTransfer(payable(royaltyInfo.pinkTokenAddress), royaltyInfo.pinkTokenAmount, saleInfo.kindOfCoin);
+        }
+        if(royaltyInfo.pccTeamAmount > 0) {
+            customizedTransfer(payable(royaltyInfo.pccTeamAddress), royaltyInfo.pccTeamAmount, saleInfo.kindOfCoin);
+        }
+        if(royaltyInfo.pinkTeamAmount > 0) {
+            customizedTransfer(payable(royaltyInfo.pinkTeamAddress), royaltyInfo.pinkTeamAmount, saleInfo.kindOfCoin);
+        }
+        if(royaltyInfo.devTeamAmount > 0) {
+            customizedTransfer(payable(royaltyInfo.devTeamAddress), royaltyInfo.devTeamAmount, saleInfo.kindOfCoin);
+        }
+        if(royaltyInfo.sellerAmount > 0) {
+            customizedTransfer(payable(saleInfo.currentOwner), royaltyInfo.sellerAmount, saleInfo.kindOfCoin);
+        }
 
         address seller = saleInfo.currentOwner;
         saleInfo.currentOwner = saleInfo.maxBidder;
@@ -328,15 +330,6 @@ contract PinkBananaFactory is Ownable,ERC1155Receiver {
             emit EndBid(bidInfo.sender, bidInfo.seller, bidInfo.maxBidder, bidInfo.maxBidPrice, bidInfo.tokenHash, bidInfo.tokenId, royaltyInfo);
         }
         return true;
-    }
-
-    function buyNow(string memory _tokenHash) payable external nonReentrant{
-        RoyaltyInfo memory royaltyInfo;
-        require(getAuctionState(_tokenHash) == AuctionState.DIRECT_BUY, "Auction state is not buy now");
-        placeBidReal(_tokenHash);
-        BidInfo memory bidInfo;
-        (bidInfo, royaltyInfo) = performBidReal(_tokenHash);
-        emit BuyNow(bidInfo.sender, bidInfo.seller, bidInfo.maxBidder, bidInfo.maxBidPrice, bidInfo.tokenHash, bidInfo.tokenId, royaltyInfo);
     }
 
     function getAuthentication(address _addr) external view returns (uint8) {

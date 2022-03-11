@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import cn from "classnames";
 import Icon from "../../components/Icon";
 import styles from "./Profile.module.sass";
@@ -7,17 +7,19 @@ import styles2 from "./UploadDetails.module.sass";
 import axios from "axios";
 import config from "../../config";
 import Modal from "../../components/Modal";
-import FolowSteps from "./FolowSteps";
 import { useHistory } from "react-router-dom";
 import TextInput from "../../components/TextInput";
 import { useDispatch, useSelector } from "react-redux";
 import Dropdown from "../../components/Dropdown";
 import { setConsideringCollectionId } from "../../store/actions/collection.actions";
 import MultipleInput from "../../components/MultipleInput";
+import Alert from "../../components/Alert";
+import { ThemeProvider, createTheme } from '@mui/material/styles';
+
+const ColorModeContext = React.createContext({ CollectionSelect: () => {} });
 
 const CreateCollection = () => 
-{
-  
+{  
   const categoriesOptions = [
     {value:1, text: "Art"}, 
     {value:2, text: "Game"}, 
@@ -25,16 +27,15 @@ const CreateCollection = () =>
     {value:4, text: "Music"},
     {value:5, text: "video"}];
 
-  const [visible, setVisible] = useState(false);
+  // const [visible, setVisible] = useState(false);
   const [selectedAvatarFile, setSelectedAvatarFile] = useState(null);
   const [selectedBannerFile, setSelectedBannerFile] = useState(null);
   const [logoImg, setLogoImg] = useState("");
   const [bannerImg, setBannerImg] = useState("");
-  const [createState, setCreateState] = useState(1);
   const [visibleModal, setVisibleModal] = useState(false);
   const [textName, setTextName] = useState("");
   const [textDescription, setTextDescription] = useState("");
-  const [textCategory, setTextCategory] = useState("");
+  // const [textCategory, setTextCategory] = useState("");
   const [categories, setCategories] = useState(categoriesOptions[0]);
   let history = useHistory(); let dispatch = useDispatch();
   const currentUsr  = useSelector(state=>state.auth.user);
@@ -42,10 +43,48 @@ const CreateCollection = () =>
   const [metaFieldInput, setMetaFieldInput] = useState("");
   const [metaFields, setMetaFields] = useState([]);
   const [metaFieldDatas, setMetaFieldDatas] = useState([]);
-  const [metaString, setMetaSting] = useState("");
+  const [metaArry, setMetaArray] = useState([]);
   const [removeField, setRemoveField] = useState(false);
   const [consideringField, setConsideringField] = useState("");
   const [consideringFieldIndex, setConsideringFieldIndex] = useState(0);
+  const [alertParam, setAlertParam] = useState({});
+
+  const [mode, setMode] = React.useState('light');
+  const colorMode = React.useContext(ColorModeContext);
+  const globalThemeMode = useSelector(state => state.user.themeMode);
+
+  useEffect(() =>
+  {
+    setMode(globalThemeMode);
+  }, [globalThemeMode])
+
+  useEffect(() =>
+  {
+    let thmode = localStorage.getItem("darkMode");
+    if(thmode.toString() === "true") setMode('dark');
+    else setMode('light');
+  }, [])
+  
+  const theme = React.useMemo(
+    () =>
+      createTheme({
+        palette: {
+          mode,
+        },
+        components: {
+          MuiStack: {
+            styleOverrides: {
+              root: {
+                width: '100% !important',
+                border: '2px solid #353945',
+                borderRadius: '12px'
+              }
+            }
+          }
+        }
+      }),
+    [mode],
+  );
 
   const changeBanner = (event) => 
   {
@@ -92,35 +131,24 @@ const CreateCollection = () =>
       let isCreatingNewItem = localStorage.getItem("isNewItemCreating");
       if(isCreatingNewItem) localStorage.setItem("newCollectionId", newCollectionId); 
       
-      dispatch(setConsideringCollectionId(newCollectionId));
-      setCreateState(0);      
+      dispatch(setConsideringCollectionId(newCollectionId));         
+      setAlertParam({state: "success", title:"Success", content:"You 've created a new collection."});      
+      setVisibleModal(true);      
     })
     .catch(function (error) {
-      console.log(error);
-      //setCreateState(2);
+      console.log("creating collection error : ", error);
+      setAlertParam({state: "error", title:"Error", content:"Uploading failed"});      
+      setVisibleModal(true);      
     });  
   }
 
-  const navigate2Next = () =>
-  { 
-
-    let isCreatingNewItem = localStorage.getItem("isNewItemCreating");
-    if(isCreatingNewItem === "true")
-    {
-      let previoueLink = localStorage.getItem("previousPageURL");
-      history.push(previoueLink);
-    }
-    else{
-      history.push("/");
-    }
-  }
-
   const createCollection = async () => {
-    setVisibleModal(true);
-    if( currentUsr  == null || currentUsr == undefined || selectedAvatarFile == null)
-    {
-      setCreateState(3);
+    
+    if( currentUsr  === null || currentUsr === undefined || selectedAvatarFile === null)
+    {       
       console.log("Invalid user :  currentUsr = ", currentUsr);
+      setAlertParam({state: "warning", title:"Warning", content:"Please sign in and try again."});      
+      setVisibleModal(true);     
       return;
     }
     var formData = new FormData();
@@ -139,7 +167,8 @@ const CreateCollection = () =>
     })
     .catch(function (error) {
       console.log(error);
-      setCreateState(2);
+      setAlertParam({state: "error", title:"Error", content:"Uploading failed."});      
+      setVisibleModal(true);     
     });
     
     formData = new FormData();
@@ -158,21 +187,25 @@ const CreateCollection = () =>
         params.collectionCategory = categories.value;
         params.price = floorPrice;
         params.owner = currentUsr._id;   
-        params.metaData = metaString;   
+        params.metaData = metaArry;   
         saveCollection(params);
       })
       .catch(function (error) {
         console.log(error);
-        setCreateState(2);
+        setAlertParam({state: "error", title:"Error", content:"Uploading failed."});      
+        setVisibleModal(true);     
       });
   }
 
   const setAddMetaField  = () =>
   {
-    let mfs = metaFields;
-    mfs.push(metaFieldInput);
-    setMetaFields(mfs);
-    setMetaFieldInput("");
+    if(metaFieldInput !== "")
+    {
+      let mfs = metaFields;
+      mfs.push(metaFieldInput);
+      setMetaFields(mfs);
+      setMetaFieldInput("");
+    }
   }
 
   const onRemoveMetaFieldInput = (index) =>
@@ -187,15 +220,15 @@ const CreateCollection = () =>
     socs2.splice(index, 1);
     setMetaFieldDatas(socs2);
 
-    let i; let metaStr = "{";
+    let i;
+    let metaFdArry = [];    
     for(i=0; i<socs1.length; i++) 
     {
-      if(i === socs1.length - 1) metaStr += "\""+socs1[i] + "\" : " + socs2[i]+"}";
-      else metaStr += "\""+socs1[i] + "\" : " + socs2[i] + ", ";
+      metaFdArry.push({ key : socs1[i], value : socs2[i] });
     }
-    setMetaSting(metaStr);
+    setMetaArray(metaFdArry);
 
-    console.log("metaStr = ", metaStr);
+    console.log("metaFdArry = ", metaFdArry);
   } 
 
   const onChangeMetaFieldValue = (data, metaIndex) =>
@@ -204,7 +237,8 @@ const CreateCollection = () =>
     if(data !=="" && data !== undefined)
     {
       let mfds = metaFieldDatas;
-      mfds[metaIndex] = JSON.stringify(data);
+      // mfds[metaIndex] = JSON.stringify(data);
+      mfds[metaIndex] = data;
       setMetaFieldDatas(mfds);
             
       let socs1 = [];
@@ -212,15 +246,15 @@ const CreateCollection = () =>
       let socs2 = [];
       socs2 = metaFieldDatas;
 
-      let i; let metaStr = "{";
+      let i;
+      let metaFdArry = [];    
       for(i=0; i<socs1.length; i++) 
       {
-        if(i === socs1.length - 1) metaStr += "\""+socs1[i] + "\" : " + socs2[i]+"}";
-        else metaStr += "\""+socs1[i] + "\" : " + socs2[i] + ", ";
+        metaFdArry.push({key : socs1[i], value : socs2[i] });
       }
-      setMetaSting(metaStr);
-
-      console.log("metaStr = ", metaStr);
+      setMetaArray(metaFdArry);
+  
+      console.log("metaFdArry = ", metaFdArry);
     }
   }
 
@@ -237,8 +271,26 @@ const CreateCollection = () =>
     setRemoveField(true);
   }
   
-  // console.log("metaFields = ", metaFields);
+  const onOk = () => { 
+    setVisibleModal(false);
+    
+    let isCreatingNewItem = localStorage.getItem("isNewItemCreating");
+    if(isCreatingNewItem === "true")
+    {
+      let previoueLink = localStorage.getItem("previousPageURL");
+      history.push(previoueLink);
+    }
+    else{
+      history.push("/");
+    }
+  }
 
+  const onCancel = () => {
+    setVisibleModal(false);
+  }
+
+  // console.log("metaFields = ", metaFields);
+  
   return (
     <div className="container">
       <div style={{paddingTop: "3rem", paddingRight: "3rem"}}>
@@ -343,14 +395,20 @@ const CreateCollection = () =>
               options={categoriesOptions}
             />
           </div>                                               
-          <div className="row">     
+          <div className="row"
+            style = {{              
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              marginTop: '14px'
+            }}
+          >     
             <div style={{
-              width: "80%",
-              display: "inline-block"
+              width: "95%"
             }}>
               <TextInput
                 className={styles.field}
-                label="Input new name of metadata"
+                label="Metadata"
                 // key={index}
                 name={metaFieldInput}
                 type="text"
@@ -360,14 +418,15 @@ const CreateCollection = () =>
             </div>
             <div 
               style={{
-                width: "10%",
-                display: "inline",
-                paddingLeft: "5px"
+                width: "20%",
+                paddingLeft: "5px",
+                paddingTop:'30px'
               }}
             >         
              <button
               className={cn("button-stroke button-small", styles.button)}
               onClick = {() => setAddMetaField()}
+              style={{width: "100%"}}
             >
               <Icon name="plus-circle" size="16" />
               <span>Add field</span>
@@ -377,23 +436,33 @@ const CreateCollection = () =>
           {
             metaFields && metaFields.length > 0 && 
             metaFields.map((field, index) =>(
-              <div className="row" key={index}>     
+              <div className="row" key={index}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  marginTop: '14px'
+                }}
+              >     
                 <div style={{
-                  width: "70%",
-                  display: "inline-block"
+                  width: "95%",
                 }}> 
-                  <MultipleInput label={field} metaIndex={index} onChange={onChangeMetaFieldValue}/>           
+                <ColorModeContext.Provider value={colorMode}>
+                  <ThemeProvider theme={theme}>
+                    <MultipleInput className={styles.multipleInput} label={field} metaIndex={index} onChange={onChangeMetaFieldValue}/>
+                  </ThemeProvider>
+                </ColorModeContext.Provider>           
                 </div>
                 <div 
                   style={{
                     width: "20%",
-                    display: "inline",
-                    paddingLeft: "5px"
+                    paddingLeft: "10px"                    
                   }}
                 >         
-                  <button
+                <button
                   className={cn("button-stroke button-small", styles.button)}
                   onClick = {() => doRemovingModal(index, field)}
+                  style={{width: "100%"}}
                 >
                   <Icon name="close-circle" size="16" />
                   <span>Remove field</span>
@@ -419,7 +488,7 @@ const CreateCollection = () =>
         </div>
       </div>
       <Modal visible={visibleModal} onClose={() => setVisibleModal(false)}>
-        <FolowSteps className={styles2.steps} state={createState} navigate2Next={navigate2Next}/>
+        <Alert className={styles.steps} param={alertParam} okLabel="OK" onOk={onOk} onCancel={onCancel} />
       </Modal>
       <Modal visible={removeField} onClose={() => setRemoveField(false)} >               
         <div className={styles.field}>
@@ -431,7 +500,7 @@ const CreateCollection = () =>
             marginTop: "1rem"
           }} 
           onClick={()=>onClickRemoveField(consideringFieldIndex)}>
-          Add
+          Yes
         </button>
       </Modal>
     </div>

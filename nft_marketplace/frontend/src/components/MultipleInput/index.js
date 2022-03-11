@@ -6,10 +6,10 @@ import Stack from '@mui/material/Stack';
 
 const MultipleInput = ({metaIndex = 0, label="", onChange = null}) => 
 {
-    const onChangeOptions = (values) =>
-    {
-        onChange(values, metaIndex);
-    }
+  const onChangeOptions = (values) =>
+  {
+      onChange(values, metaIndex);
+  }
 
   return (
     <Stack spacing={3} sx={{ width: 500 }}>     
@@ -18,7 +18,7 @@ const MultipleInput = ({metaIndex = 0, label="", onChange = null}) =>
         fullWidth
         id="tags-filled"
         options={top100Films.map((option) => option.title)}
-        defaultValue={[top100Films[0].title]}
+        // defaultValue={[top100Films[0].title]}
         freeSolo
         onChange={(event, value) => onChangeOptions(value)}
         renderTags={(value, getTagProps) =>   
@@ -45,7 +45,7 @@ const MultipleInput = ({metaIndex = 0, label="", onChange = null}) =>
 }
 
 const top100Films = [
-  { title: 'example' },
+  
 ];
 
 export default MultipleInput;

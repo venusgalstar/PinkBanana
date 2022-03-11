@@ -6,7 +6,16 @@ import Icon from "../../../components/Icon";
 import axios from "axios";
 import config from "../../../config";
 import { io } from 'socket.io-client';
-const socket = io(`${config.socketUrl}`);
+
+var socket = io(`${config.socketUrl}`);
+socket.on("disconnect", () =>
+{
+  console.log("disconnected");
+  setTimeout(() =>
+  {
+    socket.connect();
+  }, 1000)
+})
 
 
 const Selection = () => {

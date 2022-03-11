@@ -10,6 +10,8 @@ import config from "../../../config";
 import { useParams } from "react-router-dom";
 import {toggleFollow, getIsExists} from "../../../store/actions/follow.actions";
 import { getDetailedUserInfo } from "../../../store/actions/auth.actions";
+import moment from "moment";
+
 
 // import { isStepDivisible } from "react-range/lib/utils";
 
@@ -160,7 +162,7 @@ const User = ({ className, item }) => {
             </a>
           ))}
         </div>
-        <div className={styles.note}>Member since {detailedUserInfo && detailedUserInfo.createdAt}</div>
+        <div className={styles.note}>Member since {detailedUserInfo && moment(detailedUserInfo.createdAt).format("YYYY-MM-DD")}</div>
       </div>
       <Modal
         visible={visibleModalReport}

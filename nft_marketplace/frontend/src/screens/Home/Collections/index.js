@@ -10,7 +10,15 @@ import { useDispatch, useSelector } from "react-redux";
 import config from "../../../config";
 
 import { io } from 'socket.io-client';
-const socket = io(`${config.socketUrl}`);
+var socket = io(`${config.socketUrl}`);
+socket.on("disconnect", () =>
+{
+  console.log("disconnected");
+  setTimeout(() =>
+  {
+    socket.connect();
+  }, 1000)
+})
 
 
 const SlickArrow = ({ currentSlide, slideCount, children, ...props }) => (
@@ -70,7 +78,7 @@ const Collections = () => {
 
   useEffect(() => {
     // console.log("hots state: ", collection.hots);
-    if (collection.hots != undefined) {
+    if (collection.hots !== undefined) {
 
       var hots = collection.hots;
       var list = [];

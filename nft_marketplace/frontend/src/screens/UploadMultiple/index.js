@@ -7,8 +7,6 @@ import TextInput from "../../components/TextInput";
 import Switch from "../../components/Switch";
 import Modal from "../../components/Modal";
 import Preview from "./Preview";
-// import Cards from "../../components/Card";
-import FolowSteps from "./FolowSteps";
 import axios from 'axios';
 import config from "../../config";
 import { useHistory } from "react-router-dom";
@@ -16,7 +14,8 @@ import { useDispatch, useSelector } from "react-redux";
 import { getCollections } from "../../store/actions/collection.actions";
 import { batchMintOnSale } from "../../InteractWithSmartContract/interact";
 import Checkbox from '@mui/material/Checkbox';
-// const royaltiesOptions = ["10%", "20%", "30%"];
+import Alert from "../../components/Alert";
+
 const royaltiesOptions = [{value:10, text: "10%"}, {value:20, text: "20%"}, {value:30, text: "30%"}];
 
 const Upload = ({asset_id = null}) => {
@@ -26,15 +25,12 @@ const Upload = ({asset_id = null}) => {
   const [textProperty, setTextProperty] = useState("");
   const [royalties, setRoyalties] = useState(royaltiesOptions[0]);
   const [sale, setSale] = useState(true);
-  const [flagPrice, setFlagPrice] = useState(false);
   const [price, setPrice] = useState(0);
-  const [locking, setLocking] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
 
   const [visibleModal, setVisibleModal] = useState(false);
   const [visiblePreview, setVisiblePreview] = useState(false);
   const [logoImg, setLogoImg] = useState("");
-  const [createState, setCreateState] = useState(1);
   const [sel_files, setSelFiles] = useState([]);
   const [collectionId, setCollectionId] =useState("");
   const [selectedColl, setSelectedColl] = useState({});
@@ -50,6 +46,7 @@ const Upload = ({asset_id = null}) => {
   const [metaTemplateValues, setMetaTemplateValues] = useState([]);
   const [checkedFields, setCheckedFields] = useState([]);
   const [metaStr, setMetaStr] = useState("");
+  const [alertParam, setAlertParam] = useState({});
 
   useEffect(() => {
     if (collections && collections.length > 0) {
@@ -126,27 +123,22 @@ const Upload = ({asset_id = null}) => {
 
       if(collections[index] && collections[index].metaData)
       {
-        let strMetaTemplate = collections[index].metaData.toString();
+        let MetaTemplateArry = collections[index].metaData;
         // console.log("meataDataTemplate = ", strMetaTemplate);
 
         let templateFds = []; let i = 0;
         let vals = []; let tempVals = [], tempChecks  = [];
-        JSON.parse(strMetaTemplate, function (key, value) {
-          // console.log("key = ", key, "value = ", value);
-          if(typeof value === "object" && key !== "") 
-          {
-            templateFds.push({index: i, key: key, values: vals});
-            tempVals.push("");
-            tempChecks.push(true);
-            vals = [];
-            i++;
-          }
-          else if(typeof value === "string")
-          {
-            vals.push({value, text:value});
-          }
-          
-        });
+
+        for(i=0; i<MetaTemplateArry.length; i++)
+        {
+          var subValues = MetaTemplateArry[i].value;
+          let j;
+          for(j=0; j<subValues.length; j++) vals.push({value : subValues[j], text: subValues[j] });
+          templateFds.push({index: i, key: MetaTemplateArry[i].key, values: vals });          
+          vals = [];
+          tempVals.push("");
+          tempChecks.push(true);
+        }
 
         console.log("templateFds = ", templateFds);
         
@@ -183,24 +175,7 @@ const Upload = ({asset_id = null}) => {
     reader.onerror = function (error) {
     }
   }
-  
-  const saveItem = (params) => {
-    axios({
-      method: "post",
-      url: `${config.baseUrl}item/create`,
-      data: params
-    })
-    .then(function (response) 
-    {
-      console.log(response);      
-      setCreateState(0);
-    })
-    .catch(function (error) {
-      console.log(error);
-      setCreateState(2);
-    });
-  }
-  
+    
   const saveMultipleItem = (params, paths) => {
     let names = []; let i;
     for(i=0; i<paths.length; i++)
@@ -225,38 +200,55 @@ const Upload = ({asset_id = null}) => {
           0);
         if (ret.success === true) 
         {
-          console.log("succeed in put on sale") ;         
+          console.log("succeed in put on sale") ;   
+          setAlertParam({state: "success", title:"Success", content:"You 've put new items on sale."});      
+          setVisibleModal(true);       
+          return;
         }
         else {
-          console.log("failed in put on sale : ", ret.status);
-        }
-      }
-        setCreateState(0); 
-        history.push("/");
+          console.log("failed in put on sale : ", ret.status);          
+          setAlertParam({state: "error", title:"Error", content:"Failed in put on sale."});      
+          setVisibleModal(true);    
+          return;
+        }        
+      }          
+      setAlertParam({state: "success", title:"Success", content:"Uploading succeed."});      
+      setVisibleModal(true);
+
     })
     .catch(function (error) {
-      console.log(error);
-      setCreateState(2);
+      console.log("multiple uploading error : ", error);
+      setAlertParam({state: "error", title:"Error", content:"Uploading failed."});      
+      setVisibleModal(true);
     });
   }
 
-  const createItem = () => {
-    setVisibleModal(true);
+  const createItem = () => 
+  {
+    // console.log("currentUser = ", currentUsr);
+    if(Object.keys(currentUsr).length === 0)
+    {
+      console.log("Invalid account.");
+      setAlertParam({state: "warning", title:"Warning", content:"You have to sign in before creting a item."});      
+      setVisibleModal(true);
+      return;
+    }    
     if(collectionId === 0 || collectionId === undefined || collectionId === null)
     {
-      setCreateState(3);
       console.log("Invalid collection id.");
+      setAlertParam({state: "warning", title:"Warning", content:"You have to select a collection."});      
+      setVisibleModal(true);
       return;
     }
     if(selectedFile === null) 
     {
-      setCreateState(5);
       console.log("Invalid file.");
+      setAlertParam({state: "warning", title:"Warning", content:"Image is not selected."});      
+      setVisibleModal(true);
       return;
     }
     if(sel_files.length >0 && sel_files.length<100) 
-    {
-      setCreateState(1);
+    {            
       console.log("sel_files = ", sel_files);
       var formData = new FormData();
       sel_files.forEach((file, index) =>
@@ -298,7 +290,9 @@ const Upload = ({asset_id = null}) => {
         saveMultipleItem(params, response.data.paths);
       })
       .catch((err) =>{
-        console.log("Multiple upload err : ", err);
+        // console.log("mutiple creation, file uploading error : ", err);
+        setAlertParam({state: "error", title:"Error", content:"Uploading failed."});      
+        setVisibleModal(true);
       });
     }
   }
@@ -309,12 +303,6 @@ const Upload = ({asset_id = null}) => {
     setTextName("");
     setPrice(0);
   }
-
-  const navigate2Next = () =>
-  {
-    history.push("/")
-  }
-
   
   const setSelectedMetaValue = (x, index) =>
   {
@@ -324,18 +312,16 @@ const Upload = ({asset_id = null}) => {
     valsforDisplay[index] = x;
     setMetaTemplateValues(valsforDisplay);
 
-    let metaString = "{", i=0;    
-    for(i = 0; i<checkedFields.length; i++)
-    {
-      if(checkedFields[i] === true)
-      {
-        if(i === checkedFields.length - 1) metaString += "\""+metaTemplateFields[i].key + "\" : \"" + valsforDisplay[i].value+"\"}";
-        else metaString += "\""+metaTemplateFields[i].key + "\" : \"" + valsforDisplay[i].value + "\", ";      
+    var list = [];
+    for (var i = 0; i < checkedFields.length; i++) {
+      if (checkedFields[i] === true) {
+        var temp = {}
+        temp[metaTemplateFields[i].key] = valsforDisplay[i].value;
+        list.push(JSON.stringify(temp));
       }
     }
-    setMetaStr(metaString);
+    setMetaStr(list.toString());
 
-    console.log("metaString = ", metaString);
   }
 
   const handleCheckFieldChange = (event, index) => {
@@ -346,21 +332,26 @@ const Upload = ({asset_id = null}) => {
     chFields[index] = event.target.checked;
     setCheckedFields(chFields);
 
-    // console.log("chFields = ", chFields);
-    let metaString = "{", i=0;    
-    for(i = 0; i<chFields.length; i++)
-    {
-      if(chFields[i] === true)
-      {
-        if(i === chFields.length - 1) metaString += "\""+metaTemplateFields[i].key + "\" : \"" + metaTemplateValues[i].value+"\"}";
-        else metaString += "\""+metaTemplateFields[i].key + "\" : \"" + metaTemplateValues[i].value + "\", ";      
+    var list = [];
+    for (var i = 0; i < chFields.length; i++) {
+      if (chFields[i] === true) {
+        var temp = {}
+        temp[metaTemplateFields[i].key] = metaTemplateValues[i].value;
+        list.push(JSON.stringify(temp));
       }
     }
-    setMetaStr(metaString);
-
-    console.log("metaString = ", metaString);
+    setMetaStr(list.toString());
 
   };
+
+  const onOk = () => { 
+    setVisibleModal(false);
+    history.push("/");
+  }
+
+  const onCancel = () => {
+    setVisibleModal(false);
+  }
 
   return (
     <>
@@ -536,7 +527,7 @@ const Upload = ({asset_id = null}) => {
                   <div className={styles.details}>
                     <div className={styles.info}>{instant ? "Instant sale price" : "Auction Sale"}</div>
                     <div className={styles.textForPutSale}>
-                      Enter the price for which the item will be instanly sold
+                      Enter the price for which the item will be sold
                     </div>
                   </div>
                   <Switch className={styles.switch} value={instant} setValue={setInstant} />
@@ -608,7 +599,7 @@ const Upload = ({asset_id = null}) => {
         </div>
       </div>
       <Modal visible={visibleModal} onClose={() => setVisibleModal(false)}>
-        <FolowSteps className={styles.steps} state={createState} navigate2Next={navigate2Next}/>
+        <Alert className={styles.steps} param={alertParam} okLabel="OK" onOk={onOk} onCancel={onCancel} />
       </Modal>
     </>
   );

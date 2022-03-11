@@ -1,63 +1,47 @@
-import React, { useState , useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import cn from "classnames";
 import OutsideClickHandler from "react-outside-click-handler";
 import styles from "./Notification.module.sass";
 import Icon from "../../Icon";
-import {useSelector, useDispatch} from "react-redux";
-import {getNotifiesByLimt} from "../../../store/actions/notify.action";
+import { useSelector, useDispatch } from "react-redux";
+import { getNotifiesByLimit } from "../../../store/actions/notify.action";
 import config from "../../../config";
+import moment from "moment";
 
-const items = [
-  {
-    title: "AVAX received",
-    price: "0.08 AVAX recived",
-    date: "2 days ago",
-    color: "#3772FF",
-    image: "/images/content/notification-pic-1.jpg",
-    url: "/activity",
-  },
-  {
-    title: "C O I N Z",
-    price: "New bid 0.2 AVAX",
-    date: "3 days ago",
-    color: "#3772FF",
-    image: "/images/content/notification-pic-2.jpg",
-    url: "/activity",
-  },
-  {
-    title: "AVAX received",
-    price: "0.08 AVAX recived",
-    date: "4 days ago",
-    color: "#3772FF",
-    image: "/images/content/notification-pic-3.jpg",
-    url: "/activity",
-  },
-  {
-    title: "AVAX received",
-    price: "0.08 AVAX recived",
-    date: "5 days ago",
-    color: "#3772FF",
-    image: "/images/content/notification-pic-4.jpg",
-    url: "/activity",
-  },
-];
+
+
 
 const Notification = ({ className }) => {
   const [visible, setVisible] = useState(false);
   const notifiesList = useSelector(state => state.notify.list);
   const dispatch = useDispatch();
+  const user = useSelector(state => state.auth.user);
+  const [hasNew, setHasNew] = useState(false);
 
-  useEffect(() => 
-  {
-    dispatch(getNotifiesByLimt(4))
-  }, []);
+  useEffect(() => {
+    dispatch(getNotifiesByLimit(50, user._id))
+  }, [user]);
+
+  useEffect(() => {
+    if (notifiesList) {
+      var temp = false;
+      for (var i = 0; i < notifiesList.length; i++) {
+        if (notifiesList[i].is_new == true) {
+          temp = true;
+          break;
+        }
+      }
+      setHasNew(temp);
+    }
+  }, [notifiesList]);
+
 
   return (
     <OutsideClickHandler onOutsideClick={() => setVisible(false)}>
       <div className={cn(styles.notification, className)}>
         <button
-          className={cn(styles.head, styles.active)}
+          className={cn(styles.head, hasNew ? styles.active : "")}
           onClick={() => setVisible(!visible)}
         >
           <Icon name="notification" size="24" />
@@ -67,28 +51,28 @@ const Notification = ({ className }) => {
             <div className={cn("h4", styles.title)}>Notification</div>
             <div className={styles.list}>
               {
-                (notifiesList && notifiesList.length > 0) && 
+                (notifiesList && notifiesList.length > 0) &&
                 notifiesList.slice(0, 4).map((x, index) => (
-                <Link
-                  className={styles.item}
-                  to="/activity"
-                  onClick={() => setVisible(!visible)}
-                  key={index}
-                >
-                  <div className={styles.preview}>
-                    <img src={config.imgUrl + x.imgUrl} alt="Notification" />
-                  </div>
-                  <div className={styles.details}>
-                    <div className={styles.subtitle}>{x.subTitle}</div>
-                    <div className={styles.description}>{x.description}</div>
-                    <div className={styles.date}>{x.date}</div>
-                  </div>
-                  <div
-                    className={styles.status}
-                    style={{ backgroundColor: "#000000" }}
-                  ></div>
-                </Link>
-              ))}
+                  <Link
+                    className={styles.item}
+                    to="/activity"
+                    onClick={() => setVisible(!visible)}
+                    key={index}
+                  >
+                    <div className={styles.preview}>
+                      <img src={config.imgUrl + x.imgUrl} alt="Notification" />
+                    </div>
+                    <div className={styles.details}>
+                      <div className={styles.subtitle}>{x.subTitle}</div>
+                      <div className={styles.description}>{x.description}</div>
+                      <div className={styles.date}>{x.date ? moment(x.date).format("YYYY-MM-DD HH:mm:ss") : ""}</div>
+                    </div>
+                    <div
+                      className={styles.status}
+                      style={{ backgroundColor: x.is_new ? "#45B26B" : "#000000" }}
+                    ></div>
+                  </Link>
+                ))}
             </div>
             <Link
               className={cn("button-small", styles.button)}

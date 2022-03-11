@@ -3,7 +3,7 @@ const Collection = db.Collection;
 const Follows = db.Follow;
 const Users = db.User;
 const Notify = db.Notify;
-const {io} = require("../../socket");
+const { io } = require("../../socket");
 const fs = require('fs');
 const fsPromises = fs.promises;
 const env = require("../../../env");
@@ -12,9 +12,9 @@ const upload_path = env.upload_path;
 var ObjectId = require('mongodb').ObjectID;
 
 exports.create = (req, res) => {
-    
+
     console.log("creting collection 00");
-    
+
     console.log("req.body = ", req.body);
 
     var reqItem = req.body;
@@ -44,24 +44,22 @@ exports.create = (req, res) => {
                         .save()
                         .then(async (data) => {
                             console.log("Creating new collection succeed.");
-                            
+
                             const new_notify = new Notify(
-                            {
-                                imgUrl : data.logoURL,
-                                subTitle : "New collection is created.",
-                                description: "Item "+data.name+" is created",
-                                date : new Date(),
-                                readers: [],
-                                target_ids : [],
-                                Type : 2
-                            });
-                            await new_notify.save(function(err)
-                            {
-                                if(!err)
                                 {
+                                    imgUrl: data.logoURL,
+                                    subTitle: "New collection is created.",
+                                    description: "Collection " + data.name + " is created",
+                                    date: new Date(),
+                                    readers: [],
+                                    target_ids: [],
+                                    Type: 2
+                                });
+                            await new_notify.save(function (err) {
+                                if (!err) {
                                     //io.sockets.emit("Notification");
                                 }
-                            });    
+                            });
                             res.status(200).send(
                                 { success: true, data, message: "New collection successfully created." }
                             );
@@ -84,22 +82,20 @@ exports.create = (req, res) => {
                             .then(async (data) => {
                                 console.log("Creating new collection succeed.");
                                 const new_notify = new Notify(
-                                {
-                                    imgUrl : data.logoURL,
-                                    subTitle : "New collection is created.",
-                                    description: "Item "+data.name+" is created",
-                                    date : new Date(),
-                                    readers: [],
-                                    target_ids : [],
-                                    Type : 2
-                                });
-                                await new_notify.save(function(err)
-                                {
-                                    if(!err)
                                     {
+                                        imgUrl: data.logoURL,
+                                        subTitle: "New collection is created.",
+                                        description: "Collection " + data.name + " is created",
+                                        date: new Date(),
+                                        readers: [],
+                                        target_ids: [],
+                                        Type: 2
+                                    });
+                                await new_notify.save(function (err) {
+                                    if (!err) {
                                         //io.sockets.emit("Notification");
                                     }
-                                });    
+                                });
                                 res.status(200).send(
                                     { success: true, data, message: "New collection successfully created." }
                                 );
@@ -115,10 +111,14 @@ exports.create = (req, res) => {
     })
 }
 
-exports.get = (req, res) => {
-    Collection.findOne({ _id: req.params.id }).populate("owner")
+exports.getDetail = (req, res) => {
+    console.log("req.body.id  : ", req.body.id);
+    Collection.findOne({ _id: new ObjectId(req.body.id) }).populate("owner")
         .then((docs) => {
-            if (docs !== null && docs !== undefined) res.status(200).send({ success: true, data: docs, message: "success" });
+            if (docs !== null && docs !== undefined) {
+                console.log("found a collection : ", docs);
+                res.status(200).send({ success: true, data: docs, message: "success" });
+            }
             else res.status(404).send({ success: false, data: [], message: "Can't find such asset." });
         })
         .catch((err) => {
@@ -238,15 +238,21 @@ exports.getCollectionList = async (req, res) => {
     var likes = req.body.likes ? req.body.likes : 0;
     var price = req.body.price ? req.body.price : 0;
     var range = req.body.range ? req.body.range : null;
-    var search = req.body.search? req.body.search : "";
+    var search = req.body.search ? req.body.search : "";
+    var collection_id = req.body.collection_id ? req.body.collection_id : 0;
+    var metadatas = req.body.metadata ? req.body.metadata : [];
+
+
 
     var creatorFilter = { $match: {} };
     var categoryFilter = { $match: {} };
     var dateSort = {};
     var likeSort = {};
     var priceSort = {};
-    var rangeFilter = { $match: {} };
+    var rangeFilter = [{ $match: {} }, { $match: {} }];
     var searchFilter = { $match: {} };
+    var collectionFilter = { $match: {} };
+    var metadataFilter = { $match: {} };
 
 
     if (search != "") {
@@ -293,11 +299,36 @@ exports.getCollectionList = async (req, res) => {
     } else if (price == 1) {
         priceSort = { $sort: { "item_info.price": 1 } };
     }
-
     if (range) {
-        rangeFilter = { $match: { "item_info.price": { $gte: range[0] }, "item_info.price": { $lte: range[1] } } };
+        rangeFilter = [{ $match: { "item_info.price": { $gte: range[0] } } },
+        { $match: { "item_info.price": { $lte: range[1] } } }];
+        // rangeFilter = {
+        //     $match: { "item_info.price": { $and: [{ $gte: range[0] }, { $lte: range[1] }] } }
+        // };
     }
+    if (collection_id != 0) {
+        collectionFilter = { $match: { "_id": ObjectId(collection_id) } };
+    }
+
+
+
+    if (metadatas.length > 0) {
+        var list = [];
+        for (var i = 0; i < metadatas.length; i++) {
+            list.push({
+                "item_info.metaData": { $regex: new RegExp(metadatas[i], "g") }
+            });
+        }
+
+        metadataFilter = {
+            $match: {
+                "$or": list
+            }
+        }
+    }
+
     Collection.aggregate([
+        collectionFilter,
         categoryFilter,
         {
             $unwind: "$items"
@@ -344,7 +375,9 @@ exports.getCollectionList = async (req, res) => {
             }
         },
         searchFilter,
-        rangeFilter,
+        metadataFilter,
+        rangeFilter[0],
+        rangeFilter[1],
         creatorFilter,
         dateSort,
         likeSort,
@@ -374,7 +407,7 @@ exports.getCollectionList = async (req, res) => {
 }
 
 exports.getUserCollectionList = (req, res) => {
-    const userId = req.params.userId;
+    const userId = req.body.userId;
     const limit = req.body.limit;
 
     Collection.find({ owner: ObjectId(userId) })
@@ -402,3 +435,28 @@ exports.getNewCollectionList = (req, res) => {
         });
 }
 
+exports.getCollectionNames = (req, res) => {
+    var name = req.body.name ? req.body.name : "";
+    var limit = req.body.limit ? req.body.limit : 10;
+
+    Collection.find({ name: { $regex: new RegExp("^" + name, "i") } }, { "_id": 1, "name": 1 })
+        .sort({ createdAt: -1 })
+        // .sort({ name: 1 })
+        .limit(limit)
+        .skip(0)
+        .then((data) => {
+            res.send({ code: 0, list: data });
+        }).catch(() => {
+            res.send({ code: 0, list: [] });
+        })
+}
+
+
+exports.getCollectionMetadatas = (req, res) => {
+    var id = req.body.id;
+    Collection.find({ _id: ObjectId(id) }, { metaData: 1 }).then((data) => {
+        res.send({ code: 0, data: data });
+    }).catch(() => {
+        res.send({ code: 1, data: data });
+    })
+}

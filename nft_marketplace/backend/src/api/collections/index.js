@@ -5,7 +5,7 @@ const collection = require("./controller");
 // router.get('/', assets.findAll);
 // router.post('/update', assets.update);
 router.post('/', collection.create);
-router.get('/:id', collection.get);
+router.post('/detail', collection.getDetail);
 router.put('/:id', collection.update);
 // router.post('/findOne', collection.findOne);
 // router.delete('/', collection.delete);
@@ -13,11 +13,11 @@ router.put('/:id', collection.update);
 // router.get('/get_banner_list', collection.getBannerList);
 
 router.post("/get_hot_collections", collection.getHotCollections);
-router.post("/getUserCollections/:userId", collection.getUserCollectionList);
+router.post("/getUserCollections", collection.getUserCollectionList);
 router.post("/get_new_collection_list", collection.getNewCollectionList);
 
-
-
+router.post("/get_collection_names", collection.getCollectionNames);
+router.post("/get_collection_metadatas", collection.getCollectionMetadatas);
 
 router.post("/get_collection_list", collection.getCollectionList);
 

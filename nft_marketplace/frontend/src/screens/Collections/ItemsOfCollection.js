@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import cn from "classnames";
 import { useDispatch, useSelector } from "react-redux";
-import { getItemsOfCollection } from "../../store/actions/nft.actions";
+// import { getItemsOfCollection } from "../../store/actions/nft.actions";
 import { getCollectionDetail } from "../../store/actions/collection.actions";
 import Icon from "../../components/Icon";
 import styles from "./Profile.module.sass";
@@ -26,6 +26,8 @@ const ItemsOfCollection = () =>
     // const collectionId = useSelector(state => state.collection.consideringId);
   const {collectionId} = useParams();
  
+  console.log("collectionId = ", collectionId);
+
     const settings = {
         infinite: true,
         speed: 500,
@@ -56,11 +58,14 @@ const ItemsOfCollection = () =>
       };     
 
     useEffect(() =>
-    {                
+    {   
+      console.log("[useEffect] collectionId = ", collectionId)    ;         
       dispatch(getCollectionDetail(collectionId));        
       
-    }, [dispatch]);
+    }, [dispatch, collectionId]);
     
+    console.log("collection = ", collection);
+
     useEffect(() => {
       setStart(0);
       setLast(8);
@@ -75,10 +80,9 @@ const ItemsOfCollection = () =>
 
     const itemsOfCollectionList = () =>
     {      
-      var params = { start: start, last: last, date: 0 };
+      var params = { start: start, last: last, date: 0, colId : collectionId };
      
-      axios.post(`${config.baseUrl}item/get_items_of_collection/${collectionId}`, params).then((result) => {
-        // console.log("reducer UPDATE_ITEMS_OF_COLLECTION", "result.data : ", result.data.data)
+      axios.post(`${config.baseUrl}item/get_items_of_collection`, params).then((result) => {
         if (start === 0) {
           setItems(result.data.data);
         } else {
@@ -89,8 +93,7 @@ const ItemsOfCollection = () =>
             for(i=0; i<moreItems.length; i++) curItems.push(moreItems[i]);
           setItems(curItems);
         }
-        // console.log("result.data.data = ", result.data.data);
-        // console.log("start=", start, " last=", last, "items.length = ", items.length)
+   
       }).catch(() => {
 
       });
@@ -145,7 +148,7 @@ const ItemsOfCollection = () =>
                     collection && 
                     <>
                         <span>Created by </span>
-                        <a href='/profile'>{`${collection.owner.username}`}</a>
+                        <a href={`/profile/${collection.owner._id}`}>{`${collection.owner.username}`}</a>
                     </>
                 }
             </div>           

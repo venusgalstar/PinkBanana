@@ -18,8 +18,64 @@ import ProfileEdit from "./screens/ProfileEdit";
 import Item from "./screens/Item";
 import PageList from "./screens/PageList";
 import Admin from "./screens/Admin";
+import jwt_decode from "jwt-decode";
+import { authLogout, authSet } from "./store/actions/auth.actions";
+import { getValidWallet } from "./InteractWithSmartContract/interact";
+import store from "./store";
 
-function App() {
+import Modal from "./components/Modal";
+import Alert from "./components/Alert";
+import styles from "./styles/helpers.sass";
+import { useEffect, useState } from "react";
+
+const App = () =>
+{  
+  const [visibleModal, setVisibleModal] = useState(false);
+  const [alertParam, setAlertParam] = useState({});  
+
+  useEffect( () =>
+  {
+    async function checkValidLogin () {
+
+      let connection = await getValidWallet();
+      if(connection.address === "")
+      {
+        setAlertParam( {state: "info", title:"Information", content:"No connected wallet. You should consider trying MetaMask!"} );      
+        setVisibleModal( true );
+      }
+
+      if (localStorage.jwtToken !== undefined &&
+        localStorage.jwtToken !== "" &&
+        localStorage.jwtToken !== null) {
+        const decoded = jwt_decode(localStorage.jwtToken);
+        const currTime = Date.now() / 1000;
+        if (connection.success === true) {
+          if (decoded.app < currTime ) 
+          {
+            // console.log(decoded);
+            store.dispatch(authLogout());
+            localStorage.removeItem("jwtToken");
+            setAlertParam( {state: "info", title:"Information", content:"Session timeouted. Please sign in again"} );     
+            setVisibleModal( true );
+          }
+          else {
+            // console.log(decoded);      
+            store.dispatch(authSet(decoded._doc));
+          }
+        }
+      }
+    }
+    checkValidLogin();
+  }, [])
+
+  const onOk = () => { 
+    setVisibleModal( false );
+  }
+
+  const onCancel = () => {
+    setVisibleModal( false );
+  }
+
   return (
     <Router>
       <Switch>
@@ -176,7 +232,10 @@ function App() {
             // </Page>
           )}
         />
-      </Switch>
+      </Switch>      
+      <Modal visible={visibleModal} onClose={() => setVisibleModal(false) }>
+        <Alert className={styles.steps} param={alertParam} okLabel="Yes" onOk={onOk} onCancel={onCancel} />
+      </Modal>
     </Router>
   );
 }

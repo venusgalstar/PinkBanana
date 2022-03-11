@@ -13,18 +13,22 @@ const items = [
   },
 ];
 
-const Accept = ({ className, onOk, onCancel }) => 
+const Accept = ({ className, onOk, onCancel, nft}) => 
 {
   return (
     <div className={cn(className, styles.accept)}>
       <div className={styles.line}>
         <div className={styles.icon}></div>
         <div className={styles.text}>
-          You are about to accept a bid for <strong>C O I N Z</strong> from{" "}
-          <strong>UI8</strong>
+          You are about to accept a bid for <strong>{nft && nft.name}</strong>
+          {/* from{" "}<strong>PINK BANANA</strong> */}
         </div>
       </div>
-      <div className={styles.stage}>1.46 AVAX for 1 edition</div>
+      {
+        nft? <div className={styles.stage}>{Number(nft.bids.length>0 && nft.bids[nft.bids.length - 1].price).toFixed(4)} AVAX for 1 item</div> 
+        : 
+        <div className={styles.stage}>0 AVAX for 1 item</div>
+      }
       <div className={styles.table}>
         {items && items.length>0 && items.map((x, index) => (
           <div className={styles.row} key={index}>

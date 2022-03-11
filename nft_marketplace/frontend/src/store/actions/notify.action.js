@@ -2,9 +2,9 @@ import { UPDATE_NOTIFY_LIST , GET_NOTIFIES_BY_FILTERS, MARK_ALL_NOTIFIES_AS_READ
 import config from '../../config';
 import axios from 'axios';
 
-export const getNotifiesByLimt = (limit, userId) => dispatch => 
+export const getNotifiesByLimit = (limit, userId, filter) => dispatch => 
 {    
-    axios.post(`${config.baseUrl}notify/getlist`, {limit, userId}, {
+    axios.post(`${config.baseUrl}notify/getlist`, {limit, userId, filter}, {
         headers:
         {
             "x-access-token": localStorage.getItem("jwtToken")
@@ -27,8 +27,6 @@ export const markAllAsRead = (notifyIds, userId) => dispatch =>
             "x-access-token": localStorage.getItem("jwtToken")
         }
     }).then((result) => {
-        console.log("[MARK_ALL_NOTIFIES_AS_READ action ] result.data.success  = ", result.data.success );
-
         dispatch({
             type: MARK_ALL_NOTIFIES_AS_READ,
             payload: result.data.success 

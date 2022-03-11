@@ -12,6 +12,17 @@ import { useHistory } from "react-router-dom";
 import { getBalanceOfAccount } from "../../../InteractWithSmartContract/interact";
 import { getDetailedUserInfo } from "../../../store/actions/auth.actions";
 
+import { io } from 'socket.io-client';
+var socket = io(`${config.socketUrl}`);
+socket.on("disconnect", () =>
+{
+  console.log("disconnected");
+  setTimeout(() =>
+  {
+    socket.connect();
+  }, 1000)
+})
+
 const User = ({ className }) => {
   const [visible, setVisible] = useState(false);
   const currentUsr  = useSelector(state=>state.auth.user);
@@ -19,7 +30,24 @@ const User = ({ className }) => {
   const history = useHistory();
   const [balance, setBalance] = useState(0);
   const [compressedAddress, setCompressedAddress] = useState("");
-  const detailedUserInfo = useSelector(state => state.auth.detail);
+
+  useEffect(() => {
+    
+    socket.on("UpdateStatus", data => 
+    {
+      console.log("status updated!:", data);      
+      setTimeout(async () =>{
+        if(currentUsr.address )
+        {
+          let bal = 0;
+          bal  = await  getBalanceOfAccount(currentUsr.address);
+          setBalance(bal.balance);   
+          console.log("balance = ", balance);   
+        }
+      }, 200);
+    });
+    
+  }, [])
 
   useEffect(() =>
   {
@@ -43,7 +71,7 @@ const User = ({ className }) => {
         setBalance(bal.balance);   
         console.log("balance = ", balance);   
       }
-    }, 1000);
+    }, 200);
   }, [currentUsr]);
 
   const items = [

@@ -8,11 +8,11 @@ exports.getUsers = async (req, res) => {
     var query = {};
     if (req.body.keyword != '') {
         if (req.body.searchType == 0) {
-            query = {nickname: new RegExp('.*' + req.body.keyword + '.*', "i")};
+            query = {username: new RegExp('.*' + req.body.keyword + '.*', "i")};
         } else if (req.body.searchType == 1) {
             query = {address: new RegExp('.*' + req.body.keyword + '.*', "i")};
         } else if (req.body.searchType == 2) {
-            query = {phone: new RegExp('.*' + req.body.keyword + '.*', "i")};
+            query = {socials: new RegExp('.*' + req.body.keyword + '.*', "i")};
         }
     }
     promise.push(Users.find(query).skip((page - 1) * itemsByPage).limit(itemsByPage));

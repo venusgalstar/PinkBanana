@@ -9,7 +9,8 @@ import Followers from "./Followers";
 import axios from "axios";
 import config from "../../config";
 import Modal from "../../components/Modal";
-import FolowSteps from "./FolowSteps";
+// import FolowSteps from "./FolowSteps";
+import Alert from "../../components/Alert";
 import { useParams } from "react-router-dom";
 import { getItemsOfUserByConditions } from "../../store/actions/nft.actions";
 import { getFollowList, getFollowingList } from "../../store/actions/follow.actions";
@@ -86,7 +87,7 @@ const Profile = () =>
   const [selectedFile, setSelectedFile] = useState(null);
   const [imgBanner, setImgBanner] = useState("/images/content/bg-profile.jpg");
   const [visibleModal, setVisibleModal] = useState(false);
-  const [createState, setCreateState] = useState(1);  
+  const [alertParam, setAlertParam] = useState({});  
   const itemsOfCol = useSelector(state => state.nft.list);
   const dispatch = useDispatch();
   const currentUsr  =  useSelector(state=>state.auth.user);  //user_id in making follow
@@ -127,23 +128,23 @@ const Profile = () =>
     })
     .then(function (response) {
       console.log(response);      
-      setCreateState(0);
+      setAlertParam({state: "success", title:"Success", content:"Uploading succeed."});      
+      setVisibleModal(true);
       dispatch(getDetailedUserInfo(userId));
     })
     .catch(function (error) {
       console.log(error);
-      setCreateState(2);
+      setAlertParam({state: "error", title:"Error", content:"Uploading failed."});      
+      setVisibleModal(true);
     });
   }
 
   const onUpdateUserImg = async () =>
   {
-    setVisibleModal(true);    
     if(selectedFile == null) 
     {
       const params = {};
       params.banner = imgBanner;
-      setCreateState(1);
       await saveItem(params);
       return;
     }
@@ -152,7 +153,6 @@ const Profile = () =>
     formData.append("authorId", "hch");
     console.log(selectedFile);
     
-    setCreateState(1);
     await axios({
       method: "post",
       url: `${config.baseUrl}utils/upload_file`,
@@ -163,12 +163,12 @@ const Profile = () =>
       console.log("response = ", response);
       const params = {};
       params.banner = response.data.path;
-      setCreateState(1);
       await saveItem(params);
     })
     .catch(function (error) {
       console.log(error);
-      setCreateState(2);
+      setAlertParam({state: "error", title:"Error", content:"Uploading failed."});      
+      setVisibleModal(true);
     });
 
     setVisible(false);
@@ -200,6 +200,14 @@ const Profile = () =>
   const onGotoProfile = () =>
   {
     history.push(`/profile-edit/${currentUsr._id}`);
+  }
+
+  const onOk = () => { 
+    setVisibleModal(false);
+  }
+
+  const onCancel = () => {
+    setVisibleModal(false);
   }
 
   return (
@@ -299,7 +307,7 @@ const Profile = () =>
         </div>
       </div>          
       <Modal visible={visibleModal} onClose={() => setVisibleModal(false)}>
-        <FolowSteps className={styles.steps} state={createState} navigate2Next={navigate2Next}/>
+        <Alert className={styles.steps} param={alertParam} okLabel="Yes" onOk={onOk} onCancel={onCancel} />
       </Modal>
     </div>
   );

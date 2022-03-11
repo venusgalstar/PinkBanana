@@ -2,9 +2,18 @@ import React from "react";
 import cn from "classnames";
 import styles from "./Theme.module.sass";
 import useDarkMode from "use-dark-mode";
+import { setThemeMode } from "../../store/actions/user.action";
+import { useDispatch } from "react-redux";
 
 const Theme = ({ className }) => {
   const darkMode = useDarkMode(false);
+  const dispatch = useDispatch();
+
+  const onChangeTheme = () =>
+  {
+    darkMode.toggle()
+    dispatch(setThemeMode(darkMode.value? "light" : "dark"))
+  }
 
   return (
     <label
@@ -17,7 +26,7 @@ const Theme = ({ className }) => {
       <input
         className={styles.input}
         checked={darkMode.value}
-        onChange={darkMode.toggle}
+        onChange={onChangeTheme}
         type="checkbox"
       />
       <span className={styles.inner}>

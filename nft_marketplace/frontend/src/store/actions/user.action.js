@@ -1,9 +1,8 @@
-import { UPDATE_POPULAR_USERS, SET_AVAX_PRICE } from "./action.types";
+import { UPDATE_POPULAR_USERS, SET_AVAX_PRICE, SET_THEME_THEME } from "./action.types";
 import config from '../../config';
 import axios from 'axios';
 import { getNftDetail } from "./nft.actions";
 import { getAvaxPrice } from "../../InteractWithSmartContract/interact";
-
 
 export const getPopularUserList = (time, limit) => dispatch => {
     // time : timeframe, 0: all, 1: today, 2: this month, 3: 3 months, 4: year
@@ -68,3 +67,11 @@ export const setAvaxPrice = (price) => dispatch => {
         payload: { avax: price }
     })
 }
+
+export const setThemeMode = (mode) => dispatch =>
+{
+    dispatch({
+        type: SET_THEME_THEME,
+        payload: { themeMode: mode }
+    })
+} 

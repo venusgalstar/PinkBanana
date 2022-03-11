@@ -18,7 +18,6 @@ export const authLogout = () => dispatch => {
 
 export const getCurrentUser = () => dispatch =>
 {
-    console.log("getCurrentUser action !!")
     dispatch({
         type: CURRENT_USER,
         payload: {}
@@ -27,7 +26,7 @@ export const getCurrentUser = () => dispatch =>
 
 export const getDetailedUserInfo = (userId) => dispatch =>
 {    
-    axios.get(`${config.baseUrl}users/findOne/${userId}`, {}, {
+    axios.post(`${config.baseUrl}users/findOne`, {userId}, {
         headers:
         {
             "x-access-token": localStorage.getItem("jwtToken")

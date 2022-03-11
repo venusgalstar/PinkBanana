@@ -2,6 +2,40 @@
 	{
 		"inputs": [
 			{
+				"internalType": "string",
+				"name": "_tokenHash",
+				"type": "string"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_interval",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_price",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint8",
+				"name": "_kind",
+				"type": "uint8"
+			}
+		],
+		"name": "createSale",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
 				"internalType": "address",
 				"name": "_nftAddress",
 				"type": "address"
@@ -120,12 +154,17 @@
 		"inputs": [
 			{
 				"internalType": "string[]",
-				"name": "_tokenHashs",
+				"name": "_tokenHash",
 				"type": "string[]"
 			},
 			{
 				"internalType": "uint256",
-				"name": "_startPrice",
+				"name": "_interval",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_price",
 				"type": "uint256"
 			},
 			{
@@ -340,6 +379,12 @@
 				"internalType": "uint256",
 				"name": "newPrice",
 				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "interval",
+				"type": "uint256"
 			}
 		],
 		"name": "ChangePrice",
@@ -351,29 +396,6 @@
 				"internalType": "string[]",
 				"name": "_tokenHashs",
 				"type": "string[]"
-			},
-			{
-				"internalType": "uint256",
-				"name": "_price",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint8",
-				"name": "_kind",
-				"type": "uint8"
-			}
-		],
-		"name": "createBatchSale",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "string",
-				"name": "_tokenHash",
-				"type": "string"
 			},
 			{
 				"internalType": "uint256",
@@ -391,14 +413,8 @@
 				"type": "uint8"
 			}
 		],
-		"name": "createSale",
-		"outputs": [
-			{
-				"internalType": "bool",
-				"name": "",
-				"type": "bool"
-			}
-		],
+		"name": "createBatchSale",
+		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
 	},
@@ -856,6 +872,19 @@
 	{
 		"inputs": [
 			{
+				"internalType": "uint256",
+				"name": "maxTokenId",
+				"type": "uint256"
+			}
+		],
+		"name": "setMaxTokenId",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
 				"internalType": "address",
 				"name": "_creator",
 				"type": "address"
@@ -894,6 +923,38 @@
 			}
 		],
 		"name": "SetMintingFee",
+		"type": "event"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "nftAddress",
+				"type": "address"
+			}
+		],
+		"name": "setNFTAddress",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "sender",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "nftAddress",
+				"type": "address"
+			}
+		],
+		"name": "SetNFTAddress",
 		"type": "event"
 	},
 	{
@@ -1043,6 +1104,19 @@
 		"type": "event"
 	},
 	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "saleId",
+				"type": "uint256"
+			}
+		],
+		"name": "setSaleId",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
 		"anonymous": false,
 		"inputs": [
 			{
@@ -1142,6 +1216,29 @@
 		"inputs": [
 			{
 				"internalType": "address",
+				"name": "from",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "to",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "tokenId",
+				"type": "uint256"
+			}
+		],
+		"name": "transferNFTFrom",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
 				"name": "to",
 				"type": "address"
 			}
@@ -1225,6 +1322,75 @@
 	{
 		"inputs": [
 			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "_allSaleInfo",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "tokenId",
+				"type": "uint256"
+			},
+			{
+				"internalType": "string",
+				"name": "tokenHash",
+				"type": "string"
+			},
+			{
+				"internalType": "address",
+				"name": "creator",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "currentOwner",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "startPrice",
+				"type": "uint256"
+			},
+			{
+				"internalType": "address",
+				"name": "maxBidder",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "maxBid",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "startTime",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "interval",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint8",
+				"name": "kindOfCoin",
+				"type": "uint8"
+			},
+			{
+				"internalType": "bool",
+				"name": "_isOnSale",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
 				"internalType": "string",
 				"name": "",
 				"type": "string"
@@ -1236,6 +1402,63 @@
 				"internalType": "uint256",
 				"name": "",
 				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "string",
+				"name": "",
+				"type": "string"
+			}
+		],
+		"name": "_getSaleId",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"name": "_isCreator",
+		"outputs": [
+			{
+				"internalType": "uint8",
+				"name": "",
+				"type": "uint8"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "string",
+				"name": "",
+				"type": "string"
+			}
+		],
+		"name": "_tokenHashExists",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "",
+				"type": "bool"
 			}
 		],
 		"stateMutability": "view",
@@ -1293,6 +1516,144 @@
 				"internalType": "uint8",
 				"name": "",
 				"type": "uint8"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "user",
+				"type": "address"
+			},
+			{
+				"internalType": "string",
+				"name": "tokenHash",
+				"type": "string"
+			},
+			{
+				"internalType": "address",
+				"name": "nftAddress",
+				"type": "address"
+			}
+		],
+		"name": "getBalanceOf",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "getMaxTokenId",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "getNFTAddress",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "nftAddress",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "getRoyalty",
+		"outputs": [
+			{
+				"components": [
+					{
+						"internalType": "uint256",
+						"name": "totalAmount",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "sellerAmount",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "artistAmount",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "pinkTokenAmount",
+						"type": "uint256"
+					},
+					{
+						"internalType": "address",
+						"name": "pinkTokenAddress",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "pccTeamAmount",
+						"type": "uint256"
+					},
+					{
+						"internalType": "address",
+						"name": "pccTeamAddress",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "pinkTeamAmount",
+						"type": "uint256"
+					},
+					{
+						"internalType": "address",
+						"name": "pinkTeamAddress",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "devTeamAmount",
+						"type": "uint256"
+					},
+					{
+						"internalType": "address",
+						"name": "devTeamAddress",
+						"type": "address"
+					}
+				],
+				"internalType": "struct PinkBananaFactory.RoyaltyInfo",
+				"name": "",
+				"type": "tuple"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "getSaleId",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
 			}
 		],
 		"stateMutability": "view",

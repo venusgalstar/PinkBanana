@@ -106,9 +106,9 @@ exports.findOne = (req, res) => {
 }
 
 exports.getDetailById = (req, res) => {
-    const usrId = req.params.userId;
+    const userId = req.body.userId;
     // console.log("usrId = ", usrId);
-    Users.findOne({ _id: new ObjectId(usrId) })
+    Users.findOne({ _id: new ObjectId(userId) })
         .then((data) => {
             if (!data) {
                 res

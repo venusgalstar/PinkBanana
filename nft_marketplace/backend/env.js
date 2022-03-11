@@ -10,7 +10,7 @@ const testnet_http_RPC = "https://speedy-nodes-nyc.moralis.io/28d3cf172b5d4a2a5c
 const bsc_testnet_ws_RPC = "wss://speedy-nodes-nyc.moralis.io/28d3cf172b5d4a2a5ca57641/bsc/testnet/ws";
 
 const pinkBananaFactoryABI = require("./src/PinkBananFactory.json");
-const pinkBananaFactoryAddress = "0xF2b2cdc554d3b07ADbe9B46C9438982F6B6055B8";
+const pinkBananaFactoryAddress = "0xA91Bc151066448a07243E2A90879969fF92CB640";
 
 module.exports  =  { 
 	jwt_enc_key, 

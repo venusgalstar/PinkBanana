@@ -3,7 +3,7 @@ import { useSelector } from "react-redux";
 import cn from "classnames";
 import styles from "./Control.module.sass";
 import Checkout from "./Checkout";
-import Connect from "../../../components/Connect";
+// import Connect from "../../../components/Connect";
 import Bid from "../../../components/Bid";
 import Accept from "./Accept";
 import PutSale from "./PutSale";
@@ -11,67 +11,85 @@ import PutSale from "./PutSale";
 import Modal from "../../../components/Modal";
 import Backdrop from '@mui/material/Backdrop';
 import CircularProgress from '@mui/material/CircularProgress';
+import Alert from "../../../components/Alert";
 
-import { getNftDetail, buyNft } from "../../../store/actions/nft.actions";
+import { getNftDetail } from "../../../store/actions/nft.actions";
 import { useDispatch } from "react-redux";
 import { useParams } from "react-router-dom";
-import { putSale } from "../../../store/actions/user.action";
 import config from "../../../config";
-import { setBid, acceptBid } from "../../../store/actions/bid.actions";
-import { singleMintOnSale, placeABid, buyNow, createSale, performBid } from "../../../InteractWithSmartContract/interact";
+import { singleMintOnSale, placeABid, buyNow, performBid } from "../../../InteractWithSmartContract/interact";
 import { checkNetworkById } from "../../../InteractWithSmartContract/interact";
 
 import { io } from 'socket.io-client';
-const socket = io(`${config.socketUrl}`);
+var socket = io(`${config.socketUrl}`);
+socket.on("disconnect", () =>
+{
+  console.log("disconnected");
+  setTimeout(() =>
+  {
+    socket.connect();
+  }, 1000)
+})
 
-
-
-const Control = ({ className, id }) => {
+const Control = ({ className, id }) => 
+{
   const [visibleModalPurchase, setVisibleModalPurchase] = useState(false);
   const [visibleModalBid, setVisibleModalBid] = useState(false);
   const [visibleModalAccept, setVisibleModalAccept] = useState(false);
   const [visibleModalSale, setVisibleModalSale] = useState(false);
   const currentWalletAddress = useSelector(state => state.auth.currentWallet);
   const currentChainId = useSelector(state => state.auth.currentChainId);
-  const [processing, setProcessing] = useState(false);
-
-  const [buyCheckList, setBuyCheckList] = useState([]);
-
   const [bidPrice, setBidPrice] = useState(0);
+  const [processing, setProcessing] = useState(false);
+  const [alertParam, setAlertParam] = useState({});
+  const [visibleModal, setVisibleModal] = useState(false);
 
   const auth = useSelector(state => state.auth.user);
   const nft = useSelector(state => state.nft.detail);
   const avax = useSelector(state => state.user.avax);
+  const serviceFee = useSelector(state => state.nft.serviceFee);
 
   const dispatch = useDispatch();
   const params = useParams();
 
   useEffect(() => {
-    socket.on("UpdateStatus", data => {
+    
+    socket.on("UpdateStatus", data => 
+    {
       console.log("status updated!:", data);
       getNftDetail(params.id)(dispatch);
     });
   }, [])
 
-
   useEffect(() => {
     getNftDetail(params.id)(dispatch);
   }, [params, dispatch]);
 
-  const checkWalletAddrAndChainId = async () => {
+  const checkWalletAddrAndChainId = async () => 
+  {
+    if(Object.keys(auth).length === 0)
+    {
+      setAlertParam({state: "warning", title:"Warning", content:"You have to sign in before creting a item."});      
+      setVisibleModal(true);
+      console.log("Invalid account.");
+      return false;
+    }
     if (currentWalletAddress && auth && auth.address && currentWalletAddress.toLowerCase() !== auth.address.toLowerCase()) {
-      //alert("Wallet addresses are not equal. Please check current wallet to your registered wallet.");
+      setAlertParam({state: "warning", title:"Warning", content:"Wallet addresses are not equal. Please check current wallet to your registered wallet."});      
+      setVisibleModal(true);
       return false;
     }
     var result = await checkNetworkById(currentChainId);
     if (!result) {
-      //alert("Please connect to Avalanche network and try again.");
+      setAlertParam({state: "warning", title:"Warning", content:"Please connect to Avalanche network and try again."});      
+      setVisibleModal(true);
       return false;
     }
     return true;
   }
 
-  const cofirmBuy = async () => {
+  const cofirmBuy = async () => 
+  {
     setVisibleModalPurchase(false);
 
     setProcessing(true);
@@ -82,18 +100,20 @@ const Control = ({ className, id }) => {
     }
 
     let ret = await buyNow(auth.address, params.id, nft.price);
-    if (ret.success === true) {
-      //buyNft(params.id, nft.price, nft.owner._id, auth._id)(dispatch);
-
-      //alert("Buying succeed.");
+    if (ret.success === true) 
+    {
+      setProcessing(false);
       setTimeout(() => {
         getNftDetail(params.id)(dispatch);
       }, 1000);
+      setAlertParam({state: "success", title:"Success", content:"You 've bought a NFT."});      
+      setVisibleModal(true);
     }
     else {
       console.log("failed on buyNow : ", ret.status);
       setProcessing(false);
-      //alert(ret.status);
+      setAlertParam({state: "error", title:"Error", content:"You 've failed in buying a NFT."});      
+      setVisibleModal(true);
     }
     setProcessing(false);
   }
@@ -113,25 +133,36 @@ const Control = ({ className, id }) => {
     }
 
     let ret = await placeABid(auth.address, params.id, bidPrice);
-    if (ret.success === true) {
-      //setBid(params.id, auth._id, bidPrice)(dispatch);
-
-      //alert("Bidding succeed.");
+    if (ret.success === true) 
+    {
+      setProcessing(false);
       setTimeout(() => {
         getNftDetail(params.id)(dispatch);
       }, 1000);
+      setAlertParam({state: "success", title:"Success", content:"You 've placed a bid."});      
+      setVisibleModal(true);
     }
     else {
       console.log("failed on place a bid : ", ret.status);
       setProcessing(false);
-      //alert(ret.status);
+      setAlertParam({state: "error", title:"Error", content:"You 've failed in placing a bid."});      
+      setVisibleModal(true);
     }
     setProcessing(false);
   }
 
-  const onPutSale = async (price, instant, period) => {
+  const onPutSale = async (price, instant, period) => 
+  {
     console.log("put sale:", price, "instant:", instant, "period:", period);
     setVisibleModalSale(false);
+
+    if(Number(price) <= 0 || Number(price) === NaN)
+    {      
+      setAlertParam({state: "error", title:"Error", content:"Invalid price."});      
+      setVisibleModal(true);
+      return;
+    }
+
     setProcessing(true);
     let checkResut = await checkWalletAddrAndChainId();
     if (!checkResut) {
@@ -139,29 +170,30 @@ const Control = ({ className, id }) => {
       return;
     }
 
-    // //alert("checkResut = "+checkResut);
-
     var aucperiod = instant === true ? 0 : period;
 
     let ret = await singleMintOnSale(auth.address, params.id, aucperiod * 24 * 3600, price, 0);
-    if (ret.success === true) {
-      //putSale(params.id, auth._id, price, instant, period)(dispatch); 
-
-      //alert("Putting on sale succeed.");
+    if (ret.success === true) 
+    {
+      setProcessing(false);
       setTimeout(() => {
         getNftDetail(params.id)(dispatch);
       }, 1000);
+      setAlertParam({state: "success", title:"Success", content:"You 've put a NFT on sale."});      
+      setVisibleModal(true);
     }
     else {
       console.log("failed on put on sale : ", ret.status);
       setProcessing(false);
-      //alert(ret.status);
+      setAlertParam({state: "error", title:"Error", content:"You 've failed in put a NFT on sale."});      
+      setVisibleModal(true);
     }
     setProcessing(false);
   }
 
   const onAccept = async () => {
     setVisibleModalAccept(false);
+
     setProcessing(true);
     let checkResut = await checkWalletAddrAndChainId();
     if (!checkResut) {
@@ -172,50 +204,59 @@ const Control = ({ className, id }) => {
     let ret;
     if (params.id) ret = await performBid(auth.address, params.id);
     else {
-      //alert("Incorrect token ID");
+      setAlertParam({state: "warning", title:"Warning", content:"Invalid NFT."});      
+      setVisibleModal(true);
       return;
     }
 
-    if (ret.success === true) {
-      //acceptBid( params.id)(dispatch);   
-
-      //alert("Accepting succeed.");
+    if (ret.success === true) 
+    {
+      setProcessing(false);
       setTimeout(() => {
         getNftDetail(params.id)(dispatch);
       }, 1000);
+      setAlertParam({state: "success", title:"Success", content:"You 've accept a final bid and sold your NFT."});      
+      setVisibleModal(true);
     }
     else {
       console.log("failed on place accept : ", ret.status);
       setProcessing(false);
-      //alert(ret.status);
+      setAlertParam({state: "error", title:"Error", content:"You 've failed accepting a bid."});      
+      setVisibleModal(true);
     }
     setProcessing(false);
   }
 
-  const purchaseNow = () => {
-    const items = [
-      {
-        title: "0.007",
-        value: "AVAX",
-      },
-      {
-        title: "Your balance",
-        value: "8.498 AVAX",
-      },
-      {
-        title: "Service fee",
-        value: "0 AVAX",
-      },
-      {
-        title: "You will pay",
-        value: "0.007 AVAX",
-      },
-    ];
-    setVisibleModalPurchase(true);
-    // setBuyCheckList(items);
+  // const purchaseNow = () => {
+  //   const items = [
+  //     {
+  //       title: "0.007",
+  //       value: "AVAX",
+  //     },
+  //     {
+  //       title: "Your balance",
+  //       value: "8.498 AVAX",
+  //     },
+  //     {
+  //       title: "Service fee",
+  //       value: "0 AVAX",
+  //     },
+  //     {
+  //       title: "You will pay",
+  //       value: "0.007 AVAX",
+  //     },
+  //   ];
+  //   setVisibleModalPurchase(true);
+  //   // setBuyCheckList(items);
+  // }
+
+  const onOk = () => { 
+    setVisibleModal(false);
   }
 
-
+  const onCancel = () => {
+    setVisibleModal(false);
+  }
 
   return (
     <>
@@ -239,7 +280,7 @@ const Control = ({ className, id }) => {
         }
         <div className={styles.btns}>
           {
-            nft && auth && nft.isSale == 1 && nft.owner._id != auth._id ?
+            nft && auth && nft.isSale === 1 && nft.owner._id !== auth._id ?
 
               <button
                 className={cn("button", styles.button)}
@@ -249,7 +290,7 @@ const Control = ({ className, id }) => {
               </button> : <></>
           }
           {
-            nft && auth && nft.isSale == 2 && nft.owner._id != auth._id ?
+            nft && auth && nft.isSale === 2 && nft.owner._id !== auth._id ?
               <button
                 className={cn("button", styles.button)}
                 onClick={() => setVisibleModalBid(true)}
@@ -261,7 +302,7 @@ const Control = ({ className, id }) => {
             View all
           </button> */}
           {
-            nft && auth && nft.isSale == 2 && nft.owner._id == auth._id ?
+            nft && auth && nft.isSale === 2 && nft.owner._id === auth._id ?
               <button
                 className={cn("button", styles.button)}
                 onClick={() => setVisibleModalAccept(true)}
@@ -270,23 +311,23 @@ const Control = ({ className, id }) => {
               </button> : <></>
           }
         </div>
-        {nft && nft.owner == auth._id ?
-          <div className={styles.btns}>
-            <button className={cn("button", styles.button)}>
-              View all
-            </button>
-            <button
-              className={cn("button", styles.button)}
-              onClick={() => setVisibleModalAccept(true)}
-            >
-              Accept
-            </button>
-          </div> : <></>}
+       
         <div className={styles.text}>
-          Service fee <span className={styles.percent}>1.5%</span>{" "}
-          <span>2.563 AVAX</span> <span>$4,540.62</span>
+          Service fee <span className={styles.percent}>{serviceFee}%</span>{" "} 
+          {
+            nft ? 
+            <>
+              <span>{Number(serviceFee*0.01*(nft.isSale ===0? 0 : (nft.isSale ===1? nft.price : nft.auctionPrice))).toFixed(4)} AVAX</span> 
+              <span>${Number(serviceFee*0.01*(nft.isSale ===0? 0 : (nft.isSale ===1? nft.price : nft.auctionPrice)) * avax).toFixed(2)}</span>
+            </>
+            :
+            <>
+              <span>0 AVAX</span> 
+              <span>$ 0</span>
+            </>
+          }       
         </div>
-        {nft && nft.isSale == 0 && nft.owner._id == auth._id ?
+        {nft && nft.isSale === 0 && nft.owner._id === auth._id ?
           <div className={styles.foot}>
             <button
               className={cn("button", styles.button)}
@@ -304,7 +345,7 @@ const Control = ({ className, id }) => {
         visible={visibleModalPurchase}
         onClose={() => setVisibleModalPurchase(false)}
       >
-        <Checkout onOk={cofirmBuy} />
+        <Checkout onOk={cofirmBuy} nft={nft}/>
         {/* <SuccessfullyPurchased /> */}
       </Modal>
       <Modal
@@ -312,19 +353,21 @@ const Control = ({ className, id }) => {
         onClose={() => setVisibleModalBid(false)}
       >
         {/* <Connect /> */}
-        <Bid onChange={changeBidPrice} onOk={onBid} onCancel={() => setVisibleModalBid(false)} />
+        <Bid onChange={changeBidPrice} onOk={onBid} onCancel={() => setVisibleModalBid(false)} nft={nft}/>
       </Modal>
       <Modal
         visible={visibleModalAccept}
         onClose={() => setVisibleModalAccept(false)} >
-
-        <Accept onOk={onAccept} onCancel={() => { setVisibleModalAccept(false) }} />
+        <Accept onOk={onAccept} onCancel={() => { setVisibleModalAccept(false) }} nft={nft} />
       </Modal>
       <Modal
         visible={visibleModalSale}
         onClose={() => setVisibleModalSale(false)}
       >
         <PutSale onOk={onPutSale} onCancel={() => setVisibleModalSale(false)} />
+      </Modal>
+      <Modal visible={visibleModal} onClose={() => setVisibleModal(false)}>
+        <Alert className={styles.steps} param={alertParam} okLabel="OK" onOk={onOk} onCancel={onCancel} />
       </Modal>
       {<Backdrop
         sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}

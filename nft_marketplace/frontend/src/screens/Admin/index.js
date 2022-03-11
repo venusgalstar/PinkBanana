@@ -116,6 +116,28 @@ const Admin = () => {
         });
     }
 
+    const initRoyalty = () => {
+        var RoyaltyInfo = {
+            totalAmount: 10000,
+            sellerAmount: 8750,
+            artistAmount: 700,
+            pinkTokenAmount: 22,
+            pinkTokenAddress: "0x4a7798fC47F729A39b61Fc8373573dBb0c62e264",
+            pccTeamAmount: 165,
+            pccTeamAddress: "0x7c8597Ed7035711e4566C389d19B81a1Cf06E823",
+            pinkTeamAmount: 362,
+            pinkTeamAddress: "0x2722CDD58c0D77A1103fd6feE50226901F26dA64",
+            devTeamAmount: 1,
+            devTeamAddress: "0x697A32dB1BDEF9152F445b06d6A9Fd6E90c02E3e",
+        }
+
+        contract.methods.setRoyalty(RoyaltyInfo).send({ from: account }).then(() => {
+            alert("init contract successfully");
+        }).catch(() => {
+
+        })
+    };
+
     const connectWallet = async () => {
         await window.ethereum.enable();
         web3.eth.getAccounts((err, accounts) => {
@@ -134,7 +156,10 @@ const Admin = () => {
 
     return (
         <>
-            <div style={{display:"flex", justifyContent: "flex-end", paddingRight:"40px", paddingTop:"30px"}}>
+            <div style={{ display: "flex", justifyContent: "space-between", paddingLeft: "40px", paddingRight: "40px", paddingTop: "30px" }}>
+                <Button variant="outlined" onClick={initRoyalty}>
+                    Init Royalty
+                </Button>
                 <Button variant="outlined" onClick={connectWallet}>
                     {
                         account ? account.slice(0, 8) + "..." + account.slice(34) : "Connect Wallet"

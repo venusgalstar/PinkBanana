@@ -37,7 +37,6 @@ export function GetCurrentUser(state, action)
 {
     if(action.type === CURRENT_USER)
     {
-        console.log("GetCurrentUser !!")
         return state.user;
     }
 }

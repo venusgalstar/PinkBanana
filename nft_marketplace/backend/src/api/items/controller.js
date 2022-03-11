@@ -1,11 +1,13 @@
 const { Item } = require("../../db");
 const db = require("../../db");
-const {io} = require("../../socket");
+const { io } = require("../../socket");
 const Items = db.Item;
 const Sales = db.Sale;
 const Collection = db.Collection;
 const Notify = db.Notify;
 var ObjectId = require('mongodb').ObjectID;
+
+
 
 exports.create = (req, res) => {
     // console.log(req.body);
@@ -71,22 +73,21 @@ exports.create = (req, res) => {
                 return;
             }
             const new_notify = new Notify(
-            {
-                imgUrl : data.logoURL,
-                subTitle : "New item is created.",
-                description: "Item "+data.name+" is created",
-                date : new Date(),
-                readers: [],
-                target_ids : [],
-                Type : 2
-            });
-            await new_notify.save(function(err)
-            {
-                if(!err)
                 {
+                    imgUrl: data.logoURL,
+                    subTitle: "New item is created.",
+                    description: "Item " + data.name + " is created",
+                    date: new Date(),
+                    readers: [],
+                    target_ids: [],
+                    Type: 2
+                });
+            await new_notify.save(function (err) {
+                if (!err) {
                     //io.sockets.emit("Notification");
                 }
-            });    
+            });
+            io.sockets.emit("UpdateStatus", { type: "CREATE_NOTIFY" });
             res.status(200).send(data);
             // console.log("Creating new item succeed.");
         })
@@ -103,8 +104,7 @@ exports.multipleCreate = async (req, res) => {
     // console.log(reqItem.names)
     // console.log(reqItem.paths)
     let i, itemIdArr = [];
-    for (i = 0; i < reqItem.paths.length; i++) 
-    {
+    for (i = 0; i < reqItem.paths.length; i++) {
         const itemName = reqItem.names[i];
         const itemLogoURL = reqItem.paths[i];
 
@@ -125,24 +125,22 @@ exports.multipleCreate = async (req, res) => {
             .save()
             .then(async (data) => {
                 itemIdArr.push(data._id);
-                
+
                 const new_notify = new Notify(
-                {
-                    imgUrl : data.logoURL,
-                    subTitle : "New item is created.",
-                    description: "Item "+data.name+" is created",
-                    date : new Date(),
-                    readers: [],
-                    target_ids : [],
-                    Type : 2
-                });
-                await new_notify.save(function(err)
-                {
-                    if(!err)
                     {
+                        imgUrl: data.logoURL,
+                        subTitle: "New item is created.",
+                        description: "Item " + data.name + " is created",
+                        date: new Date(),
+                        readers: [],
+                        target_ids: [],
+                        Type: 2
+                    });
+                await new_notify.save(function (err) {
+                    if (!err) {
                         //io.sockets.emit("Notification");
                     }
-                });   
+                });
             })
             .catch((err) => {
                 res.status(500).send({
@@ -184,17 +182,20 @@ exports.multipleCreate = async (req, res) => {
                         },
                         { upsert: true }
                     );
+                    io.sockets.emit("UpdateStatus", { type: "CREATE_NOTIFY" });
                 }
-                else res.status(404).send({ success: false, data: [], message: "Can't find such asset." });
+                else {
+                    res.status(404).send({ success: false, data: [], message: "Can't find such asset." });
+                }
             }
         });
-        
+
         // console.log("Multiple loading succeed  00.");
     } catch (err) {
         res.status(500).send({ success: false, message: "Internal server Error" });
         return;
     }
-    
+
     res.status(200).send(itemIdArr);
     console.log("Multiple loading succeed. 11");
 }
@@ -203,6 +204,7 @@ exports.update = (req, res) => {
 }
 
 exports.delete = (req, res) => {
+
 }
 
 exports.deleteAll = (req, res) => {
@@ -329,7 +331,7 @@ exports.findOne = (req, res) => {
         .populate('bids.user_id')
         .populate({ path: "owner", select: "_id username avatar" })
         .populate({ path: "creator", select: "_id username avatar" })
-        .populate({ path: "collection_id", select: "_id category name"})
+        .populate({ path: "collection_id", select: "_id category name" })
         .then((data) => {
             if (!data) {
                 res.status(404)
@@ -343,18 +345,16 @@ exports.findOne = (req, res) => {
         });
 }
 
-exports.changeItemsOwner =  async (itemId, ownerId) =>
-{
+exports.changeItemsOwner = async (itemId, ownerId) => {
     console.log("[changeItemsOwner]  00");
-    await Items.findByIdAndUpdate(new ObjectId(itemId), { owner : new ObjectId(ownerId), isSale : 0 }).then((data) => {
+    await Items.findByIdAndUpdate(new ObjectId(itemId), { owner: new ObjectId(ownerId), isSale: 0 }).then((data) => {
         res.send({ code: 0, data: data });
     }).catch(() => {
         res.status(500).send({ code: 1 });
     })
 }
 
-exports.setPrice = (req, res) => 
-{
+exports.setPrice = (req, res) => {
     var id = req.body.id;
     var price = req.body.price;
 
@@ -366,7 +366,7 @@ exports.setPrice = (req, res) =>
 }
 
 exports.getItemsOfCollection = (req, res) => {
-    const colId = req.params.colId;
+    const colId = req.body.colId;
     var start = req.body.start;
     var last = req.body.last;
     // console.log("colId = ", colId, "start =", start, "last =", last);
@@ -388,7 +388,7 @@ exports.getItemsOfCollection = (req, res) => {
 
 
 exports.getItemsOfUserByCondition = (req, res) => {
-    const userId = req.params.userId;
+    const userId = req.body.userId;
     var start = req.body.start;
     var last = req.body.last;
     var activeindex = req.body.activeindex;
@@ -435,8 +435,7 @@ exports.getItemsOfUserByCondition = (req, res) => {
                 res.status(500).send({ success: false, message: "Internal server Error" });
             })
     }
-    if(activeindex === 1)
-    {
+    if (activeindex === 1) {
         Items.aggregate([
             {
                 $match: {
@@ -446,9 +445,9 @@ exports.getItemsOfUserByCondition = (req, res) => {
                             "$creator"
                         ]
                     }
-                }		
+                }
             },
-            {	            
+            {
                 $match: {
                     $expr: {
                         $eq: [
@@ -456,10 +455,10 @@ exports.getItemsOfUserByCondition = (req, res) => {
                             0
                         ]
                     }
-              }	     
+                }
             }
             ,
-            {	            
+            {
                 $match: {
                     $expr: {
                         $eq: [
@@ -467,17 +466,17 @@ exports.getItemsOfUserByCondition = (req, res) => {
                             new ObjectId(userId)
                         ]
                     }
-              }	     
+                }
             }
         ])
-        .then((docs) => {
-            // console.log("docs.length = ", docs.length);
-             res.status(200).send({ success: true, data: docs, message: "success" });
-        })
-        .catch((err) => {
-            console.log("User items doesn't exisit" + err.message);
-            res.status(500).send({ success: false, message: "Internal server Error" });
-        })
+            .then((docs) => {
+                // console.log("docs.length = ", docs.length);
+                res.status(200).send({ success: true, data: docs, message: "success" });
+            })
+            .catch((err) => {
+                console.log("User items doesn't exisit" + err.message);
+                res.status(500).send({ success: false, message: "Internal server Error" });
+            })
     }
 }
 

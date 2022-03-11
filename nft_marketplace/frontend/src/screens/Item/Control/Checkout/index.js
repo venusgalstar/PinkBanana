@@ -1,37 +1,36 @@
 import React from "react";
 import cn from "classnames";
 import styles from "./Checkout.module.sass";
-import Icon from "../../../../components/Icon";
-import LoaderCircle from "../../../../components/LoaderCircle";
-// import { useParams } from "react-router";
 
-const items = [
-  {
-    title: "0.007",
-    value: "AVAX",
-  },
-  {
-    title: "Your balance",
-    value: "8.498 AVAX",
-  },
-  {
-    title: "Service fee",
-    value: "0 AVAX",
-  },
-  {
-    title: "You will pay",
-    value: "0.007 AVAX",
-  },
-];
+// const items = [
+//   {
+//     title: "0.007",
+//     value: "AVAX",
+//   },
+//   {
+//     title: "Your balance",
+//     value: "8.498 AVAX",
+//   },
+//   {
+//     title: "Service fee",
+//     value: "0 AVAX",
+//   },
+//   {
+//     title: "You will pay",
+//     value: "0.007 AVAX",
+//   },
+// ];
 
-const Checkout = ({ className , onOk, items}) => {
+const Checkout = ({ className , onOk, items, nft}) => {
   
+
+
   return (
     <div className={cn(className, styles.checkout)}>
       <div className={cn("h4", styles.title)}>Checkout</div>
       <div className={styles.info}>
-        You are about to purchase <strong>C O I N Z</strong> from{" "}
-        <strong>UI8</strong>
+        You are about to purchase <strong>{nft && nft.name}</strong>
+        {/* from{" "}<strong>PINK BANANA</strong> */}
       </div>
       <div className={styles.table}>
         {

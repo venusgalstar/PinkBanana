@@ -6,17 +6,27 @@ import styles from "./Hero.module.sass";
 import Icon from "../../../components/Icon";
 import Player from "../../../components/Player";
 import Modal from "../../../components/Modal";
-import Connect from "../../../components/Connect";
 import Bid from "../../../components/Bid";
 
 import { useDispatch, useSelector } from 'react-redux';
-// import Bid from "../../../components/Bid";
 import { getNftBannerList } from '../../../store/actions/nft.actions';
 import config from "../../../config";
-import { setBid } from "../../../store/actions/bid.actions";
-import { io } from 'socket.io-client';
-const socket = io(`${config.socketUrl}`);
+import Backdrop from '@mui/material/Backdrop';
+import CircularProgress from '@mui/material/CircularProgress';
+import {getNftDetail} from "../../../store/actions/nft.actions";
+import {placeABid, checkNetworkById} from "../../../InteractWithSmartContract/interact";
+import Alert from "../../../components/Alert";
 
+import { io } from 'socket.io-client';
+var socket = io(`${config.socketUrl}`);
+socket.on("disconnect", () =>
+{
+  console.log("disconnected");
+  setTimeout(() =>
+  {
+    socket.connect();
+  }, 1000)
+})
 
 const SlickArrow = ({ currentSlide, slideCount, children, ...props }) => (
   <button {...props}>{children}</button>
@@ -52,14 +62,68 @@ const Hero = () => {
   const auth = useSelector(state => state.auth.user);
   const curTime = useSelector(state => state.bid.system_time);
   const avax = useSelector(state => state.user.avax);
+  const [processing, setProcessing] = useState(false);
+  const currentWalletAddress = useSelector(state => state.auth.currentWallet);
+  const currentChainId = useSelector(state => state.auth.currentChainId);
+  const [biddingNftId, setBiddingNftId] = useState(0);
+  const [alertParam, setAlertParam] = useState({});
+  const [visibleModal, setVisibleModal] = useState(false);
 
   const onChangeBidPrice = (value) => {
     setBidPrice(value);
   }
 
-  const onBid = () => {
-    setBid(itemList[activeIndex]._id, auth._id, bidPrice)(dispatch);
+  const checkWalletAddrAndChainId = async () => 
+  {
+    if(Object.keys(auth).length === 0)
+    {
+      setAlertParam({state: "warning", title:"Warning", content:"You have to sign in before creting a item."});      
+      setVisibleModal(true);
+      console.log("Invalid account.");
+      return false;
+    }
+    if (currentWalletAddress && auth && auth.address && currentWalletAddress.toLowerCase() !== auth.address.toLowerCase()) {
+      //alert("Wallet addresses are not equal. Please check current wallet to your registered wallet.");
+      setAlertParam({state: "warning", title:"Warning", content:"Wallet addresses are not equal. Please check current wallet to your registered wallet."});      
+      setVisibleModal(true);
+      return false;
+    }
+    var result = await checkNetworkById(currentChainId);
+    if (!result) {
+      //alert("Please connect to Avalanche network and try again.");
+      setAlertParam({state: "warning", title:"Warning", content:"Please connect to Avalanche network and try again."});      
+      setVisibleModal(true);
+      return false;
+    }
+    return true;
+  }
+
+  const onBid = async () => {
+    //setBid(itemList[activeIndex]._id, auth._id, bidPrice)(dispatch);
     setVisibleModalBid(false);
+    
+    setProcessing(true);
+    let checkResut = await checkWalletAddrAndChainId();
+    if (!checkResut) {
+      setProcessing(false);
+      return;
+    }
+    let ret = await placeABid(auth.address, biddingNftId, bidPrice);
+    if (ret.success === true) 
+    {     
+      setProcessing(false);
+      setTimeout(() => {
+        getNftDetail(biddingNftId)(dispatch);
+      }, 1000);
+      setAlertParam({state: "success", title:"Success", content:"You 've put a bid."});      
+      setVisibleModal(true);
+    }
+    else {
+      console.log("failed on place a bid : ", ret.status);
+      setProcessing(false);
+      setAlertParam({state: "error", title:"Error", content:"Failed in place a bid."});      
+      setVisibleModal(true);
+    }
   }
 
   useEffect(()=>{
@@ -73,10 +137,8 @@ const Hero = () => {
     getNftBannerList(5)(dispatch);
   }, [load, dispatch])
 
-
-
   useEffect(() => {
-    if (nft != undefined && nft.banner !== undefined) {
+    if (nft !== undefined && nft.banner !== undefined) {
       setItemList(nft.banner);
     }
   }, [nft]);
@@ -112,7 +174,13 @@ const Hero = () => {
     return { hours, minutes, seconds }
   }
 
+  const onOk = () => { 
+    setVisibleModal(false);
+  }
 
+  const onCancel = () => {
+    setVisibleModal(false);
+  }
 
   return (
     <>
@@ -188,10 +256,10 @@ const Hero = () => {
                         </div>
                         <div className={styles.btns}>
                           {
-                            auth && x.owner._id && auth._id && x.owner._id.toLowerCase() == auth._id.toLowerCase()? <></> :
+                              auth && x.owner._id && auth._id && x.owner._id.toLowerCase() === auth._id.toLowerCase()? <></> :
                               <button
                                 className={cn("button", styles.button)}
-                                onClick={() => { setVisibleModalBid(true); setActiveIndex(index) }}
+                                onClick={() => { setVisibleModalBid(true); setActiveIndex(index); setBiddingNftId(x._id) }}
                               >
                                 Place a bid
                               </button>
@@ -217,7 +285,16 @@ const Hero = () => {
       >
         {/* <Connect /> */}
         <Bid onChange={onChangeBidPrice} onOk={onBid} onCancel={() => setVisibleModalBid(false)} />
+      </Modal>      
+      <Modal visible={visibleModal} onClose={() => setVisibleModal(false)}>
+        <Alert className={styles.steps} param={alertParam} okLabel="OK" onOk={onOk} onCancel={onCancel} />
       </Modal>
+      {<Backdrop
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={processing}
+      >
+        <CircularProgress color="inherit" />
+      </Backdrop>}
     </>
   );
 };

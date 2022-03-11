@@ -3,9 +3,6 @@ import cn from "classnames";
 import styles from "./PutSale.module.sass";
 import Icon from "../../../../components/Icon";
 import Switch from "../../../../components/Switch";
-import { putSale } from "../../../../store/actions/user.action";
-import { useDispatch } from "react-redux";
-
 
 const items = [
   // {
@@ -23,16 +20,14 @@ const items = [
 ];
 
 const PutSale = ({ className, onOk, onCancel }) => {
-  const [instant, setInstant] = useState(false);
-  const [price, setPrice] = useState();
+  const [instant, setInstant] = useState(false); 
   const [period, setPeriod] = useState(7);
 
-  const setNftPrice = (event) => {
-    setPrice(event.target.value);
-  }
   const onContinue = () => {
+    var price  = document.getElementById("priceInput").value;
     onOk(price, instant, period);
   }
+  
   return (
     <div className={cn(className, styles.sale)}>
       <div className={cn("h4", styles.title)}>Put on sale</div>
@@ -43,23 +38,23 @@ const PutSale = ({ className, onOk, onCancel }) => {
         <div className={styles.details}>
           <div className={styles.info}>{instant ? "Instant sale price" : "Auction Sale"}</div>
           <div className={styles.text}>
-            Enter the price for which the item will be instanly sold
+            Enter the price for which the item will be sold
           </div>
         </div>
         <Switch className={styles.switch} value={instant} setValue={setInstant} />
       </div>
       <div className={styles.table}>
         <div className={styles.row}>
-          <input className={styles.input} value={price || ""} onChange={(e) => { setNftPrice(e) }} placeholder="Enter your price" />
+          <input className={styles.input} type="text"  id="priceInput" placeholder="Enter your price" />
           <div className={styles.col} style={{ display: "flex", alignItems: "center" }}>AVAX</div>
         </div>
         {
           !instant ?
             <div className={styles.row}>
               <select className={styles.select} value={period} onChange={(event) => { setPeriod(event.target.value) }} placeholder="Please select auction time">
-                <option value={7}>7days</option>
-                <option value={10}>10days</option>
-                <option value={30}>1month</option>
+                <option value={7}>7 days</option>
+                <option value={10}>10 days</option>
+                <option value={30}>1 month</option>
               </select>
             </div>
             : <></>

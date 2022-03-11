@@ -210,9 +210,9 @@ const Discover = () => {
             </div>
             <div className={styles.cell}>
               <div className={styles.label}>Price range</div>
-              <RangeSlider min={0.01} max={10} step={0.01} setRange={(value) => setRange(value)}></RangeSlider>
+              <RangeSlider min={0} max={10} step={0.01} setRange={(value) => setRange(value)}></RangeSlider>
               <div className={styles.scale}>
-                <div className={styles.number}>0.01 AVAX</div>
+                <div className={styles.number}>0 AVAX</div>
                 <div className={styles.number}>10 AVAX</div>
               </div>
             </div>

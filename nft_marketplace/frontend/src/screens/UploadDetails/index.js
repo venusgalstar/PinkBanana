@@ -6,9 +6,7 @@ import Icon from "../../components/Icon";
 import TextInput from "../../components/TextInput";
 import Switch from "../../components/Switch";
 import Preview from "./Preview";
-// import Cards from "../../components/Card";
 import Modal from "../../components/Modal";
-import FolowSteps from "./FolowSteps";
 import axios from 'axios';
 import config from "../../config";
 import { useHistory } from "react-router-dom";
@@ -16,32 +14,32 @@ import { useSelector, useDispatch } from "react-redux";
 import { getCollections } from "../../store/actions/collection.actions";
 import { singleMintOnSale } from "../../InteractWithSmartContract/interact";
 import Checkbox from '@mui/material/Checkbox';
+import Alert from "../../components/Alert";
 
-// const royaltiesOptions = ["10%", "20%", "30%"];
 const royaltiesOptions = [{ value: 10, text: "10%" }, { value: 20, text: "20%" }, { value: 30, text: "30%" }];
 
-const items = [
-  {
-    id: 0,
-    title: "Create collection",
-    color: "#4BC9F0",
-  },
-  {
-    id: 23,
-    title: "Crypto Legend - Professor",
-    color: "#45B26B",
-  },
-  {
-    id: 245,
-    title: "Crypto Legend - Professor",
-    color: "#EF466F",
-  },
-  {
-    id: 342,
-    title: "Legend Photography",
-    color: "#9757D7",
-  },
-];
+// const items = [
+//   {
+//     id: 0,
+//     title: "Create collection",
+//     color: "#4BC9F0",
+//   },
+//   {
+//     id: 23,
+//     title: "Crypto Legend - Professor",
+//     color: "#45B26B",
+//   },
+//   {
+//     id: 245,
+//     title: "Crypto Legend - Professor",
+//     color: "#EF466F",
+//   },
+//   {
+//     id: 342,
+//     title: "Legend Photography",
+//     color: "#9757D7",
+//   },
+// ];
 
 const Upload = ({ asset_id = null }) => {
   const [textName, setTextName] = useState("");
@@ -50,16 +48,12 @@ const Upload = ({ asset_id = null }) => {
   const [textProperty, setTextProperty] = useState("");
   const [royalties, setRoyalties] = useState(royaltiesOptions[0]);
   const [sale, setSale] = useState(true);
-  const [flagPrice, setFlagPrice] = useState(false);
   const [price, setPrice] = useState(0);
-  const [locking, setLocking] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
 
   const [visibleModal, setVisibleModal] = useState(false);
   const [visiblePreview, setVisiblePreview] = useState(false);
-  const [createState, setCreateState] = useState(1);
   const [logoImg, setLogoImg] = useState("");
-  // const [collectionId, setCollectionId] =useState("");
   const [selectedColl, setSelectedColl] = useState({});
   let history = useHistory(); let dispatch = useDispatch();
   const [collectionId, setCollectionId] =useState("");
@@ -74,6 +68,7 @@ const Upload = ({ asset_id = null }) => {
   const [metaTemplateValues, setMetaTemplateValues] = useState([]);
   const [checkedFields, setCheckedFields] = useState([]);
   const [metaStr, setMetaStr] = useState("");
+  const [alertParam, setAlertParam] = useState({});
 
   useEffect(() => {
     if (collections && collections.length > 0) {
@@ -151,29 +146,25 @@ const Upload = ({ asset_id = null }) => {
 
       if(collections[index] && collections[index].metaData)
       {
-        let strMetaTemplate = collections[index].metaData.toString();
-        // console.log("meataDataTemplate = ", strMetaTemplate);
+        let MetaTemplateArry = collections[index].metaData;
+        // console.log("MetaTemplateArry = ", MetaTemplateArry);
 
         let templateFds = []; let i = 0;
         let vals = []; let tempVals = [], tempChecks  = [];
-        JSON.parse(strMetaTemplate, function (key, value) {
-          // console.log("key = ", key, "value = ", value);
-          if(typeof value === "object" && key !== "") 
-          {
-            templateFds.push({index: i, key: key, values: vals});
-            tempVals.push("");
-            tempChecks.push(true);
-            vals = [];
-            i++;
-          }
-          else if(typeof value === "string")
-          {
-            vals.push({value, text:value});
-          }
-          
-        });
 
-        console.log("templateFds = ", templateFds);
+        for(i=0; i<MetaTemplateArry.length; i++)
+        {
+          var subValues = MetaTemplateArry[i].value;
+          // console.log("typeof subValues = ", typeof subValues);
+          let j;
+          for(j=0; j<subValues.length; j++) vals.push({value : subValues[j], text: subValues[j] });
+          templateFds.push({index: i, key: MetaTemplateArry[i].key, values: vals });          
+          vals = [];
+          tempVals.push("");
+          tempChecks.push(true);
+        }
+
+        // console.log("templateFds = ", templateFds);
         
         setMetaTemplateFields(templateFds);
         setMetaTemplateValues(tempVals);
@@ -228,18 +219,25 @@ const Upload = ({ asset_id = null }) => {
             0);
           if (ret.success === true) 
           {
-            console.log("succeed in put on sale") ;         
+            console.log("succeed in put on sale") ;             
+            setAlertParam({state: "success", title:"Success", content:"You 've put a new item on sale."});      
+            setVisibleModal(true);   
+            return;
           }
           else {
-            console.log("failed in put on sale : ", ret.status);
+            console.log("failed in put on sale : ", ret.status);          
+            setAlertParam({state: "error", title:"Error", content:"Failed in put on sale."});      
+            setVisibleModal(true);    
+            return;
           }
         }
-        setCreateState(0); 
-        history.push("/");
+        setAlertParam({state: "success", title:"Success", content:"Uploading succeed."});      
+        setVisibleModal(true);
       })
       .catch(function (error) {
         console.log(error);
-        setCreateState(2);
+        setAlertParam({state: "error", title:"Error", content:"Uploading failed."});      
+        setVisibleModal(true);
       });
       
   }
@@ -248,17 +246,25 @@ const Upload = ({ asset_id = null }) => {
 
   const createItem = () => 
   {
-    setVisibleModal(true);
+    if(Object.keys(currentUsr).length === 0)
+    {
+      console.log("Invalid account.");
+      setAlertParam({state: "warning", title:"Warning", content:"You have to sign in before creting a item."});      
+      setVisibleModal(true);
+      return;
+    }
     if (collectionId === 0 || collectionId === undefined || collectionId === null) 
     {
-      setCreateState(3);
       console.log("Invalid collection id.");
+      setAlertParam({state: "warning", title:"Warning", content:"You have to select a collection."});      
+      setVisibleModal(true);
       return;
     }
     if (selectedFile == null) 
     {
-      setCreateState(5);
       console.log("Invalid file.");
+      setAlertParam({state: "warning", title:"Warning", content:"Image is not selected."});      
+      setVisibleModal(true);
       return;
     }
     const formData = new FormData();
@@ -267,7 +273,7 @@ const Upload = ({ asset_id = null }) => {
     formData.append("collectionName", collectionName);
     console.log(selectedFile);
 
-    setCreateState(1);
+    
     axios({
       method: "post",
       url: `${config.baseUrl}utils/upload_file`,
@@ -296,12 +302,13 @@ const Upload = ({ asset_id = null }) => {
         }
         params.auctionPeriod = !sale? 0 : period;
         params.metaData = metaStr;
-        setCreateState(1);
+        
         saveItem(params);
       })
       .catch(function (error) {
-        console.log(error);
-        setCreateState(2);
+        // console.log("single creation, file uploading error : ", error);
+        setAlertParam({state: "error", title:"Error", content:"Uploading failed."});      
+        setVisibleModal(true);
       });
   }
 
@@ -311,30 +318,21 @@ const Upload = ({ asset_id = null }) => {
     setPrice(0);
   }
 
-  const navigate2Next = () => {
-    history.push("/")
-  }
-  
   const setSelectedMetaValue = (x, index) =>
   {
-    // console.log(x);
-
     let valsforDisplay  = metaTemplateValues;
     valsforDisplay[index] = x;
     setMetaTemplateValues(valsforDisplay);
 
-    let metaString = "{", i=0;    
-    for(i = 0; i<checkedFields.length; i++)
-    {
-      if(checkedFields[i] === true)
-      {
-        if(i === checkedFields.length - 1) metaString += "\""+metaTemplateFields[i].key + "\" : \"" + valsforDisplay[i].value+"\"}";
-        else metaString += "\""+metaTemplateFields[i].key + "\" : \"" + valsforDisplay[i].value + "\", ";      
+    var list = [];
+    for (var i = 0; i < checkedFields.length; i++) {
+      if (checkedFields[i] === true) {
+        var temp = {}
+        temp[metaTemplateFields[i].key] = valsforDisplay[i].value;
+        list.push(JSON.stringify(temp));
       }
     }
-    setMetaStr(metaString);
-
-    console.log("metaString = ", metaString);
+    setMetaStr(list.toString());
   }
 
   const handleCheckFieldChange = (event, index) => {
@@ -344,22 +342,26 @@ const Upload = ({ asset_id = null }) => {
     let chFields = checkedFields;
     chFields[index] = event.target.checked;
     setCheckedFields(chFields);
-
-    // console.log("chFields = ", chFields);
-    let metaString = "{", i=0;    
-    for(i = 0; i<chFields.length; i++)
-    {
-      if(chFields[i] === true)
-      {
-        if(i === chFields.length - 1) metaString += "\""+metaTemplateFields[i].key + "\" : \"" + metaTemplateValues[i].value+"\"}";
-        else metaString += "\""+metaTemplateFields[i].key + "\" : \"" + metaTemplateValues[i].value + "\", ";      
+    
+    var list = [];
+    for (var i = 0; i < chFields.length; i++) {
+      if (chFields[i] === true) {
+        var temp = {}
+        temp[metaTemplateFields[i].key] = metaTemplateValues[i].value;
+        list.push(JSON.stringify(temp));
       }
     }
-    setMetaStr(metaString);
-
-    console.log("metaString = ", metaString);
-
+    setMetaStr(list.toString());
   };
+
+  const onOk = () => { 
+    setVisibleModal(false);
+    history.push("/");
+  }
+
+  const onCancel = () => {
+    setVisibleModal(false);
+  }
 
   return (
     <>
@@ -472,51 +474,51 @@ const Upload = ({ asset_id = null }) => {
                   </div>
                 </div>
               </div>
-              <div className={styles.options}>                
-              <div className={styles.category}>Choose collection</div>
+              <div className={styles.options}>
+                <div className={styles.category}>Choose collection</div>
                 <div className={styles.text}>
                   Choose an exiting collection or create a new one
                 </div>
-                <div className="row" style={{display:"flex"}}>
-                    <div style={{flex: 1}}>
-                      <Dropdown
-                        className={styles.dropdown}
-                        value={selectedColl}
-                        setValue={setSelectedColl}
-                        options={colls}
-                      />
-                    </div>
-                    <button
-                      className={cn("button-stroke", styles.button)}
-                      onClick={() => onSelectCollection(0)}                     
-                    >
-                      New Collection
-                    </button>
+                <div className="row" style={{ display: "flex" }}>
+                  <div style={{ flex: 1 }}>
+                    <Dropdown
+                      className={styles.dropdown}
+                      value={selectedColl}
+                      setValue={setSelectedColl}
+                      options={colls}
+                    />
+                  </div>
+                  <button
+                    className={cn("button-stroke", styles.button)}
+                    onClick={() => onSelectCollection(0)}
+                  >
+                    New Collection
+                  </button>
                 </div>
                 {
-                  metaTemplateFields && metaTemplateFields.length>0 &&
+                  metaTemplateFields && metaTemplateFields.length > 0 &&
                   metaTemplateFields.map((metaField, index) => (
-                    <div className="row" key={index}  style={{marginTop: "1rem"}} >
+                    <div className="row" key={index} style={{ marginTop: "1rem" }} >
                       <div >
                         <Checkbox
                           checked={checkedFields[index]}
                           onChange={(e) => handleCheckFieldChange(e, index)}
                           inputProps={{ 'aria-label': 'controlled' }}
-                        />                        
+                        />
                         {metaField.key}
                       </div>
-                      <div style={{flex: 1}}>
+                      <div style={{ flex: 1 }}>
                         <Dropdown
-                          className={styles.dropdown}                          
-                          value={ metaTemplateValues[index] }
-                          setValue={(x)=>{ setSelectedMetaValue(x, index) }}
+                          className={styles.dropdown}
+                          value={metaTemplateValues[index]}
+                          setValue={(x) => { setSelectedMetaValue(x, index) }}
                           options={metaTemplateFields[index].values}
                         />
                       </div>
-                     </div>
+                    </div>
                   ))
                 }
-                <div className={styles.option}  style={{marginTop: "2rem"}}>
+                <div className={styles.option} style={{ marginTop: "2rem" }}>
                   <div className={styles.box}>
                     <div className={styles.category}>Put on sale</div>
                     <div className={styles.text}>
@@ -528,42 +530,43 @@ const Upload = ({ asset_id = null }) => {
                 {
                   sale &&
                   <>
-                  <div className={styles.line}>
-                  <div className={styles.iconForPutSale}>
-                    <Icon name="coin" size="24" />
-                  </div>
-                  <div className={styles.details}>
-                    <div className={styles.info}>{instant ? "Instant sale price" : "Auction Sale"}</div>
-                    <div className={styles.textForPutSale}>
-                      Enter the price for which the item will be instanly sold
-                    </div>
-                  </div>
-                  <Switch className={styles.switch} value={instant} setValue={setInstant} />
-                  </div>
-                  <div className={styles.table}>
-                    <div className={styles.rowForSale}>
-                      <input className={styles.inputForSale} 
-                        type="number" min="0" step="0.001" defaultValue={0}
-                        value={price || ""} onChange={(e) => setPrice(e.target.value) } placeholder="Enter your price" />
-                      <div className={styles.colForSale} style={{ display: "flex", alignItems: "center" }}>AVAX</div>
-                    </div>
-                    {
-                      !instant ?
-                        <div className={styles.rowForSale}>
-                          <select className={styles.selectForSale} value={period} onChange={(event) => { setPeriod(event.target.value) }} placeholder="Please select auction time">
-                            <option value={7}>7 days</option>
-                            <option value={10}>10 days</option>
-                            <option value={30}>1 month</option>
-                          </select>
+                    <div className={styles.line}>
+                      <div className={styles.iconForPutSale}>
+                        <Icon name="coin" size="24" />
+                      </div>
+                      <div className={styles.details}>
+                        <div className={styles.info}>{instant ? "Instant sale price" : "Auction Sale"}</div>
+                        <div className={styles.textForPutSale}>
+                          Enter the price for which the item will be sold
                         </div>
-                        : <></>
-                    }                    
-                    <div className={styles.row} >
-                      <div className={styles.col}>Service fee</div>
-                      <div className={styles.col}>1.5%</div>
-                    </div>                    
-                  </div>
-                </>
+                      </div>
+                      <Switch className={styles.switch} value={instant} setValue={setInstant} />
+                    </div>
+                    <div className={styles.table}>
+                      <div className={styles.rowForSale}>
+                        <input className={styles.inputForSale}
+                          type="number" min="0" step="0.001" defaultValue={0}
+                          value={price || ""} onChange={(e) => setPrice(e.target.value)} placeholder="Enter your price" />
+                        <div className={styles.colForSale} style={{ display: "flex", alignItems: "center" }}>AVAX</div>
+                      </div>
+                      {
+                        !instant ?
+                          <div className={styles.rowForSale}>
+                            <select className={styles.selectForSale} value={period} onChange={(event) => { setPeriod(event.target.value) }} placeholder="Please select auction time">
+                              <option value={7}>7 days</option>
+                              <option value={10}>10 days</option>
+                              <option value={30}>1 month</option>
+                            </select>
+                          </div>
+                          :
+                          <></>
+                      }
+                      <div className={styles.row} >
+                        <div className={styles.col}>Service fee</div>
+                        <div className={styles.col}>1.5%</div>
+                      </div>
+                    </div>
+                  </>
                 }
                 {/* <div className={styles.option}>
                   <div className={styles.box}>
@@ -607,7 +610,7 @@ const Upload = ({ asset_id = null }) => {
         </div>
       </div>
       <Modal visible={visibleModal} onClose={() => setVisibleModal(false)}>
-        <FolowSteps className={styles.steps} state={createState} navigate2Next={navigate2Next} />
+        <Alert className={styles.steps} param={alertParam} okLabel="OK" onOk={onOk} onCancel={onCancel} />
       </Modal>
     </>
   );

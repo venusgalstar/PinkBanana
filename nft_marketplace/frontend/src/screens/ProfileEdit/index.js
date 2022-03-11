@@ -1,16 +1,14 @@
-import React, {createElement, useEffect, useState}from "react";
-// import { Link } from "react-router-dom";
+import React, {useEffect, useState}from "react";
 import cn from "classnames";
 import styles from "./ProfileEdit.module.sass";
 import Control from "../../components/Control";
 import TextInput from "../../components/TextInput";
 import TextArea from "../../components/TextArea";
 import Icon from "../../components/Icon";
-// import { useTable } from "react-table";
 import axios from "axios";
 import config from "../../config";
 import Modal from "../../components/Modal";
-import FolowSteps from "./FolowSteps";
+// import FolowSteps from "./FolowSteps";
 import { useHistory } from "react-router-dom";
 import { authSet } from "../../store/actions/auth.actions";
 import { useDispatch, useSelector } from 'react-redux';
@@ -19,6 +17,7 @@ import { signString } from "../../InteractWithSmartContract/interact";
 import Dropdown from "../../components/Dropdown";
 import { useParams } from "react-router-dom";
 import { getDetailedUserInfo } from "../../store/actions/auth.actions";
+import Alert from "../../components/Alert";
 
 const breadcrumbs = [
   {
@@ -44,8 +43,6 @@ const ProfileEdit = () => {
   const [createState, setCreateState] = useState(1);
   let history = useHistory();
   let dispatch = useDispatch();
-  const currentUsr = useSelector(state => state.auth.user);
-  const [signedString, setSignedString] = useState("");
   const [addSocial, setAddSocial] = useState(false);
   const [socialAccount, setSocialAccount] = useState("");
   const [socialType, setSocialType] = useState("");
@@ -55,11 +52,14 @@ const ProfileEdit = () => {
   const [saveMode, setSaveMode] = useState(0); //0: new, 1: update
   const [socialInputs, setSocialInputs]  = useState([]);
   const currentWalletAddress = useSelector(state => state.auth.currentWallet);
+  const [alertParam, setAlertParam] = useState({});
+  const regexForWebsite = /^((ftp|http|https):\/\/)?(www.)?(?!.*(ftp|http|https|www.))[a-zA-Z0-9_-]+(\.[a-zA-Z]+)+((\/)[\w#]+)*(\/\w+\?[a-zA-Z0-9_]+=\w+(&[a-zA-Z0-9_]+=\w+)*)?$/gm;
+  const regexForWallet = /^(0x[a-fA-F0-9]{40})$/gm;
 
   const socialTypes = [{ value: 1, text: "Email" }, { value: 2, text: "Discord" }, { value: 3, text: "Phone" },
   { value: 4, text: "Yutube" } ];
 
-  console.log("userId = ", userId, "currentWalletAddress = ", currentWalletAddress);
+  console.log("userId = ", userId, "address = ", address);
 
   useEffect( () =>
   {
@@ -86,14 +86,14 @@ const ProfileEdit = () => {
       setTwitterText(detailedUserInfo.twitter);
       setBioText(detailedUserInfo.userBio);      
       setSocials(detailedUserInfo.socials);
-      console.log("[in the useEffect] address = " , detailedUserInfo.address);
+      // console.log("[in the useEffect] address = " , detailedUserInfo.address);
     }else{
       setAddress(currentWalletAddress);
     }
   }, [detailedUserInfo])
 
-  console.log("[out of useEffect] currentUsr = " , currentUsr);
-  console.log("[out of useEffect] address = " , currentUsr.address);
+  // console.log("[out of useEffect] currentUsr = " , currentUsr);
+  // console.log("[out of useEffect] address = " , currentUsr.address);
 
   const changeAvatar = (event) => 
   {
@@ -146,103 +146,189 @@ const ProfileEdit = () => {
     });
   }
 
-  const saveItem = async (params) => 
+  const saveUser = async (params) => 
   {
-    if(saveMode === 0)
+    let signedString = ""; 
+    try{  
+      signedString =  await signString(address);
+    }catch(err)
     {
-      await axios({
-        method: "post",
-        url: `${config.baseUrl}users/create`,
-        data: params
-      })
-      .then(function (response) {
-        console.log(response);      
-        setCreateState(0);
-        doLogin(params.address, params.password);
-      })
-      .catch(function (error) {
-        console.log(error);
-        setCreateState(2);
-      });
-    }else if(saveMode === 1)
-    {      
-      await axios({
-        method: "put",
-        url: `${config.baseUrl}users/${detailedUserInfo._id}`,
-        data: params
-      })
-      .then(function (response) {
-        console.log(response);      
-        setCreateState(0);
-        history.push("/");
-      })
-      .catch(function (error) {
-        console.log(error);
-        setCreateState(2);
-      });
+      // alert("Failed to sign")
+      setAlertParam({state:"warning", title:"Warning", content:"Failed in metamask sign"});
+      setVisibleModal(true);
+      return;
+    }
+    if(signedString !== "" )
+    {
+      params.password = signedString;
+      if(saveMode === 0)
+      {
+        await axios({
+          method: "post",
+          url: `${config.baseUrl}users/create`,
+          data: params
+        })
+        .then(function (response) {
+          console.log(response);      
+          setCreateState(0);
+          doLogin(params.address, params.password);
+        })
+        .catch(function (error) {
+          console.log(error);
+          setCreateState(2);
+        });
+      }
+      if(saveMode === 1)
+      {      
+        await axios({
+          method: "put",
+          url: `${config.baseUrl}users/${detailedUserInfo._id}`,
+          data: params
+        })
+        .then(function (response) {
+          console.log(response);  
+          if(saveMode === 0) 
+          {
+            setAlertParam({state: "success", title:"Success", content:"Registering succeed."});
+            setVisibleModal(true);
+          }
+          else {
+            setAlertParam({state:"success", title:"Success", content:"Updating succeed."});
+            setVisibleModal(true);
+          }
+          history.push("/");
+        })
+        .catch(function (error) {
+          console.log(error);
+        });
+      }
     }
   }
 
   const onClickUpdate = async () =>
-  { 
-    setVisibleModal(true);    
-    let signedString = "";   
-    signedString =  await signString(address);
-    if(signedString !== "")
+  {     
+    const params = {};
+    if(address !== "") 
     {
-      if(selectedAvatarFile == null) 
+      let m; let correct = false;
+      while ((m = regexForWallet.exec(address)) !== null) 
       {
-        const params = {};
-        params.address = address;
-        params.username = nameText;
-        params.customURL = urlText;
-        params.avatar = logoImg;
-        params.userBio = bioText;
-        params.websiteURL = websiteText;
-        params.verified = true;
-        params.userImg = "";
-        params.password = signedString;
-        params.twitter = twitterText;
-        params.socials = socials;
-        setCreateState(1);
-        saveItem(params);
+        if (m.index === regexForWallet.lastIndex) {
+          regexForWallet.lastIndex++;
+        }
+        console.log("matched :"+m[0]);
+        if(m[0] === address) 
+        {
+          correct = true;
+          params.address = address;
+        }         
+      }      
+      if(!correct)         
+      {
+        setAlertParam({state:"warning", title:"Warning", content:"Invalid wallet address."});
+        setVisibleModal(true);
+        params.address = "";      
         return;
       }
-      const formData = new FormData();
-      formData.append("itemFile", selectedAvatarFile);
-      formData.append("authorId", "hch");
-      console.log(selectedAvatarFile);
-      
-      setCreateState(1);
-      await axios({
-        method: "post",
-        url: `${config.baseUrl}utils/upload_file`,
-        data: formData,
-        headers: { "Content-Type": "multipart/form-data" },
-      })
-      .then(function (response) 
-      {
-        // console.log(response);
-        const params = {};
-        params.address = address;
-        params.username = nameText;
-        params.customURL = urlText;
-        params.avatar = response.data.path;
-        params.userBio = bioText;
-        params.websiteURL = websiteText;
-        params.verified = true;
-        params.banner = "";
-        params.password = signedString;
-        params.twitter = twitterText;
-        params.socials = socials;
-        setCreateState(1);
-        saveItem(params);
-      })
-      .catch(function (error) {
-        console.log(error);
-        setCreateState(2);
-      });
+    }        
+    else params.address = "";
+    if(nameText === "" ) 
+    {
+      setAlertParam({state:"warning", title:"Warning", content:"Username can not be empty."});
+      setVisibleModal(true);
+      return;
     }
+    params.username = nameText;
+    if(urlText !== "") 
+    {
+      let m; let correct = false;
+      while ((m = regexForWebsite.exec(urlText)) !== null) 
+      {
+        if (m.index === regexForWebsite.lastIndex) {
+          regexForWebsite.lastIndex++;
+        }
+        console.log("matched :"+m[0]);
+        if(m[0] === urlText) 
+        {
+          correct = true;
+          params.customURL = urlText;
+        }         
+      }      
+      if(!correct)         
+      {
+        setAlertParam({state:"warning", title:"Warning", content:"Invalid custom url."});
+        setVisibleModal(true);
+        params.customURL = "";      
+        return;
+      }
+    }        
+    else params.customURL = "";
+    params.userBio = bioText;          
+    if(websiteText !== "") 
+    {
+      let m; let correct = false;
+      while ((m = regexForWebsite.exec(websiteText)) !== null) 
+      {
+        if (m.index === regexForWebsite.lastIndex) {
+          regexForWebsite.lastIndex++;
+        }
+        console.log("matched :"+m[0]);
+        if(m[0] === websiteText) 
+        {
+          correct = true;
+          params.websiteURL = websiteText;
+        }      
+      } 
+      if(!correct)
+      {
+        setAlertParam({state:"warning", title:"Warning", content:"Invalid website url."});
+        setVisibleModal(true);
+        params.websiteURL = "";       
+        return;
+      }            
+    }         
+    else params.websiteURL = "";                        
+    params.verified = true;
+    params.banner = "";
+    params.twitter = twitterText;
+    params.socials = socials;
+
+    if(selectedAvatarFile == null) 
+    {
+      if(saveMode === 1)
+      {
+        params.avatar = logoImg.split(config.imgUrl)[1];
+        saveUser(params);
+        return;
+      }else{
+        setAlertParam({state:"warning", title:"Warning", content:"Invalid logo."});
+        setVisibleModal(true);
+        return;
+      }
+    }
+    const formData = new FormData();
+    formData.append("itemFile", selectedAvatarFile);
+    formData.append("authorId", "hch");
+    console.log(selectedAvatarFile);
+    
+    setCreateState(1);
+    await axios({
+      method: "post",
+      url: `${config.baseUrl}utils/upload_file`,
+      data: formData,
+      headers: { "Content-Type": "multipart/form-data" },
+    })
+    .then(function (response) 
+    {
+      params.avatar = response.data.path;
+      saveUser(params);
+    })
+    .catch(function (error) {
+      console.log(error);
+      setAlertParam({state: "error", title:"Error", content:"Uploading failed."});      
+      setVisibleModal(true);
+    });
+
   }
 
   const onAddSocial = () =>
@@ -298,6 +384,13 @@ const ProfileEdit = () => {
     setSocials("");
   }
 
+  const onOk = () => { 
+    setVisibleModal(false);
+  }
+
+  const onCancel = () => {
+    setVisibleModal(false);
+  }
 
   return (
     <div className={styles.page}>
@@ -424,7 +517,7 @@ const ProfileEdit = () => {
                       {
                         (socialInputs && socialInputs.length > 0) && 
                         socialInputs.map((socialInfo, index) => (                                        
-                          <div className="row">     
+                          <div className="row" key={index}>     
                             <div style={{
                               width: "92%",
                               display: "inline-block"
@@ -469,13 +562,13 @@ const ProfileEdit = () => {
               </div>
               <div className={styles.note}>
                 To update your settings you should sign message through your
-                wallet. Click 'Update profile' then sign the message
+                wallet. Click {saveMode ===0 ? "'Register'" : "'Update'"} then sign the message
               </div>
               <div className={styles.btns}>
                 <button className={cn("button", styles.button)}
                   onClick={() => onClickUpdate()}
                 >
-                  Register
+                  {saveMode ===0 ? "Register" : "Update"}
                 </button>
                 <button className={styles.clear} onClick={()=>onCliearAll()}>
                   <Icon name="circle-close" size="24" />
@@ -487,7 +580,7 @@ const ProfileEdit = () => {
         </div>
       </div>      
       <Modal visible={visibleModal} onClose={() => setVisibleModal(false)}>
-        <FolowSteps className={styles.steps} state={createState} navigate2Next={navigate2Next}/>
+        <Alert className={styles.steps} param={alertParam} okLabel="Yes" onOk={onOk} onCancel={onCancel}/>
       </Modal>
       <Modal visible={addSocial} onClose={() => setAddSocial(false)} >               
         <div className={styles.field}>

@@ -4,6 +4,7 @@ const { io } = require("./socket");
 const mainnet_http_RPC = require("../env").mainnet_http_RPC;
 const pinkBananaFactoryABI = require("../env").pinkBananaFactoryABI;
 const pinkBananaFactoryAddress = require("../env").pinkBananaFactoryAddress;
+var ObjectId = require('mongodb').ObjectID;
 
 const db = require("./db");
 const User = db.User;
@@ -23,6 +24,9 @@ var PlaceTemp = {};
 var AcceptTemp = {};
 var BuyTemp = {};
 var EndTemp = {};
+var TransferTemp = {};
+var BurnTemp = {};
+var ChangePriceTemp = {};
 
 const compareObjects = (A, B) =>
 {
@@ -31,6 +35,7 @@ const compareObjects = (A, B) =>
     else{
         if(JSON.stringify(A) !== JSON.stringify(B)) return false;
     }
+    console.log("----------------- same event happend ----------------");
     return true;
 }
 
@@ -62,6 +67,9 @@ const getData = async () => {
             await AcceptBid_monitor(scanBlockNumber);
             await BuyNow_monitor(scanBlockNumber);
             await EndBid_monitor(scanBlockNumber);
+            await TransferNFT_monitor(scanBlockNumber);
+            await BurnNFT_monitor(scanBlockNumber);
+            await ChangePrice_monitor(scanBlockNumber);
             scanBlockNumber++;
         } catch (e) {
 
@@ -81,9 +89,11 @@ const CreateSale_monitor = async (blockNumber) => {
             for(i=0; i<event.length; i++)
             {
                 let data = event[i];
-                if (compareObjects(CreateTemp, data.returnValues) === false) 
+                let objTemp = data.returnValues;
+                objTemp.transactionHash = data.transactionHash;
+                if (compareObjects(CreateTemp, objTemp) === false) 
                 {
-                    CreateTemp = data.returnValues;
+                    CreateTemp = objTemp;
 
                     console.log("---------------------- CreateSale event --------------------")
                     console.log(data.returnValues);
@@ -105,19 +115,23 @@ const CreateSale_monitor = async (blockNumber) => {
                         param.auctionPrice = item_price;
                         param.auctionPeriod = interval;
                     }
-                    Item.findByIdAndUpdate(tokenHash, param).then(async (data) => {
+                    Item.findByIdAndUpdate(tokenHash, param).then( (data) => {
+                        
+                    let descriptionStr =  data.auctionPeriod === 0 ? 
+                    "An instnat sale is opened on " + data.name + " with price " + data.price
+                    : "An auction is opened on " + data.name + " with price " + data.price;
+                    
                         const new_notify = new Notify(
                         {
                             imgUrl: data.logoURL,
                             subTitle: "New sale is opened",
-                            description: (auctionPeriod === 0 ? "An instnat sale is opened on " + data.name + " with price " + price
-                                : "An auction is opened on " + data.name + " with price " + price),
+                            description: descriptionStr,
                             date: new Date(),
                             readers: [],
                             target_ids: [],
                             Type: 1
                         });
-                        await new_notify.save(function (err) {
+                        new_notify.save(function (err) {
                             if (!err) {
                             }
                         });
@@ -136,10 +150,7 @@ const CreateSale_monitor = async (blockNumber) => {
         }
 
     } catch (error) {
-        return {
-            success: false,
-            status: "Something went wrong 1: " + error.message,
-        };
+        console.log("Something went wrong 1: " + error.message)
     }
 }
 
@@ -152,25 +163,26 @@ const DestroySale_monitor = async (blockNumber) => {
             for(i=0; i<event.length; i++)
             {
                 let data = event[i];
-                if (compareObjects(DestroyTemp, data.returnValues) === false) 
+                let objTemp = data.returnValues;
+                objTemp.transactionHash = data.transactionHash;
+                if (compareObjects(DestroyTemp, objTemp) === false) 
                 {
-                    DestroyTemp = data.returnValues;
+                    DestroyTemp = objTemp;
 
                     console.log("----------------------DestroySale event--------------------")
                     console.log(data.returnValues);
 
                     var tokenHash = data.returnValues.tokenHash;
-                    var param = { price: 0 };
+                    var param = { };
 
-                    if (instant) {
-                        param.isSale = 0;
-                        param.price = 0;
-                    } else {
-                        param.isSale = 0;
-                        param.auctionPrice = 0;
-                        param.auctionPeriod = 0;
-                    }
+                    param.price = 0;
+                    param.isSale = 0;
+                    param.auctionPrice = 0;
+                    param.auctionPeriod = 0;
+
+                    console.log("before call findByIdAndUpdate()");
                     Item.findByIdAndUpdate(tokenHash, param).then((data) => {
+                        console.log("data = ", data)
                         const new_notify = new Notify(
                         {
                             imgUrl: data.logoURL,
@@ -187,8 +199,8 @@ const DestroySale_monitor = async (blockNumber) => {
                         });
                         io.sockets.emit("UpdateStatus", { type: "DESTROY_SALE" });
 
-                    }).catch(() => {
-                        ////res.send({ code: 1 });
+                    }).catch((err) => {
+                        console.log("destroy sale error : " + err)
                     });
 
                     console.log("---------------------- end of DestroySale event --------------------")
@@ -198,10 +210,7 @@ const DestroySale_monitor = async (blockNumber) => {
         }
 
     } catch (error) {
-        return {
-            success: false,
-            status: "Something went wrong 1: " + error.message,
-        };
+        console.log("Something went wrong 2: " + error.message)
     }
 }
 
@@ -214,9 +223,11 @@ const PlaceBid_monitor = async (blockNumber) => {
             for(i=0; i<event.length; i++)
             {
                 let data = event[i];
-                if (compareObjects(PlaceTemp, data.returnValues) === false) 
+                let objTemp = data.returnValues;
+                objTemp.transactionHash = data.transactionHash;
+                if (compareObjects(PlaceTemp, objTemp) === false) 
                 {
-                    PlaceTemp = data.returnValues;
+                    PlaceTemp = objTemp;
 
                     console.log("---------------------- PlaceBid event --------------------")
                     console.log(data.returnValues);
@@ -267,10 +278,7 @@ const PlaceBid_monitor = async (blockNumber) => {
         }
 
     } catch (error) {
-        return {
-            success: false,
-            status: "Something went wrong 1: " + error.message,
-        };
+        console.log("Something went wrong 3: " + error.message)
     }
 }
 
@@ -283,9 +291,11 @@ const AcceptBid_monitor = async (blockNumber) => {
             for(i=0; i<event.length; i++)
             {
                 let data = event[i];
-                if (compareObjects(AcceptTemp, data.returnValues) === false)
+                let objTemp = data.returnValues;
+                objTemp.transactionHash = data.transactionHash;
+                if (compareObjects(AcceptTemp, objTemp) === false)
                 {
-                    AcceptTemp = data.returnValues;
+                    AcceptTemp = objTemp;
 
                     console.log("---------------------- AcceptBid event --------------------")
                     console.log(data.returnValues);
@@ -357,10 +367,7 @@ const AcceptBid_monitor = async (blockNumber) => {
         }
 
     } catch (error) {
-        return {
-            success: false,
-            status: "Something went wrong 1: " + error.message,
-        };
+       console.log("Something went wrong 4: " + error.message)
     }
 }
 
@@ -373,9 +380,11 @@ const BuyNow_monitor = async (blockNumber) => {
             for(i=0; i<event.length; i++)
             {
                 let data = event[i];
-                if (compareObjects(BuyTemp, data.returnValues) === false) 
+                let objTemp = data.returnValues;
+                objTemp.transactionHash = data.transactionHash;
+                if (compareObjects(BuyTemp, objTemp) === false) 
                 {
-                    BuyTemp = data.returnValues;
+                    BuyTemp = objTemp;
 
                     console.log("---------------------- BuyNow event --------------------")
                     console.log(data.returnValues);
@@ -443,10 +452,7 @@ const BuyNow_monitor = async (blockNumber) => {
         }
 
     } catch (error) {
-        return {
-            success: false,
-            status: "Something went wrong 1: " + error.message,
-        };
+        console.log("Something went wrong 5: " + error.message)
     }
 }
 
@@ -460,9 +466,11 @@ const EndBid_monitor = async (blockNumber) => {
             for(i=0; i<event.length; i++)
             {
                 let data = event[i];
-                if (compareObjects(EndTemp, data.returnValues) === false)
+                let objTemp = data.returnValues;
+                objTemp.transactionHash = data.transactionHash;
+                if (compareObjects(EndTemp, objTemp) === false)
                 {
-                    EndTemp = data.returnValues;
+                    EndTemp = objTemp;
 
                     console.log("---------------------- EndBid event --------------------")
                     console.log(data.returnValues);
@@ -530,10 +538,201 @@ const EndBid_monitor = async (blockNumber) => {
         }
 
     } catch (error) {
-        return {
-            success: false,
-            status: "Something went wrong 1: " + error.message,
-        };
+        console.log("Something went wrong 6: " + error.message)
+    }
+}
+
+const TransferNFT_monitor = async (blockNumber) => {
+    try {
+        var event = await myContract.getPastEvents("TransferNFT", { fromBlock: blockNumber });
+        if (event.length > 0) 
+        {
+            let i;
+            for(i=0; i<event.length; i++)
+            {
+                let data = event[i];
+                let objTemp = data.returnValues;
+                objTemp.transactionHash = data.transactionHash;
+                if (compareObjects(TransferTemp, objTemp) === false) 
+                {
+                    TransferTemp = objTemp;
+                    
+                    console.log("---------------------- TransferNFT event --------------------")
+                    console.log(data.returnValues);
+
+                    var tokenHash = data.returnValues.tokenHash;
+                    var sender = data.returnValues.sender;
+                    var receiver = data.returnValues.receiver;
+
+                    var sender_id = await User.find({
+                        address:
+                            { $regex: new RegExp("^" + sender, "i") }
+                    }, { _id: 1 });
+                    sender_id = sender_id[0]._id;
+                    var receiver_id = await User.find({
+                        address:
+                            { $regex: new RegExp("^" + receiver, "i") }
+                    }, { _id: 1 });
+                    receiver_id = receiver_id[0]._id;
+                    
+                    await Item.findByIdAndUpdate(tokenHash, {
+                        owner: receiver_id,
+                        auctionPrice: 0,
+                        auctionPeriod: 0,
+                        bids: [],
+                        isSale: 0
+                    }).then((result) => {
+                        const new_notify = new Notify(
+                        {
+                            imgUrl: result.logoURL,
+                            subTitle: "NFT is transfered.",
+                            description: "Item " + result.name + " is transfered ",
+                            date: new Date(),
+                            readers: [],
+                            target_ids: [],
+                            Type: 8
+                        });
+                        new_notify.save(function (err) 
+                        {
+                            if (!err) {
+                            }
+                        });
+                        io.sockets.emit("UpdateStatus", { type: "TRANSFER_NFT" });
+                    })
+                    .catch((err) => {
+                        console.log("transferNFT error : ", err)
+                    })
+
+                    console.log("---------------------- end of TransferNFT event --------------------")
+                    console.log("");
+                }
+            }
+        }
+
+    } catch (error) {
+        console.log("Something went wrong 7: " + error.message)
+    }
+}
+
+const BurnNFT_monitor = async (blockNumber) => {
+    try {
+        var event = await myContract.getPastEvents("BurnNFT", { fromBlock: blockNumber });
+        if (event.length > 0) 
+        {
+            let i;
+            for(i=0; i<event.length; i++)
+            {
+                let data = event[i];
+                let objTemp = data.returnValues;
+                objTemp.transactionHash = data.transactionHash;
+                if (compareObjects(BurnTemp, objTemp) === false) 
+                {
+                    BurnTemp = objTemp;
+
+                    console.log("---------------------- BurnNFT event --------------------")
+                    console.log(data.returnValues);
+
+                    var tokenHash = data.returnValues.tokenHash;
+                    
+                    Item.findOneAndDelete({ _id: new ObjectId(tokenHash) }).then((data) => {
+                        const new_notify = new Notify(
+                        {
+                            imgUrl: "notify_icons/Item_deleted.png",
+                            subTitle: "A nft is burned.",
+                            description: "Item " + data.name + " is burned.",
+                            date: new Date(),
+                            readers: [],
+                            target_ids: [],
+                            Type: 4
+                        });
+                        new_notify.save(function (err) {
+                            if (!err) {
+                            }
+                        });
+                        io.sockets.emit("UpdateStatus", { type: "BURN_NFT" });
+
+                    }).catch(() => {
+                        ////res.send({ code: 1 });
+                    });
+
+                    console.log("---------------------- end of BurnNFT event --------------------")
+                    console.log("");
+                }
+            }
+        }
+
+    } catch (error) {
+       console.log("Something went wrong 8: " + error.message)        
+    }
+}
+
+const ChangePrice_monitor = async (blockNumber) => 
+{
+    try {
+        var event = await myContract.getPastEvents("ChangePrice", { fromBlock: blockNumber });
+        if (event.length > 0) 
+        {
+            let i;
+            for(i=0; i<event.length; i++)
+            {
+                let data = event[i];
+                let objTemp = data.returnValues;
+                objTemp.transactionHash = data.transactionHash;
+                if (compareObjects(ChangePriceTemp, objTemp) === false) 
+                {
+                    ChangePriceTemp = objTemp;
+
+                    console.log("---------------------- ChangePrice event --------------------")
+                    console.log(data.returnValues);
+
+                    var tokenHash = data.returnValues.tokenHash;
+                    var newPrice = data.returnValues.newPrice;
+                    var interval = Number(data.returnValues.interval) / (24 * 3600);
+
+                    var param = { price: 0 };
+                    let item_price = web3WS.utils.fromWei(newPrice !== null ? newPrice.toString() : '0', 'ether');
+
+                    if (interval == 0) {
+                        param.isSale = 1;
+                        param.price = item_price;
+                        param.auctionPeriod = 0;
+                        param.auctionPrice = 0;
+                    } else {
+                        param.isSale = 2;
+                        param.auctionPrice = item_price;
+                        param.auctionPeriod = interval;
+                    }
+
+                    await Item.findByIdAndUpdate(tokenHash, param)
+                    .then((result) => {
+                        const new_notify = new Notify(
+                        {
+                            imgUrl: result.logoURL,
+                            subTitle: "NFT's price updated.",
+                            description: "Item " + result.name + " 's price was changed ",
+                            date: new Date(),
+                            readers: [],
+                            target_ids: [],
+                            Type: 1
+                        });
+                        new_notify.save(function (err) {
+                            if (!err) {
+                            }
+                        });
+                        io.sockets.emit("UpdateStatus", { type: "CHANGE_PRICE" });
+                    })
+                    .catch((err) => {
+                        console.log("change price error : ", err)
+                    })
+
+                    console.log("---------------------- end of ChangePrice event --------------------")
+                    console.log("");
+                }
+            }
+        }
+
+    } catch (error) {
+        console.log("Something went wrong 9: " + error.message );
     }
 }
 
