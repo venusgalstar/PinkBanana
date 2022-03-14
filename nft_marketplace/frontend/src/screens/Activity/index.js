@@ -11,6 +11,8 @@ import { useSelector } from "react-redux";
 import { markAllAsRead } from "../../store/actions/notify.action";
 import config from "../../config";
 import moment from "moment";
+import { useHistory } from "react-router-dom";
+
 // import config from "../../config";
 
 const _breadcrumbs = [
@@ -56,6 +58,8 @@ const Activity = () => {
 
   const [breadcrumbs, setBreadCrumbs] = useState(_breadcrumbs);
 
+  const history = useHistory();
+
   useEffect(() => {
     var temp = breadcrumbs;
     temp[0].url += `/${currentUsr._id}`;
@@ -68,6 +72,7 @@ const Activity = () => {
   useEffect(() => {
     dispatch(getNotifiesByLimit(50, currentUsr._id))
   }, []);
+
 
   const onClickMarkAllAsRead = () => {
     if (notifiesList && notifiesList.length > 0) {
@@ -121,6 +126,9 @@ const Activity = () => {
     }
   }, [activeIndex])
 
+  const goDetail = (url) => {
+    history.push(url);
+  }
 
 
   return (
@@ -172,7 +180,7 @@ const Activity = () => {
                 {
                   (notifiesList && notifiesList.length > 0) ?
                     notifiesList.map((x, index) => (
-                      <div className={styles.item} key={index}>
+                      <div className={styles.item} key={index} onClick={() => { goDetail(x.url) }}>
                         <div className={styles.preview}>
                           <img src={config.imgUrl + x.imgUrl} alt="Notification" />
                           <div

@@ -7,6 +7,7 @@ module.exports = (mongoose) => {
           subTitle: String,
           description: String,
           date: Date,
+          url: String,
           readers: [
             {
               type: mongoose.Schema.Types.ObjectId,

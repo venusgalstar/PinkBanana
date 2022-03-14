@@ -1,222 +1,218 @@
 const db = require("../../db");
 const Follow = db.Follow;
 var ObjectId = require('mongodb').ObjectID;
-var User  = db.User;
+var User = db.User;
 var Item = db.Item;
 
-exports.toggleFollow = (req, res) => 
-{
+exports.toggleFollow = (req, res) => {
     var my_id = req.body.my_id;
     var target_id = req.body.target_id;
-    
-    Follow.find({
-        user_id: ObjectId(my_id),
-        target_id: ObjectId(target_id)
-    }).then((data) => {
-        if(data.length === 0)
+    console.log("")
+    console.log("[toggleFollow] req.body = ", req.body)
+    console.log("")
+    User.aggregate([
         {
-            // console.log("now creating...")
-            //no pair, so create it
-            var follow = new Follow({
-                user_id: ObjectId(my_id),
-                target_id: ObjectId(target_id)
+            $match: {
+                _id: ObjectId(target_id)
+            }
+        },
+        {
+            $project: {
+                is_follow: {
+                    $in: [ObjectId(my_id), "$follows"]
+                }
+            }
+        }
+    ]).then((data) => {
+
+        if (data.length == 0 || !data[0].is_follow) {
+            // push user 
+            User.updateOne({
+                _id: ObjectId(target_id)
+            }, {
+                $push: {
+                    follows: ObjectId(my_id)
+                }
+            }).then((data) => {
+                return res.send({ code: 0 });
+            }).catch(() => {
+                return res.send({ code: 1 });
+            });
+        } else if (data.length > 0 && data[0].is_follow) {
+            // pull user
+            User.update(
+                {
+                    _id: ObjectId(target_id)
+                }, {
+                $pull: {
+                    follows: ObjectId(my_id)
+                }
+            }
+            ).then(() => {
+                return res.send({ code: 0 });
+            }).catch(() => {
+                return res.send({ code: 1 });
             })
-            follow.save().then((data) => {
-                // const new_notify = new Notify(
-                // {
-                //     imgUrl : data.logoURL,
-                //     subTitle : "New collection is created.",
-                //     description: "Item "+data.name+" is created",
-                //     date : new Date(),
-                //     readers: [],
-                //     target_ids : [],
-                //     Type : 2
-                // });
-                // await new_notify.save(function(err)
-                // {
-                //     if(!err)
-                //     {
-                //         io.sockets.emit("Notification");
-                //     }
-                // });    
-                 res.status(200).send({ success: true, data: data, message: "Creating new follow succeed." });        
-            }).catch((error) => {
-                console.log("Creating new follow : error = ", error);
-                 res.status(500).send({ success: false, message: "Internal server error" });
-            });
         }
-        else {
-            // console.log("now deleting...")
-            //pair exiists, delete it
-            Follow.deleteMany({
-                user_id: ObjectId(my_id)
-            }).then(() => {
-                 res.status(200).send({ success: true, message: "Deleting a follow succeed." });        
-            }).catch((error) => {
-                console.log("Deleting a follow : error = ", error);
-                 res.status(500).send({ success: false, message: "Internal server error" });
-            });
-        }
-    }).catch((err) => {        
-        console.log("Finding a follow : error = ", err);
-        res.status(500).send({ success: false, message: "Internal server error" });
-    })
-    return;       
+    }).catch(() => {
+        return res.send({ code: 1 })
+    });
+
 }
 
-exports.getFollows = (req, res) => 
-{
-    var my_id = req.body.my_id;
-    var resultObjectArry=[]; var j;
-    Follow.find({user_id: new ObjectId(my_id) })
-    .then(async (docs) => {
-        if (docs !== null && docs !== undefined) 
-        {
-            // console.log("docs.length = ", docs.length);
-            for(j = 0; j<docs.length; j++)
-            {
-                var resultObject = {};
-                await User.find({_id: new ObjectId(docs[j].target_id)})
-                .then(async (docs) =>{
-                    // console.log(" secondary docs = ", docs);
-                    let targetsFollowers = 0; let targetGallery = [];
-                    if(docs.length === 0) {}
-                    else{
-                        resultObject.name = docs[0].username;
-                        resultObject.avatar = docs[0].avatar;
-                        resultObject.url = docs[0].customURL;
-                        resultObject.buttonClass = "blue";
-                        resultObject.buttonContent  = "Unfollow";    
+exports.getFollows = (req, res) => {
 
-                        await Follow.find({user_id: new ObjectId(my_id) })
-                        .then((docs) => {
-                            if(docs !== null) targetsFollowers =  docs.length;
-                            else targetsFollowers = 0;
-                        })
-                        .catch((err) => {targetsFollowers = 0;})
+    var my_id = req.body.my_id;
+    var resultObjectArry = []; var j;
+
+    // console.log("[getFollows] my_id = ", my_id);
+
+    User.findOne({ _id: new ObjectId(my_id) })
+        .then(async (docs) => {
+            // console.log("[getFollows]  docs ", docs);
+
+            // console.log("docs.follows = ", docs.follows);
+            let j;
+            for (j = 0; j < docs.follows.length; j++) {
+                var resultObject = {};
+                await User.findOne({ _id: new ObjectId(docs.follows[j]) })
+                    .then(async (docs) => {
+                        // console.log(" secondary docs = ", docs);
+                        let targetsFollowers = 0; let targetGallery = [];
+
+                        resultObject.name = docs.username;
+                        resultObject.avatar = docs.avatar;
+                        resultObject.url = docs.customURL;
+                        resultObject.id = docs._id;
+
+                        await User.find({ follows: new ObjectId(docs._id) })
+                            .then((data) => {
+                                if (data !== null) targetsFollowers = data.length;
+                                else targetsFollowers = 0;
+                            })
+                            .catch((err) => { targetsFollowers = 0; })
                         resultObject.counter = targetsFollowers;
 
-                        await Item.find({owner: new ObjectId(docs[0]._id)})
-                        .skip(0).limit(5)
-                        .then((docs) => {
-                            if(docs.length === 0) targetGallery = [];
-                            else for(i=0; i<docs.length; i++) 
-                                targetGallery.push(docs[i].logoURL);
-                        })
-                        .catch((err) => {
-                            targetGallery = [];
-                        })
+                        await Item.find({ owner: new ObjectId(docs._id) })
+                            .skip(0).limit(5)
+                            .then((data) => {
+                                if (data.length === 0) targetGallery = [];
+                                else for (i = 0; i < data.length; i++)
+                                    targetGallery.push(data[i].logoURL);
+                            })
+                            .catch((err) => {
+                                targetGallery = [];
+                            })
                         resultObject.gallery = targetGallery;
-                    }
-                })
-                .catch((err) =>
-                {
-                    resultObject = {};
-                })
+
+                    })
+                    .catch((err) => {
+                        resultObject = {};
+                    })
                 resultObjectArry.push(resultObject);
+                return res.status(200).send({ success: true, data: resultObjectArry, message: "success" });
             }
-             res.status(200).send({ success: true, data: resultObjectArry, message: "success" });
-        }
-        else  res.status(404).send({ success: false, data: [], message: "Can't find such follow." });
-    })
-    .catch((err) =>
-    {
-        console.log("Follow doesn't exisit" + err.message);
-         res.status(500).send({ success: false, message: "Internal server Error" });
-    })
+
+
+        })
+        .catch((err) => {
+            console.log("Follow doesn't exisit" + err.message);
+            return res.status(500).send({ success: false, message: "Internal server Error" });
+        })
+
 }
 
-exports.getFollowings = (req, res) => 
-{
+exports.getFollowings = (req, res) => {
     var my_id = req.body.my_id;
-    var resultObjectArry=[]; var j;
-    Follow.find({target_id: new ObjectId(my_id) })
-    .then(async (docs) => {
-        if (docs !== null && docs !== undefined) 
-        {
-            // console.log("docs.length = ", docs.length);
-            for(j = 0; j<docs.length; j++)
-            {
-                var resultObject = {};
-                await User.find({_id: new ObjectId(docs[j].user_id)})
-                .then(async (docs) =>{
-                    // console.log(" secondary docs = ", docs);
-                    let targetsFollowers = 0; let targetGallery = [];
-                    if(docs.length === 0) {}
-                    else{
-                        resultObject.name = docs[0].username;
-                        resultObject.avatar = docs[0].avatar;
-                        resultObject.url = docs[0].customURL;
-                        resultObject.buttonClass = "transparent";
-                        resultObject.buttonContent  = "";    
+    var resultObjectArry = []; var j;
+    // console.log("[getFollowings] my_id = ", my_id);
 
-                        await Follow.find({user_id: new ObjectId(my_id) })
-                        .then((docs) => {
-                            if(docs !== null) targetsFollowers =  docs.length;
-                            else targetsFollowers = 0;
-                        })
-                        .catch((err) => {targetsFollowers = 0;})
-                        resultObject.counter = targetsFollowers;
+    User.find({ follows: new ObjectId(my_id) })
+        .then(async (docs) => {
+            // console.log("[getFollowings]  docs ", docs);
 
-                        await Item.find({owner: new ObjectId(docs[0]._id)})
-                        .skip(0).limit(5)
-                        .then((docs) => {
-                            if(docs.length === 0) targetGallery = [];
-                            else for(i=0; i<docs.length; i++) 
-                                targetGallery.push(docs[i].logoURL);
+            if (docs.length > 0) {
+                // console.log("docs.length = ", docs.length);
+                for (j = 0; j < docs.length; j++) {
+                    var resultObject = {};
+                    await User.findOne({ _id: new ObjectId(docs[j]._id) })
+                        .then(async (docs) => {
+                            // console.log(" secondary docs = ", docs);
+                            let targetsFollowers = 0; let targetGallery = [];
+
+                            resultObject.name = docs.username;
+                            resultObject.avatar = docs.avatar;
+                            resultObject.url = docs.customURL;
+                            resultObject.id = docs._id;
+
+                            await User.find({ follows: new ObjectId(docs._id) })
+                                .then((data) => {
+                                    if (data !== null) targetsFollowers = data.length;
+                                    else targetsFollowers = 0;
+                                })
+                                .catch((err) => { targetsFollowers = 0; })
+                            resultObject.counter = targetsFollowers;
+
+                            await Item.find({ owner: new ObjectId(docs._id) })
+                                .skip(0).limit(5)
+                                .then((data) => {
+                                    if (data.length === 0) targetGallery = [];
+                                    else for (i = 0; i < data.length; i++)
+                                        targetGallery.push(data[i].logoURL);
+                                })
+                                .catch((err) => {
+                                    targetGallery = [];
+                                })
+                            resultObject.gallery = targetGallery;
+
                         })
                         .catch((err) => {
-                            targetGallery = [];
+                            resultObject = {};
                         })
-                        resultObject.gallery = targetGallery;
-                    }
-                })
-                .catch((err) =>
-                {
-                    resultObject = {};
-                })
-                resultObjectArry.push(resultObject);
+                    resultObjectArry.push(resultObject);
+                }
+                return res.status(200).send({ success: true, data: resultObjectArry, message: "success" });
             }
-             res.status(200).send({ success: true, data: resultObjectArry, message: "success" });
-        }
-        else  res.status(404).send({ success: false, data: [], message: "Can't find such follow." });
-    })
-    .catch((err) =>
-    {
-        console.log("Follow doesn't exisit" + err.message);
-         res.status(500).send({ success: false, message: "Internal server Error" });
-    })
+            else return res.status(200).send({ success: true, data: resultObjectArry, message: "success" });
+        })
+        .catch((err) => {
+            console.log("Follow doesn't exisit" + err.message);
+            return res.status(500).send({ success: false, message: "Internal server Error" });
+        })
 }
 
-exports.isExists = (req, res) =>
-{
+
+
+
+
+exports.isExists = (req, res) => {
     var user_id = req.body.user_id;
     var target_id = req.body.target_id;
     // console.log(user_id, target_id);
     Follow.find(
         {
             $or:
-            [
-                {user_id: new ObjectId(user_id), target_id: new ObjectId(target_id)},
-                {target_id: new ObjectId(user_id), user_id: new ObjectId(target_id)}
-            ]
+                [
+                    { user_id: new ObjectId(user_id), target_id: new ObjectId(target_id) },
+                    { target_id: new ObjectId(user_id), user_id: new ObjectId(target_id) }
+                ]
         }
     )
-    .then((docs) => {
-        // console.log("docs = ", docs);
-        if(docs.length>0)
-            res.status(200).send({
-                success: true, data: true, message:"Pair exists"
+        .then((docs) => {
+            // console.log("docs = ", docs);
+            if (docs.length > 0)
+                return res.status(200).send({
+                    success: true, data: true, message: "Pair exists"
+                })
+            else {
+                return res.status(200).send({
+                    success: true, data: false, message: "No such pair"
+                })
+            }
+        })
+        .catch((err) => {
+            return res.status(200).send({
+                success: false, message: "Internal server error"
             })
-        else{            
-            res.status(200).send({
-                success: true, data: false, message:"No such pair"
-            })
-        }
-    })
-    .catch((err)=>{        
-        res.status(200).send({
-            success: false,  message:"Internal server error"
-        })        
-    })
+        })
 }

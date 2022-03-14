@@ -94,14 +94,14 @@ const Profile = () =>
   const {userId} = useParams();  //taget_id in making follow
   const [start, setStart] = useState(0);
   const [last, setLast] = useState(8);
-  const following  = useSelector(state => state.follow.followlist);
-  const followers  = useSelector(state => state.follow.followinglist);
-  const detailedUserInfo = useSelector(state => state.auth.detail);
+  const following  = useSelector(state => state.follow.followinglist);
+  const followers  = useSelector(state => state.follow.followlist);
+  const detailedUserInfo = useSelector(state => state.auth.otherUser);
   const history = useHistory();
 
   useEffect(() =>
   {
-    dispatch(getDetailedUserInfo(userId));
+    dispatch(getDetailedUserInfo(userId, false));
   }, [userId])
 
   const changeFile = (e) =>
@@ -295,11 +295,11 @@ const Profile = () =>
                 )}
                 {activeIndex === 4 && (
                   //following
-                  <Followers className={styles.followers} items={following} />
+                  <Followers className={styles.followers} items={following} buttonContent="Unfollow" />
                 )}
                 {activeIndex === 5 && (
                   //Followers
-                  <Followers className={styles.followers} items={followers} />
+                  <Followers className={styles.followers} items={followers} buttonContent="" />
                 )}
               </div>
             </div>

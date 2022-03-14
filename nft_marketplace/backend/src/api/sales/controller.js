@@ -18,8 +18,8 @@ exports.buy = (req, res) => {
     });
     saleInfo.save().then(async (data) => {
         await changeItemsOwner(item, owner);
-        res.send({ code: 0, data: data });
+        return res.send({ code: 0, data: data });
     }).catch((err) => {
-        res.status(500).send({ code: 1, data: {} });
+        return res.status(500).send({ code: 1, data: {} });
     });
 }

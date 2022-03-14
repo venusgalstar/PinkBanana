@@ -15,15 +15,15 @@ exports.setBid = (req, res) => {
         if (bids.length == 0 || bids[bids.length - 1].price < price) {
             bids.push({ user_id: ObjectId(user_id), price: price, Time: Date.now() });
             Item.findByIdAndUpdate(item_id, { bids: bids }).then((data) => {
-                res.send({ code: 0, data: data });
+                return res.send({ code: 0, data: data });
             }).catch(() => {
-                res.send({ code: 1, data: [], message: "update error" });
+                return res.send({ code: 1, data: [], message: "update error" });
             })
         } else {
-            res.send({ code: 1, data: [], message: "price must be higer than prev bid's" });
+            return res.send({ code: 1, data: [], message: "price must be higer than prev bid's" });
         }
     }).catch((error) => {
-        res.send({ code: 1, data: [], message: "find error" });
+        return res.send({ code: 1, data: [], message: "find error" });
     });
 
 }
@@ -44,9 +44,9 @@ exports.getHotBids = (req, res) => {
             as: "info"
         }
     }]).limit(limit).then((data) => {
-        res.send({ code: 0, list: data });
+        return res.send({ code: 0, list: data });
     }).catch((error) => {
-        res.send({ code: 1, list: [] });
+        return res.send({ code: 1, list: [] });
     });
 }
 
@@ -56,7 +56,7 @@ exports.acceptBid = (req, res) => {
 
         var bids = data.bids;
         if (bids.length == 0) {
-            res.send({ code: 1, message: "no bids" });
+            return res.send({ code: 1, message: "no bids" });
         }
         var price = bids[bids.length - 1].price;
         var owner = data.owner;
@@ -80,10 +80,10 @@ exports.acceptBid = (req, res) => {
         });
         promise.push(sale.save());
         Promise.all(promise).then((result)=>{
-            res.send({code: 0, data: result});
+            return res.send({code: 0, data: result});
         });
     }).catch(() => {
-        res.send({ code: 1 });
+        return res.send({ code: 1 });
     })
 
 }

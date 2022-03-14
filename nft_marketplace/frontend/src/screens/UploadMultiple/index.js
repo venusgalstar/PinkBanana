@@ -15,10 +15,12 @@ import { getCollections } from "../../store/actions/collection.actions";
 import { batchMintOnSale } from "../../InteractWithSmartContract/interact";
 import Checkbox from '@mui/material/Checkbox';
 import Alert from "../../components/Alert";
+import Backdrop from '@mui/material/Backdrop';
+import CircularProgress from '@mui/material/CircularProgress';
 
-const royaltiesOptions = [{value:10, text: "10%"}, {value:20, text: "20%"}, {value:30, text: "30%"}];
+const royaltiesOptions = [{ value: 10, text: "10%" }, { value: 20, text: "20%" }, { value: 30, text: "30%" }];
 
-const Upload = ({asset_id = null}) => {
+const Upload = ({ asset_id = null }) => {
   const [textName, setTextName] = useState("");
   const [textDescription, setTextDescription] = useState("");
   const [textSize, setTextSize] = useState("");
@@ -32,10 +34,10 @@ const Upload = ({asset_id = null}) => {
   const [visiblePreview, setVisiblePreview] = useState(false);
   const [logoImg, setLogoImg] = useState("");
   const [sel_files, setSelFiles] = useState([]);
-  const [collectionId, setCollectionId] =useState("");
+  const [collectionId, setCollectionId] = useState("");
   const [selectedColl, setSelectedColl] = useState({});
   let history = useHistory(); let dispatch = useDispatch();
-  const currentUsr  = useSelector(state=>state.auth.user);
+  const currentUsr = useSelector(state => state.auth.user);
   const collections = useSelector(state => state.collection.list);
   const getConsideringCollectionId = useSelector(state => state.collection.consideringId);
   const [instant, setInstant] = useState(false);
@@ -47,6 +49,7 @@ const Upload = ({asset_id = null}) => {
   const [checkedFields, setCheckedFields] = useState([]);
   const [metaStr, setMetaStr] = useState("");
   const [alertParam, setAlertParam] = useState({});
+  const [processing, setProcessing] = useState(false);
 
   useEffect(() => {
     if (collections && collections.length > 0) {
@@ -65,83 +68,75 @@ const Upload = ({asset_id = null}) => {
     dispatch(getCollections(90, currentUsr._id))
   }, [dispatch, currentUsr._id]);
 
-  useEffect(()=>{
-    if(asset_id === 0 || asset_id === null) return;
+  useEffect(() => {
+    if (asset_id === 0 || asset_id === null) return;
     console.log("[useEffect] asset_id = ", asset_id);
     axios({
       method: "get",
       url: `${config.baseUrl}item/${asset_id}`,
     })
-    .then(function (response) {
-      console.log("get", response);
-      var item = response.data.data;
-      // setItemId(item._id);
-      setTextName(item.name);
-      setTextDescription(item.description);
-      setTextProperty(item.royalty);
-      setRoyalties(item.royalty);
-      setLogoImg(`${config.baseUrl}utils/view_file/${item.logoURL}`);
-    })
-    .catch(function (error) {
-      console.log(error);
-    });
+      .then(function (response) {
+        console.log("get", response);
+        var item = response.data.data;
+        // setItemId(item._id);
+        setTextName(item.name);
+        setTextDescription(item.description);
+        setTextProperty(item.royalty);
+        setRoyalties(item.royalty);
+        setLogoImg(`${config.baseUrl}utils/view_file/${item.logoURL}`);
+      })
+      .catch(function (error) {
+        console.log(error);
+      });
 
   }, [asset_id]);
 
-  const onSelectCollection = (collId) =>
-  {
-    if(collId  !== null && collId !== "")
-    {
-      if(collId === 0)
-      {
+  const onSelectCollection = (collId) => {
+    if (collId !== null && collId !== "") {
+      if (collId === 0) {
         //create new collection
         localStorage.setItem("isNewItemCreating", "true");
         localStorage.setItem("previousPageURL", "/upload-multiple/0");
         history.push("/createCollection")
       }
-      else if(collId>0){
+      else if (collId > 0) {
         //add this new item to selected collection
         setCollectionId(collId);
       }
     }
   }
 
-  useEffect(() => 
-  {    
+  useEffect(() => {
     setCollectionId(selectedColl.value);
     setCollectionName(selectedColl.text);
   }, [selectedColl])
 
-  useEffect(() =>
-  {
-    if(collectionId !== undefined &&  collections && collections.length>0)
-    {
+  useEffect(() => {
+    if (collectionId !== undefined && collections && collections.length > 0) {
       // console.log("collections = ", collections);
       var index = collections.findIndex((element) => {
         return element._id == collectionId
       });
 
-      if(collections[index] && collections[index].metaData)
-      {
+      if (collections[index] && collections[index].metaData) {
         let MetaTemplateArry = collections[index].metaData;
         // console.log("meataDataTemplate = ", strMetaTemplate);
 
         let templateFds = []; let i = 0;
-        let vals = []; let tempVals = [], tempChecks  = [];
+        let vals = []; let tempVals = [], tempChecks = [];
 
-        for(i=0; i<MetaTemplateArry.length; i++)
-        {
+        for (i = 0; i < MetaTemplateArry.length; i++) {
           var subValues = MetaTemplateArry[i].value;
           let j;
-          for(j=0; j<subValues.length; j++) vals.push({value : subValues[j], text: subValues[j] });
-          templateFds.push({index: i, key: MetaTemplateArry[i].key, values: vals });          
+          for (j = 0; j < subValues.length; j++) vals.push({ value: subValues[j], text: subValues[j] });
+          templateFds.push({ index: i, key: MetaTemplateArry[i].key, values: vals });
           vals = [];
           tempVals.push("");
           tempChecks.push(true);
         }
 
         console.log("templateFds = ", templateFds);
-        
+
         setMetaTemplateFields(templateFds);
         setMetaTemplateValues(tempVals);
         setCheckedFields(tempChecks);
@@ -149,22 +144,25 @@ const Upload = ({asset_id = null}) => {
     }
   }, [collectionId, collections]);
 
-  useEffect(() =>
-  {    
+  useEffect(() => {
     let flag = "";
     flag = localStorage.getItem("isNewItemCreating");
-    if(flag)
-    {
+    if (flag) {
       setCollectionId(getConsideringCollectionId);
-      localStorage.removeItem("isNewItemCreating"); 
+      localStorage.removeItem("isNewItemCreating");
     }
   }, [])
 
-  const changeFile = (event) => 
-  {
+  const changeFile = (event) => {
     var file = event.target.files[0];
-    if(file == null) return;
+    if (file == null) return;
     console.log(file);
+    if(event.target.files.length >= 50)
+    {      
+      setAlertParam({ state: "warning", title: "Warning", content: "You can not upload more than 50 files at once." });
+      setVisibleModal(true);
+      return;
+    }
     setSelFiles([...event.target.files]);
     setSelectedFile(file);
     let reader = new FileReader();
@@ -175,140 +173,147 @@ const Upload = ({asset_id = null}) => {
     reader.onerror = function (error) {
     }
   }
-    
+
   const saveMultipleItem = (params, paths) => {
     let names = []; let i;
-    for(i=0; i<paths.length; i++)
-      names.push(textName + " #" + `${i+1}`.padStart(3, 0));
+    for (i = 0; i < paths.length; i++)
+      names.push(textName + " #" + `${i + 1}`.padStart(3, 0));
     axios({
       method: "post",
       url: `${config.baseUrl}item/multiple_create`,
-      data: {params, names, paths}
+      data: { params, names, paths }
     })
-    .then(async function (response) 
-    {
-      console.log("response = ", response);
-      if(response.status === 200 && params.isSale !== 0)
-      {
-        var aucperiod = (params.isSale === 1 ? 0 : params.auctionPeriod) ;
-        var price = (params.isSale === 1  ? params.price :  params.auctionPrice)
-        let ret = await batchMintOnSale(
-          currentUsr.address, 
-          response.data, 
-          aucperiod*24*3600 , 
-          price,
-          0);
-        if (ret.success === true) 
-        {
-          console.log("succeed in put on sale") ;   
-          setAlertParam({state: "success", title:"Success", content:"You 've put new items on sale."});      
-          setVisibleModal(true);       
-          return;
+      .then(async function (response) {
+        console.log("response = ", response);
+        if (response.status === 200 && params.isSale !== 0) {
+          var aucperiod = (params.isSale === 1 ? 0 : params.auctionPeriod);
+          var price = (params.isSale === 1 ? params.price : params.auctionPrice);
+          setProcessing(true);
+          try{
+            let ret = await batchMintOnSale(
+              currentUsr.address,
+              response.data,
+              aucperiod * 24 * 3600,
+              price,
+              0);
+            if (ret.success === true) {
+              setProcessing(false);
+              console.log("succeed in put on sale");
+              setAlertParam({ state: "success", title: "Success", content: "You 've put new items on sale." });
+              setVisibleModal(true);
+              return;
+            }
+            else {
+              setProcessing(false);
+              console.log("failed in put on sale : ", ret.status);
+              setAlertParam({ state: "error", title: "Error", content: "Failed in put on sale." });
+              setVisibleModal(true);
+              return;
+            }
+          }catch(err)
+          {
+            setProcessing(false);
+            console.log("multiple uploading error : ", err.message);
+          }
         }
-        else {
-          console.log("failed in put on sale : ", ret.status);          
-          setAlertParam({state: "error", title:"Error", content:"Failed in put on sale."});      
-          setVisibleModal(true);    
-          return;
-        }        
-      }          
-      setAlertParam({state: "success", title:"Success", content:"Uploading succeed."});      
-      setVisibleModal(true);
+        setAlertParam({ state: "success", title: "Success", content: "Uploading succeed." });
+        setVisibleModal(true);
 
-    })
-    .catch(function (error) {
-      console.log("multiple uploading error : ", error);
-      setAlertParam({state: "error", title:"Error", content:"Uploading failed."});      
-      setVisibleModal(true);
-    });
+      })
+      .catch(function (error) {
+        console.log("multiple uploading error : ", error);
+        setAlertParam({ state: "error", title: "Error", content: "Uploading failed." });
+        setVisibleModal(true);
+      });
   }
 
-  const createItem = () => 
-  {
+  const createItem = () => {
     // console.log("currentUser = ", currentUsr);
-    if(Object.keys(currentUsr).length === 0)
-    {
+    if (Object.keys(currentUsr).length === 0) {
       console.log("Invalid account.");
-      setAlertParam({state: "warning", title:"Warning", content:"You have to sign in before creting a item."});      
+      setAlertParam({ state: "warning", title: "Warning", content: "You have to sign in before creting a item." });
       setVisibleModal(true);
       return;
-    }    
-    if(collectionId === 0 || collectionId === undefined || collectionId === null)
-    {
+    }
+    if (collectionId === 0 || collectionId === undefined || collectionId === null) {
       console.log("Invalid collection id.");
-      setAlertParam({state: "warning", title:"Warning", content:"You have to select a collection."});      
+      setAlertParam({ state: "warning", title: "Warning", content: "You have to select a collection." });
       setVisibleModal(true);
       return;
     }
-    if(selectedFile === null) 
-    {
+    if (selectedFile === null) {
       console.log("Invalid file.");
-      setAlertParam({state: "warning", title:"Warning", content:"Image is not selected."});      
+      setAlertParam({ state: "warning", title: "Warning", content: "Image is not selected." });
       setVisibleModal(true);
       return;
     }
-    if(sel_files.length >0 && sel_files.length<100) 
-    {            
+
+    if (sel_files.length > 0 && sel_files.length < 50) {
       console.log("sel_files = ", sel_files);
       var formData = new FormData();
-      sel_files.forEach((file, index) =>
-      {
-        formData.append("fileItem"+index.toString(), file);
-      })
+
+      // sel_files.forEach((file, index) => {
+      //   formData.append("fileItem" + index.toString(), file);
+      // })
+
+      for (var i = 0; i < sel_files.length; i++) {
+        formData.append("fileItem" + i.toString(), sel_files[i]);
+      }
+
+
       formData.append("fileArryLength", sel_files.length);
-      formData.append("authorId", "hch");
       formData.append("collectionName", collectionName);
-      console.log("uploading multiple files...");
-    
+      console.log("uploading multiple files...:", formData);
+
       axios({
         method: "post",
         url: `${config.baseUrl}utils/upload_multiple_file`,
         data: formData,
         headers: { "Content-Type": "multipart/form-data" },
       })
-      .then(function (response) {
-        console.log("Mutiple upload response : ", response.data.paths);
-        let params = {};
-        params.itemLogoURL = response.data.path;
-        params.itemDescription = textDescription;
-        params.itemProperty = textProperty;
-        params.itemSize = textSize;
-        params.itemRoyalty = royalties.value;
-        params.collectionId = collectionId;
-        params.creator = currentUsr._id;
-        params.owner = currentUsr._id;
-        params.isSale = !sale? 0 : (instant? 1: 2);
-        if(instant) {
-          params.price = !sale? 0 : price;
-          params.auctionPrice = 0;
-        }else {
-          params.auctionPrice = !sale? 0 : price;
-          params.price = 0;
-        }
-        params.auctionPeriod = !sale? 0 : period;
-        params.metaData = metaStr;
-        saveMultipleItem(params, response.data.paths);
-      })
-      .catch((err) =>{
-        // console.log("mutiple creation, file uploading error : ", err);
-        setAlertParam({state: "error", title:"Error", content:"Uploading failed."});      
-        setVisibleModal(true);
-      });
+        .then(function (response) {
+          console.log("Mutiple upload response : ", response.data.paths);
+          let params = {};
+          params.itemLogoURL = response.data.path;
+          params.itemDescription = textDescription;
+          params.itemProperty = textProperty;
+          params.itemSize = textSize;
+          params.itemRoyalty = royalties.value;
+          params.collectionId = collectionId;
+          params.creator = currentUsr._id;
+          params.owner = currentUsr._id;
+          params.isSale = !sale ? 0 : (instant ? 1 : 2);
+          if (instant) {
+            params.price = !sale ? 0 : price;
+            params.auctionPrice = 0;
+          } else {
+            params.auctionPrice = !sale ? 0 : price;
+            params.price = 0;
+          }
+          params.auctionPeriod = !sale ? 0 : period;
+          params.metaData = metaStr;
+          saveMultipleItem(params, response.data.paths);
+        })
+        .catch((err) => {
+          // console.log("mutiple creation, file uploading error : ", err);
+          setAlertParam({ state: "error", title: "Error", content: "Uploading failed." });
+          setVisibleModal(true);
+        });
     }
   }
 
-  const clearAll = () =>
-  {
+  const clearAll = () => {
     setSelectedFile(null);
     setTextName("");
     setPrice(0);
+    setSelFiles([]);
+    document.getElementById("fileInput1").value = "";
   }
-  
-  const setSelectedMetaValue = (x, index) =>
-  {
+
+  const setSelectedMetaValue = (x, index) => {
     // console.log(x);
 
-    let valsforDisplay  = metaTemplateValues;
+    let valsforDisplay = metaTemplateValues;
     valsforDisplay[index] = x;
     setMetaTemplateValues(valsforDisplay);
 
@@ -344,9 +349,8 @@ const Upload = ({asset_id = null}) => {
 
   };
 
-  const onOk = () => { 
+  const onOk = () => {
     setVisibleModal(false);
-    history.push("/");
   }
 
   const onCancel = () => {
@@ -367,7 +371,7 @@ const Upload = ({asset_id = null}) => {
                 onClick={() => history.push("/upload-details/0")}
               >
                 "Switch to Single"
-              </button>              
+              </button>
             </div>
             <form className={styles.form} action="">
               <div className={styles.list}>
@@ -381,16 +385,16 @@ const Upload = ({asset_id = null}) => {
                       <Icon name="upload-file" size="24" />
                     </div>
                     <div className={styles.format}>
-                      {                 
-                        sel_files.length > 0 ? 
-                          `You selected ${sel_files.length} files.`   
-                        :                    
-                          "PNG, GIF, WEBP, MP4 or MP3. Max 1Gb."                          
+                      {
+                        sel_files.length > 0 ?
+                          `You selected ${sel_files.length} files.`
+                          :
+                          "PNG, GIF, WEBP, MP4 or MP3. Max 1Gb."
                       }
                     </div>
-                      <input className={styles.load} type="file" onChange={changeFile}
-                        accept="image/*, video/*" multiple
-                      />
+                    <input className={styles.load} type="file" id="fileInput1" name="file[]"  onChange={changeFile}
+                      accept="image/*, video/*" multiple
+                    />
                   </div>
                 </div>
                 <div className={styles.item}>
@@ -402,7 +406,7 @@ const Upload = ({asset_id = null}) => {
                       name="Item"
                       type="text"
                       value={textName}
-                      onChange={(event)=>{
+                      onChange={(event) => {
                         setTextName(event.target.value);
                       }}
                       placeholder='e. g. Redeemable Bitcoin Card with logo"'
@@ -415,15 +419,15 @@ const Upload = ({asset_id = null}) => {
                       type="text"
                       placeholder="e. g. “After purchasing you will able to recived the logo...”"
                       value={textDescription}
-                      onChange={(event)=>{
+                      onChange={(event) => {
                         setTextDescription(event.target.value);
                       }}
                       required
                     />
-                    <div className={styles.row}>
+                    {/* <div className={styles.row}>
                       <div className={styles.col}>
                         <div className={styles.field}>
-                          <div className={styles.label} style={{marginTop:"12px"}}>Royalties</div>
+                          <div className={styles.label} style={{ marginTop: "12px" }}>Royalties</div>
                           <Dropdown
                             className={styles.dropdown}
                             value={royalties}
@@ -439,7 +443,7 @@ const Upload = ({asset_id = null}) => {
                           name="Size"
                           type="number"
                           value={textSize}
-                          onChange={(event)=>{
+                          onChange={(event) => {
                             setTextSize(event.target.value);
                           }}
                           placeholder="e. g. Size"
@@ -453,24 +457,24 @@ const Upload = ({asset_id = null}) => {
                           name="Propertie"
                           type="text"
                           value={textProperty}
-                          onChange={(event)=>{
+                          onChange={(event) => {
                             setTextProperty(event.target.value);
                           }}
                           placeholder="e. g. Propertie"
                           required
                         />
                       </div>
-                    </div>
+                    </div> */}
                   </div>
                 </div>
               </div>
               <div className={styles.options}>
-              <div className={styles.category} >Choose collection</div>
+                <div className={styles.category} >Choose collection</div>
                 <div className={styles.text}>
                   Choose an exiting collection or create a new one
                 </div>
-                <div className="row" style={{display:"flex"}}>
-                  <div style={{flex: 1}}>
+                <div className="row" style={{ display: "flex" }}>
+                  <div style={{ flex: 1 }}>
                     <Dropdown
                       className={styles.dropdown}
                       value={selectedColl}
@@ -480,35 +484,35 @@ const Upload = ({asset_id = null}) => {
                   </div>
                   <button
                     className={cn("button-stroke", styles.button)}
-                    onClick={() => onSelectCollection(0)}                     
+                    onClick={() => onSelectCollection(0)}
                   >
                     New Collection
                   </button>
                 </div>
-                {                  
-                  metaTemplateFields && metaTemplateFields.length>0 &&
+                {
+                  metaTemplateFields && metaTemplateFields.length > 0 &&
                   metaTemplateFields.map((metaField, index) => (
-                    <div className="row" key={index}  style={{marginTop: "1rem"}} >
+                    <div className="row" key={index} style={{ marginTop: "1rem" }} >
                       <div >
                         <Checkbox
                           checked={checkedFields[index]}
                           onChange={(e) => handleCheckFieldChange(e, index)}
                           inputProps={{ 'aria-label': 'controlled' }}
-                        />                        
+                        />
                         {metaField.key}
                       </div>
-                      <div style={{flex: 1}}>
+                      <div style={{ flex: 1 }}>
                         <Dropdown
-                          className={styles.dropdown}                          
-                          value={ metaTemplateValues[index] }
-                          setValue={(x)=>{ setSelectedMetaValue(x, index) }}
+                          className={styles.dropdown}
+                          value={metaTemplateValues[index]}
+                          setValue={(x) => { setSelectedMetaValue(x, index) }}
                           options={metaTemplateFields[index].values}
                         />
                       </div>
-                     </div>
+                    </div>
                   ))
                 }
-                <div className={styles.option}  style={{marginTop:"2rem"}}>
+                <div className={styles.option} style={{ marginTop: "2rem" }}>
                   <div className={styles.box}>
                     <div className={styles.category}>Put on sale</div>
                     <div className={styles.text}>
@@ -520,42 +524,45 @@ const Upload = ({asset_id = null}) => {
                 {
                   sale &&
                   <>
-                  <div className={styles.line}>
-                  <div className={styles.iconForPutSale}>
-                    <Icon name="coin" size="24" />
-                  </div>
-                  <div className={styles.details}>
-                    <div className={styles.info}>{instant ? "Instant sale price" : "Auction Sale"}</div>
-                    <div className={styles.textForPutSale}>
-                      Enter the price for which the item will be sold
-                    </div>
-                  </div>
-                  <Switch className={styles.switch} value={instant} setValue={setInstant} />
-                  </div>
-                  <div className={styles.table}>
-                    <div className={styles.rowForSale}>
-                      <input className={styles.inputForSale} 
-                        type="number" min="0" step="0.001" defaultValue={0}
-                        value={price || ""} onChange={(e) => setPrice(e.target.value) } placeholder="Enter your price" />
-                      <div className={styles.colForSale} style={{ display: "flex", alignItems: "center" }}>AVAX</div>
-                    </div>
-                    {
-                      !instant ?
-                        <div className={styles.rowForSale}>
-                          <select className={styles.selectForSale} value={period} onChange={(event) => { setPeriod(event.target.value) }} placeholder="Please select auction time">
-                            <option value={7}>7 days</option>
-                            <option value={10}>10 days</option>
-                            <option value={30}>1 month</option>
-                          </select>
+                    <div className={styles.line}>
+                      <div className={styles.iconForPutSale}>
+                        <Icon name="coin" size="24" />
+                      </div>
+                      <div className={styles.details}>
+                        <div className={styles.info}>{instant ? "Instant sale price" : "Auction Sale"}</div>
+                        <div className={styles.textForPutSale}>
+                          Enter the price for which the item will be sold
                         </div>
-                        : <></>
-                    }                    
-                    <div className={styles.row} >
-                      <div className={styles.col}>Service fee</div>
-                      <div className={styles.col}>1.5%</div>
-                    </div>                    
-                  </div>
-                </>
+                      </div>
+                      <Switch className={styles.switch} value={instant} setValue={setInstant} />
+                    </div>
+                    <div className={styles.table}>
+                      <div className={styles.rowForSale}>
+                        <input className={styles.inputForSale}
+                          type="number" min="0" step="0.001" defaultValue={0}
+                          value={price || ""} onChange={(e) => setPrice(e.target.value)} placeholder="Enter your price" />
+                        <div className={styles.colForSale} style={{ display: "flex", alignItems: "center" }}>AVAX</div>
+                      </div>
+                      {
+                        !instant ?
+                          <div className={styles.rowForSale}>
+                            <select className={styles.selectForSale} value={period} onChange={(event) => { setPeriod(event.target.value) }} placeholder="Please select auction time">
+                              <option value={0.000694}>1min</option>
+                              <option value={0.00347}>5min</option>
+                              <option value={0.00694}>10min</option>
+                              <option value={7}>7 days</option>
+                              <option value={10}>10 days</option>
+                              <option value={30}>1 month</option>
+                            </select>
+                          </div>
+                          : <></>
+                      }
+                      <div className={styles.row} >
+                        <div className={styles.col}>Service fee</div>
+                        <div className={styles.col}>1.5%</div>
+                      </div>
+                    </div>
+                  </>
                 }
                 {/* <div className={styles.option}>
                   <div className={styles.box}>
@@ -566,7 +573,6 @@ const Upload = ({asset_id = null}) => {
                   </div>
                   <Switch value={locking} setValue={setLocking} />
                 </div> */}
-                
               </div>
               <div className={styles.foot}>
                 <button
@@ -590,7 +596,7 @@ const Upload = ({asset_id = null}) => {
           </div>
           <Preview
             className={cn(styles.preview, { [styles.active]: visiblePreview })}
-            onClose={() => setVisiblePreview(false) }
+            onClose={() => setVisiblePreview(false)}
             imgSrc={logoImg}
             itemTitle={textName}
             itemPrice={price}
@@ -601,6 +607,12 @@ const Upload = ({asset_id = null}) => {
       <Modal visible={visibleModal} onClose={() => setVisibleModal(false)}>
         <Alert className={styles.steps} param={alertParam} okLabel="OK" onOk={onOk} onCancel={onCancel} />
       </Modal>
+      {<Backdrop
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={processing}
+      >
+        <CircularProgress color="inherit" />
+      </Backdrop>}
     </>
   );
 };

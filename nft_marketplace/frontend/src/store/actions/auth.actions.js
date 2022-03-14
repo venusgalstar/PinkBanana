@@ -1,4 +1,4 @@
-import { AUTH_LOGOUT, AUTH_SUCCESS, GET_USER_DETAIL, SET_CHAIN_ID, SET_WALLET_ADDR, CURRENT_USER} from "./action.types"
+import { AUTH_LOGOUT, AUTH_SUCCESS, GET_USER_DETAIL, SET_CHAIN_ID, SET_OTHER_USER_DETAIL, SET_WALLET_ADDR, CURRENT_USER} from "./action.types"
 import axios from "axios";
 import config from "../../config";
 
@@ -16,6 +16,23 @@ export const authLogout = () => dispatch => {
     })
 }
 
+export const setLatestUserInfo = (userId) => dispatch =>
+{    
+    axios.post(`${config.baseUrl}users/findOne`, {userId}, {
+        headers:
+        {
+            "x-access-token": localStorage.getItem("jwtToken")
+        }
+    }).then((result) => {
+        dispatch({
+            type: AUTH_SUCCESS,
+            payload: result.data.data
+        })
+    }).catch(() => {
+        console.log("Get latest userInfo failed.");
+    });
+}
+
 export const getCurrentUser = () => dispatch =>
 {
     dispatch({
@@ -24,7 +41,7 @@ export const getCurrentUser = () => dispatch =>
     })
 }
 
-export const getDetailedUserInfo = (userId) => dispatch =>
+export const getDetailedUserInfo = (userId, isForMine = true) => dispatch =>
 {    
     axios.post(`${config.baseUrl}users/findOne`, {userId}, {
         headers:
@@ -32,11 +49,19 @@ export const getDetailedUserInfo = (userId) => dispatch =>
             "x-access-token": localStorage.getItem("jwtToken")
         }
     }).then((result) => {
-       
-        dispatch({
-            type: GET_USER_DETAIL,
-            payload: result.data.data
-        })
+        if(isForMine)
+        {
+            dispatch({
+                type: GET_USER_DETAIL,
+                payload: result.data.data
+            })
+        }
+        else{
+            dispatch({
+                type: SET_OTHER_USER_DETAIL,
+                payload: result.data.data
+            })
+        }
     }).catch(() => {
         console.log("Get detailed userInfo failed.");
     });

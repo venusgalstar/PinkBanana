@@ -8,15 +8,15 @@ import { toggleFollow } from "../../../store/actions/follow.actions";
 import { useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
 
-const Followers = ({ className, items }) => {
+const Followers = ({ className, items, buttonContent = ""}) => {
   
   const currentUsr  =  useSelector(state=>state.auth.user);  //user_id in making follow
   const {userId} = useParams();  //taget_id in making follow
   const dispatch = useDispatch();
 
-  const onFollow = () =>
+  const onFollow = (targetId) =>
   {
-    dispatch(toggleFollow(currentUsr._id, userId ));
+    dispatch(toggleFollow(currentUsr._id, targetId));
   }
 
   return (
@@ -33,20 +33,20 @@ const Followers = ({ className, items }) => {
               <div className={styles.details}>
                 <div className={styles.title}>{x.name}</div>
                 <div className={styles.counter}>{x.counter}</div>
+                {
+                  buttonContent !== "" && currentUsr._id === userId &&
                 <button 
                   className={cn(
-                    { "button-small": x.buttonClass === "blue" },
-                    {
-                      "button-stroke button-small": x.buttonClass === "stroke",
-                    },
+                    { "button-small": true },
                     styles.button
                   )}
-                  onClick={() =>onFollow()}
+                  onClick={() =>onFollow(x.id)}
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  {x.buttonContent}
+                  {buttonContent}
                 </button>
+                }
               </div>
             </div>
             <div className={styles.wrap}>

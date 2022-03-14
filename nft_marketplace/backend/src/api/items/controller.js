@@ -7,10 +7,8 @@ const Collection = db.Collection;
 const Notify = db.Notify;
 var ObjectId = require('mongodb').ObjectID;
 
-
-
 exports.create = (req, res) => {
-    // console.log(req.body);
+    console.log("[api/item/create] req.body = ", req.body);
     var reqItem = req.body;
     const item = new Items({
         name: reqItem.itemName,
@@ -24,6 +22,7 @@ exports.create = (req, res) => {
         auctionPrice: reqItem.auctionPrice,
         auctionPeriod: reqItem.auctionPeriod,
         metaData: reqItem.metaData,
+        auctionStarted: Date.now(),
         collection_id: ObjectId(reqItem.collectionId),
         creator: ObjectId(reqItem.creator),
         owner: ObjectId(reqItem.owner)
@@ -31,12 +30,12 @@ exports.create = (req, res) => {
 
     item
         .save()
-        .then(async (data) => {
+        .then( (data) => {
             try {
                 Collection.findOne({ _id: ObjectId(data.collection_id) }, async function (err, docs) {
                     if (err) {
                         console.log("Collection doesn't exisit" + err.message);
-                        res.status(500).send({ success: false, message: "Internal server Error" });
+                        return res.status(500).send({ success: false, message: "Internal server Error" });
                     }
                     else {
                         if (docs !== null && docs !== undefined) {
@@ -51,49 +50,54 @@ exports.create = (req, res) => {
                             }
                             trimJSON(tempCollection, ['__v', '_id']);
                             // console.log("updating collection, tempCollection = ", tempCollection);
-                            await Collection.updateOne(
-                                { _id: ObjectId(reqItem.collectionId) },
-                                {
-                                    $set: {
-                                        ...tempCollection
+                            try{
+                                await Collection.updateOne(
+                                    { _id: ObjectId(reqItem.collectionId) },
+                                    {
+                                        $set: {
+                                            ...tempCollection
+                                        },
+                                        $currentDate: {
+                                            ends: true,
+                                        }
                                     },
-                                    $currentDate: {
-                                        ends: true,
+                                    { upsert: true }
+                                );
+                                const new_notify = new Notify(
+                                    {
+                                        url: "/item/"+data._id,
+                                        imgUrl: data.logoURL,
+                                        subTitle: "New item is created.",
+                                        description: "Item " + data.name + " is created",
+                                        date: new Date(),
+                                        readers: [],
+                                        target_ids: [],
+                                        Type: 2
+                                    });
+                                await new_notify.save(function (err) {
+                                    if (!err) {
+                                        
                                     }
-                                },
-                                { upsert: true }
-                            );
+                                });
+                                if(io)  io.sockets.emit("UpdateStatus", { type: "CREATE_NOTIFY" });
+                                return res.status(200).send(data);
+                            } catch (err) {
+                                console.log("fail 1 : " + err.message);
+                                return res.status(500).send({ success: false, message: "Internal server Error" });
+                            }
                         }
-                        else res.status(404).send({ success: false, data: [], message: "Can't find such asset." });
+                        else return res.status(404).send({ success: false, data: [], message: "Can't find such asset." });
                     }
                 });
             } catch (err) {
-                console.log("Updating collection : " + err.message);
-                res.status(500).send({ success: false, message: "Internal server Error" });
-                return;
+                console.log("fail 2 : " + err.message);
+                return res.status(500).send({ success: false, message: "Internal server Error" });
             }
-            const new_notify = new Notify(
-                {
-                    imgUrl: data.logoURL,
-                    subTitle: "New item is created.",
-                    description: "Item " + data.name + " is created",
-                    date: new Date(),
-                    readers: [],
-                    target_ids: [],
-                    Type: 2
-                });
-            await new_notify.save(function (err) {
-                if (!err) {
-                    //io.sockets.emit("Notification");
-                }
-            });
-            io.sockets.emit("UpdateStatus", { type: "CREATE_NOTIFY" });
-            res.status(200).send(data);
             // console.log("Creating new item succeed.");
         })
         .catch((err) => {
-            res.status(500).send({
-                message: err.message || "Some error occurred while creating the User.",
+            return res.status(500).send({
+                message: err.message || "Some error occurred while creating the Item.",
             });
         });
 }
@@ -116,6 +120,7 @@ exports.multipleCreate = async (req, res) => {
             size: reqItem.params.itemSize,
             property: reqItem.params.itemProperty,
             metaData: reqItem.params.metaData,
+            auctionStarted: Date.now(),
             collection_id: ObjectId(reqItem.params.collectionId),
             creator: ObjectId(reqItem.params.creator),
             owner: ObjectId(reqItem.params.owner)
@@ -125,9 +130,10 @@ exports.multipleCreate = async (req, res) => {
             .save()
             .then(async (data) => {
                 itemIdArr.push(data._id);
-
+                
                 const new_notify = new Notify(
                     {
+                        url: "/item/"+data._id,
                         imgUrl: data.logoURL,
                         subTitle: "New item is created.",
                         description: "Item " + data.name + " is created",
@@ -138,13 +144,14 @@ exports.multipleCreate = async (req, res) => {
                     });
                 await new_notify.save(function (err) {
                     if (!err) {
-                        //io.sockets.emit("Notification");
+                        
                     }
                 });
+                if(io)  io.sockets.emit("UpdateStatus", { type: "CREATE_NOTIFY" });
             })
             .catch((err) => {
-                res.status(500).send({
-                    message: err.message || "Some error occurred while creating the User.",
+                return res.status(500).send({
+                    message: err.message || "Some error occurred while creating the Item.",
                 });
             });
     }
@@ -153,7 +160,7 @@ exports.multipleCreate = async (req, res) => {
         Collection.findOne({ _id: ObjectId(reqItem.params.collectionId) }, async function (err, docs) {
             if (err) {
                 console.log("Collection doesn't exisit" + err.message);
-                res.status(500).send({ success: false, message: "Internal server Error" });
+                return res.status(500).send({ success: false, message: "Internal server Error" });
             }
             else {
                 if (docs !== null && docs !== undefined) {
@@ -170,34 +177,38 @@ exports.multipleCreate = async (req, res) => {
                     }
                     trimJSON(tempCollection, ['__v', '_id', 'createdAt', 'updatedAt']);
                     // console.log("updating collection, tempCollection = ", tempCollection);
-                    await Collection.updateOne(
-                        { _id: ObjectId(reqItem.params.collectionId) },
-                        {
-                            $set: {
-                                ...tempCollection
+                    try{
+                        await Collection.updateOne(
+                            { _id: ObjectId(reqItem.params.collectionId) },
+                            {
+                                $set: {
+                                    ...tempCollection
+                                },
+                                $currentDate: {
+                                    ends: true,
+                                }
                             },
-                            $currentDate: {
-                                ends: true,
-                            }
-                        },
-                        { upsert: true }
-                    );
-                    io.sockets.emit("UpdateStatus", { type: "CREATE_NOTIFY" });
+                            { upsert: true }
+                        );
+                        console.log("Multiple loading succeed. 11");
+                        if(io)  io.sockets.emit("UpdateStatus", { type: "CREATE_NOTIFY" });
+                        return res.status(200).send(itemIdArr);
+                    }catch(err){
+                        console.log("failed in multiple item upload : ", err.message);
+                        return res.status(500).send({ success: false, data: [], message: "Internal server error." });
+                    }
                 }
                 else {
-                    res.status(404).send({ success: false, data: [], message: "Can't find such asset." });
+                    return res.status(404).send({ success: false, data: [], message: "Can't find such asset." });
                 }
             }
         });
 
         // console.log("Multiple loading succeed  00.");
     } catch (err) {
-        res.status(500).send({ success: false, message: "Internal server Error" });
-        return;
-    }
-
-    res.status(200).send(itemIdArr);
-    console.log("Multiple loading succeed. 11");
+        return res.status(500).send({ success: false, message: "Internal server Error" });
+    }  
+    
 }
 
 exports.update = (req, res) => {
@@ -215,11 +226,11 @@ exports.get = (req, res) => {
         // console.log("err : " + err);
         if (err) {
             console.log("Item doesn't exisit" + err.message);
-            res.status(500).send({ success: false, message: "Internal server Error" });
+            return res.status(500).send({ success: false, message: "Internal server Error" });
         }
         else {
-            if (docs !== null && docs !== undefined) res.status(200).send({ success: true, data: docs, message: "success" });
-            else res.status(404).send({ success: false, data: [], message: "Can't find such asset." });
+            if (docs !== null && docs !== undefined) return res.status(200).send({ success: true, data: docs, message: "success" });
+            else return res.status(404).send({ success: false, data: [], message: "Can't find such asset." });
         }
     });
 };
@@ -231,10 +242,10 @@ exports.getBannerList = (req, res) => {
     // , { sort: { or: [{ updatedAt: -1 }, { auctionDeadline: 0 }] } }
     // Items.find({ isSale: 2 }).populate('creator').sort({ createdAt: -1 }).limit(req.body.limit)
     //     .then((data) => {
-    //          res.send({ code: 0, data: data });
+    //          return res.send({ code: 0, data: data });
     //     })
     //     .catch((err) => {
-    //          res.status(500).send({ code: 1 });
+    //          return res.status(500).send({ code: 1 });
     //     });
     var limit = req.body.limit ? req.body.limit : 5;
     Items.aggregate([
@@ -269,13 +280,13 @@ exports.getBannerList = (req, res) => {
                         {
                             $multiply: [
                                 {
-                                    $toInt: "$auctionPeriod"
+                                    $toDecimal: "$auctionPeriod"
                                 },
                                 86400000
                             ]
                         },
                         {
-                            $toLong: "$updatedAt"
+                            $toLong: "$auctionStarted"
                         }
                     ]
                 }
@@ -319,9 +330,9 @@ exports.getBannerList = (req, res) => {
             $limit: limit
         }
     ]).then((data) => {
-        res.send({ code: 0, data: data });
+        return res.send({ code: 0, data: data });
     }).catch((error) => {
-        res.status(500).send({ code: 1, data: [] });
+        return res.status(500).send({ code: 1, data: [] });
     });
 }
 
@@ -334,13 +345,13 @@ exports.findOne = (req, res) => {
         .populate({ path: "collection_id", select: "_id category name" })
         .then((data) => {
             if (!data) {
-                res.status(404)
+                return res.status(404)
                     .send({ code: 1 });
             } else {
-                res.send({ code: 0, data: data });
+                return res.send({ code: 0, data: data });
             }
         }).catch((err) => {
-            res.status(500)
+            return res.status(500)
                 .send({ code: 1 });
         });
 }
@@ -348,9 +359,9 @@ exports.findOne = (req, res) => {
 exports.changeItemsOwner = async (itemId, ownerId) => {
     console.log("[changeItemsOwner]  00");
     await Items.findByIdAndUpdate(new ObjectId(itemId), { owner: new ObjectId(ownerId), isSale: 0 }).then((data) => {
-        res.send({ code: 0, data: data });
+        return res.send({ code: 0, data: data });
     }).catch(() => {
-        res.status(500).send({ code: 1 });
+        return res.status(500).send({ code: 1 });
     })
 }
 
@@ -359,9 +370,9 @@ exports.setPrice = (req, res) => {
     var price = req.body.price;
 
     Items.findByIdAndUpdate(id, { price: price }).then((data) => {
-        res.send({ code: 0, data: data });
+        return res.send({ code: 0, data: data });
     }).catch(() => {
-        res.status(500).send({ code: 1 });
+        return res.status(500).send({ code: 1 });
     })
 }
 
@@ -371,18 +382,17 @@ exports.getItemsOfCollection = (req, res) => {
     var last = req.body.last;
     // console.log("colId = ", colId, "start =", start, "last =", last);
     if (colId === null || colId === undefined || colId === "") {
-        res.status(404).send({ success: false, message: "No such collection." });
-        return;
+        return res.status(404).send({ success: false, message: "No such collection." });
     }
     Items.find({ collection_id: ObjectId(colId) })
         .skip(start).limit(last - start)
         .then((docs) => {
             // console.log(docs.length);
-            res.status(200).send({ success: true, data: docs, message: "success" });
+            return res.status(200).send({ success: true, data: docs, message: "success" });
         })
         .catch((err) => {
             console.log("Collection items doesn't exisit" + err.message);
-            res.status(500).send({ success: false, message: "Internal server Error" });
+            return res.status(500).send({ success: false, message: "Internal server Error" });
         })
 }
 
@@ -394,8 +404,7 @@ exports.getItemsOfUserByCondition = (req, res) => {
     var activeindex = req.body.activeindex;
     var query = {}, owner, creator;
     if (activeindex === null || activeindex === undefined || activeindex === "") {
-        res.status(404).send({ success: false, message: "No such collection." });
-        return;
+        return res.status(404).send({ success: false, message: "No such collection." });
     }
     // console.log("activeindex = ", activeindex);
     switch (activeindex) {
@@ -420,19 +429,18 @@ exports.getItemsOfUserByCondition = (req, res) => {
     }
     // console.log("colId = ", userId, "start =", start, "last =", last);
     if (userId === null || userId === undefined || userId === "") {
-        res.status(404).send({ success: false, message: "No such collection." });
-        return;
+        return res.status(404).send({ success: false, message: "No such collection." });
     }
     if (activeindex === 0 || activeindex === 2) {
         Items.find(query)
             // .skip(start).limit(last - start)
             .then((docs) => {
                 // console.log("docs.length = ", docs.length);
-                res.status(200).send({ success: true, data: docs, message: "success" });
+                return res.status(200).send({ success: true, data: docs, message: "success" });
             })
             .catch((err) => {
                 console.log("User items doesn't exisit" + err.message);
-                res.status(500).send({ success: false, message: "Internal server Error" });
+                return res.status(500).send({ success: false, message: "Internal server Error" });
             })
     }
     if (activeindex === 1) {
@@ -471,11 +479,11 @@ exports.getItemsOfUserByCondition = (req, res) => {
         ])
             .then((docs) => {
                 // console.log("docs.length = ", docs.length);
-                res.status(200).send({ success: true, data: docs, message: "success" });
+                return res.status(200).send({ success: true, data: docs, message: "success" });
             })
             .catch((err) => {
                 console.log("User items doesn't exisit" + err.message);
-                res.status(500).send({ success: false, message: "Internal server Error" });
+                return res.status(500).send({ success: false, message: "Internal server Error" });
             })
     }
 }
@@ -488,8 +496,8 @@ exports.getOwnerHistory = (req, res) => {
         .select({ "owner": 1, "_id": 0 })
         .sort({ createdAt: -1 })
         .then((data) => {
-            res.send({ code: 0, data: data });
+            return res.send({ code: 0, data: data });
         }).catch(() => {
-            res.send({ code: 1, data: [] });
+            return res.send({ code: 1, data: [] });
         });
 }

@@ -14,7 +14,13 @@ module.exports = (mongoose) => {
         customURL: String,
         twitter: String,
         socials: String,
-        password : String
+        password: String,
+        follows: [
+          {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User"
+          }
+        ]
       },
       { timestamps: true }
     )

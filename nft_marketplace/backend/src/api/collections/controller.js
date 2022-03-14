@@ -11,7 +11,7 @@ const upload_path = env.upload_path;
 
 var ObjectId = require('mongodb').ObjectID;
 
-exports.create = (req, res) => {
+exports.create = async (req, res) => {
 
     console.log("creting collection 00");
 
@@ -29,24 +29,25 @@ exports.create = (req, res) => {
         owner: ObjectId(reqItem.owner)
     });
 
-    Collection.find({ name: reqItem.collectionName }, async function (err, docs) {
+    await Collection.find({ name: reqItem.collectionName }, async function (err, docs) {
         if (err) {
-            //res.status(501).send({ success: false, message: "Internal Server Error." });
+            //return  res.status(501).send({ success: false, message: "Internal Server Error." });
         }
         if (docs.length > 0) {
-            res.status(501).send({ success: false, message: "Collection name is duplicated." });
+            return res.status(501).send({ success: false, message: "Collection name is duplicated." });
         } else {
             await fsPromises.mkdir(process.cwd() + upload_path + reqItem.collectionName, { recursive: true })
-                .then(function () {
+                .then(async function () {
                     console.log('Directory created successfully');
 
-                    collection
+                    await collection
                         .save()
                         .then(async (data) => {
                             console.log("Creating new collection succeed.");
 
                             const new_notify = new Notify(
                                 {
+                                    url: "/collectionItems/"+data.collection_id,
                                     imgUrl: data.logoURL,
                                     subTitle: "New collection is created.",
                                     description: "Collection " + data.name + " is created",
@@ -57,32 +58,34 @@ exports.create = (req, res) => {
                                 });
                             await new_notify.save(function (err) {
                                 if (!err) {
-                                    //io.sockets.emit("Notification");
+                                    
                                 }
                             });
-                            res.status(200).send(
+                            if(io)  io.sockets.emit("Notification");
+                            return res.status(200).send(
                                 { success: true, data, message: "New collection successfully created." }
                             );
                         })
                         .catch((err) => {
-                            res.status(500).send({
+                            return res.status(500).send({
                                 success: false,
                                 message: err.message || "Some error occurred while creating the collection.",
                             });
                         });
                 }
-                ).catch(function (err) {
+                ).catch(async function (err) {
                     console.log('failed to create directory. ', err);
                     let errno = err.errno;
                     if (errno === -4075) {
                         console.log("Collection dir already exists");
 
-                        collection
+                        await collection
                             .save()
                             .then(async (data) => {
                                 console.log("Creating new collection succeed.");
                                 const new_notify = new Notify(
                                     {
+                                        url: "/collectionItems/"+data.collection_id,
                                         imgUrl: data.logoURL,
                                         subTitle: "New collection is created.",
                                         description: "Collection " + data.name + " is created",
@@ -93,14 +96,15 @@ exports.create = (req, res) => {
                                     });
                                 await new_notify.save(function (err) {
                                     if (!err) {
-                                        //io.sockets.emit("Notification");
+                                        
                                     }
                                 });
-                                res.status(200).send(
+                                if(io)  io.sockets.emit("Notification");
+                                return res.status(200).send(
                                     { success: true, data, message: "New collection successfully created." }
                                 );
                             }).catch((err) => {
-                                res.status(500).send({
+                                return res.status(500).send({
                                     success: false,
                                     message: err.message || "Some error occurred while creating the collection.",
                                 });
@@ -112,18 +116,18 @@ exports.create = (req, res) => {
 }
 
 exports.getDetail = (req, res) => {
-    console.log("req.body.id  : ", req.body.id);
+    // console.log("req.body.id  : ", req.body.id);
     Collection.findOne({ _id: new ObjectId(req.body.id) }).populate("owner")
         .then((docs) => {
             if (docs !== null && docs !== undefined) {
-                console.log("found a collection : ", docs);
-                res.status(200).send({ success: true, data: docs, message: "success" });
+                // console.log("found a collection : ", docs);
+                return res.status(200).send({ success: true, data: docs, message: "success" });
             }
-            else res.status(404).send({ success: false, data: [], message: "Can't find such asset." });
+            else return res.status(404).send({ success: false, data: [], message: "Can't find such asset." });
         })
         .catch((err) => {
             console.log("Collection doesn't exisit" + err.message);
-            res.status(500).send({ success: false, message: "Internal server Error" });
+            return res.status(500).send({ success: false, message: "Internal server Error" });
         })
 }
 
@@ -143,11 +147,10 @@ exports.update = async (req, res) => {
         );
     } catch (err) {
         console.log("Updating collection : " + err.message);
-        res.status(500).send({ success: false, message: "Internal server Error" });
-        return;
+        return res.status(500).send({ success: false, message: "Internal server Error" });
     }
     console.log("Updating collection : succeed.");
-    res.status(200).json({ success: true, message: "Successfully Update a Collection" })
+    return res.status(200).json({ success: true, message: "Successfully Update a Collection" })
 
 }
 
@@ -214,9 +217,9 @@ exports.getHotCollections = (req, res) => {
         { $limit: limit },
         { $sort: { like_count: -1 } }
     ]).then((data) => {
-        res.send({ code: 0, data: data });
+        return res.send({ code: 0, data: data });
     }).catch(() => {
-        res.send({ code: 1, data: [] });
+        return res.send({ code: 1, data: [] });
     });
 
 }
@@ -389,9 +392,9 @@ exports.getCollectionList = async (req, res) => {
             $skip: Number(start)
         }
     ]).then((data) => {
-        res.send({ code: 0, list: data });
+        return res.send({ code: 0, list: data });
     }).catch((error) => {
-        res.send({ code: 1 });
+        return res.send({ code: 1 });
     });
 
     // Collection
@@ -400,9 +403,9 @@ exports.getCollectionList = async (req, res) => {
     //     .sort({ createdAt: req.body.date == 0 ? -1 : 0 })
     //     .skip(start).limit(last - start)
     //     .then((data) => {
-    //         res.send({ code: 0, data: data });
+    //         return res.send({ code: 0, data: data });
     //     }).catch((error) => {
-    //         res.send({ code: 1 });
+    //         return res.send({ code: 1 });
     //     })
 }
 
@@ -413,11 +416,11 @@ exports.getUserCollectionList = (req, res) => {
     Collection.find({ owner: ObjectId(userId) })
         .skip(0).limit(limit)
         .then((docs) => {
-            res.status(200).send({ success: true, data: docs, message: "success" });
+            return res.status(200).send({ success: true, data: docs, message: "success" });
         })
         .catch((err) => {
             console.log("Hot collection doesn't exisit" + err.message);
-            res.status(500).send({ success: false, message: "Internal server Error" });
+            return res.status(500).send({ success: false, message: "Internal server Error" });
         })
 }
 
@@ -428,10 +431,10 @@ exports.getNewCollectionList = (req, res) => {
         .sort({ createdAt: -1 })
         .limit(4)
         .then((data) => {
-            res.send({ code: 0, data: data });
+            return res.send({ code: 0, data: data });
         })
         .catch(() => {
-            res.send({ code: 1 });
+            return res.send({ code: 1 });
         });
 }
 
@@ -445,9 +448,9 @@ exports.getCollectionNames = (req, res) => {
         .limit(limit)
         .skip(0)
         .then((data) => {
-            res.send({ code: 0, list: data });
+            return res.send({ code: 0, list: data });
         }).catch(() => {
-            res.send({ code: 0, list: [] });
+            return res.send({ code: 0, list: [] });
         })
 }
 
@@ -455,8 +458,8 @@ exports.getCollectionNames = (req, res) => {
 exports.getCollectionMetadatas = (req, res) => {
     var id = req.body.id;
     Collection.find({ _id: ObjectId(id) }, { metaData: 1 }).then((data) => {
-        res.send({ code: 0, data: data });
+        return res.send({ code: 0, data: data });
     }).catch(() => {
-        res.send({ code: 1, data: data });
+        return res.send({ code: 1, data: data });
     })
 }

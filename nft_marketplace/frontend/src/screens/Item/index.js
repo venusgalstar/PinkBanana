@@ -59,15 +59,17 @@ const Item = () => {
     if (activeIndex == 0) {
       list = [
         {
-          name: itemDetail ? itemDetail.owner.username : "",
+          name: itemDetail && itemDetail.owner ? itemDetail.owner.username : "",
+          id: itemDetail && itemDetail.owner? itemDetail.owner._id : "",
           position: "Owner",
-          avatar: itemDetail ? config.imgUrl + itemDetail.owner.avatar : "",
+          avatar: itemDetail && itemDetail.owner? config.imgUrl + itemDetail.owner.avatar : "",
           reward: "",
         },
         {
-          name: itemDetail ? itemDetail.creator.username : "",
+          name: itemDetail && itemDetail.creator? itemDetail.creator.username : "",
+          id: itemDetail  && itemDetail.creator? itemDetail.creator._id : "",
           position: "Creator",
-          avatar: itemDetail ? config.imgUrl + itemDetail.creator.avatar : "",
+          avatar: itemDetail  && itemDetail.creator ? config.imgUrl + itemDetail.creator.avatar : "",
         }
       ];
     } else if (activeIndex == 1) {
@@ -76,6 +78,7 @@ const Item = () => {
         for (var i = 0; i < nft.history.length; i++) {
           list.push({
             name: nft.history[i].owner.username,
+            id: nft.history[i].owner._id,
             position: "Owner",
             avatar: config.imgUrl + nft.history[i].owner.avatar,
             reward: "",
@@ -90,6 +93,7 @@ const Item = () => {
         for (var i = 0; i < itemDetail.bids.length; i++) {
           list.push({
             name: bids[i].username,
+            id: bids[i]._id,
             position: bids[i].price + "AVAX",
             avatar: config.imgUrl + bids[i].user_id.avatar,
             reward: "",
@@ -97,7 +101,6 @@ const Item = () => {
         }
       }
     }
-
     setUsers(list);
   }, [activeIndex, itemDetail, nft])
 
@@ -220,15 +223,15 @@ const Item = () => {
               itemDetail && itemDetail.isSale == 2 ?
                 <div className={styles.timer} style={{ marginBottom: "10px" }}>
                   <div className={styles.box}>
-                    <div className={styles.number}>{getLeftDuration(itemDetail.createdAt, itemDetail.auctionPeriod, curTime).hours()}</div>
+                    <div className={styles.number}>{getLeftDuration(itemDetail.auctionStarted, itemDetail.auctionPeriod, curTime).hours()}</div>
                     <div className={styles.time}>Hrs</div>
                   </div>
                   <div className={styles.box}>
-                    <div className={styles.number}>{getLeftDuration(itemDetail.createdAt, itemDetail.auctionPeriod, curTime).minutes()}</div>
+                    <div className={styles.number}>{getLeftDuration(itemDetail.auctionStarted, itemDetail.auctionPeriod, curTime).minutes()}</div>
                     <div className={styles.time}>mins</div>
                   </div>
                   <div className={styles.box}>
-                    <div className={styles.number}>{getLeftDuration(itemDetail.createdAt, itemDetail.auctionPeriod, curTime).seconds()}</div>
+                    <div className={styles.number}>{getLeftDuration(itemDetail.auctionStarted, itemDetail.auctionPeriod, curTime).seconds()}</div>
                     <div className={styles.time}>secs</div>
                   </div>
                 </div> : <></>

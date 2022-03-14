@@ -103,38 +103,43 @@ const Hero = () => {
     setVisibleModalBid(false);
     
     setProcessing(true);
-    let checkResut = await checkWalletAddrAndChainId();
-    if (!checkResut) {
+    try{
+      let checkResut = await checkWalletAddrAndChainId();
+      if (!checkResut) {
+        setProcessing(false);
+        return;
+      }
+      let ret = await placeABid(auth.address, biddingNftId, bidPrice);
+      if (ret.success === true) 
+      {     
+        setProcessing(false);
+        setTimeout(() => {
+          getNftDetail(biddingNftId)(dispatch);
+        }, 1000);
+        setAlertParam({state: "success", title:"Success", content:"You 've put a bid."});      
+        setVisibleModal(true);
+      }
+      else {
+        console.log("failed on place a bid : ", ret.status);
+        setProcessing(false);
+        setAlertParam({state: "error", title:"Error", content:"Failed in place a bid."});      
+        setVisibleModal(true);
+      }
+    }catch(err){
       setProcessing(false);
-      return;
-    }
-    let ret = await placeABid(auth.address, biddingNftId, bidPrice);
-    if (ret.success === true) 
-    {     
-      setProcessing(false);
-      setTimeout(() => {
-        getNftDetail(biddingNftId)(dispatch);
-      }, 1000);
-      setAlertParam({state: "success", title:"Success", content:"You 've put a bid."});      
-      setVisibleModal(true);
-    }
-    else {
-      console.log("failed on place a bid : ", ret.status);
-      setProcessing(false);
-      setAlertParam({state: "error", title:"Error", content:"Failed in place a bid."});      
-      setVisibleModal(true);
+      console.log("failed on place a bid : ", err.message)
     }
   }
 
   useEffect(()=>{
     socket.on("UpdateStatus", data=>{
       console.log("update status", data);
-      getNftBannerList(5)(dispatch);
+      getNftBannerList(100)(dispatch);
     })
   }, []);
 
   useEffect(() => {
-    getNftBannerList(5)(dispatch);
+    getNftBannerList(100)(dispatch);
   }, [load, dispatch])
 
   useEffect(() => {

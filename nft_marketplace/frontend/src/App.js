@@ -19,7 +19,7 @@ import Item from "./screens/Item";
 import PageList from "./screens/PageList";
 import Admin from "./screens/Admin";
 import jwt_decode from "jwt-decode";
-import { authLogout, authSet } from "./store/actions/auth.actions";
+import { authLogout, authSet, setLatestUserInfo } from "./store/actions/auth.actions";
 import { getValidWallet } from "./InteractWithSmartContract/interact";
 import store from "./store";
 
@@ -49,7 +49,8 @@ const App = () =>
         localStorage.jwtToken !== null) {
         const decoded = jwt_decode(localStorage.jwtToken);
         const currTime = Date.now() / 1000;
-        if (connection.success === true) {
+        if (connection.success === true) 
+        {
           if (decoded.app < currTime ) 
           {
             // console.log(decoded);
@@ -61,6 +62,7 @@ const App = () =>
           else {
             // console.log(decoded);      
             store.dispatch(authSet(decoded._doc));
+            store.dispatch(setLatestUserInfo(decoded._doc._id));
           }
         }
       }

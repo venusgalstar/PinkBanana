@@ -115,47 +115,52 @@ const Actions = ({ className }) => {
     }
 
     setProcessing(true);
-    let iHaveit = await whoHasTokenNow(auth.address, nft.detail._id);
-    if(iHaveit === 1)
-    {
-      setProcessing(false);
-      setAlertParam({state: "warning", title:"Warning", content:"Your NFT is not on sale."});      
-      setVisibleModal(true);
-      return;      
-    }
-    let checkResut = await checkWalletAddrAndChainId();
-    if (!checkResut) {
-      setProcessing(false);
-      return;
-    }
-    
-    console.log("tokenhash = " +  nft.detail._id +  " newPrice: " + newPrice);
+    try{
+      let iHaveit = await whoHasTokenNow(auth.address, nft.detail._id);
+      if(iHaveit === 1)
+      {
+        setProcessing(false);
+        setAlertParam({state: "warning", title:"Warning", content:"Your NFT is not on sale."});      
+        setVisibleModal(true);
+        return;      
+      }
+      let checkResut = await checkWalletAddrAndChainId();
+      if (!checkResut) {
+        setProcessing(false);
+        return;
+      }
+      
+      console.log("tokenhash = " +  nft.detail._id +  " newPrice: " + newPrice);
 
-    let ret;
-    if (nft.detail._id) ret = await changePrice(auth.address, nft.detail._id, newPrice );
-    else {
-      setProcessing(false);
-      setAlertParam({state: "warning", title:"Warning", content:"NFT is invalid."});      
-      setVisibleModal(true);
-      return;
-    }
+      let ret;
+      if (nft.detail._id) ret = await changePrice(auth.address, nft.detail._id, newPrice );
+      else {
+        setProcessing(false);
+        setAlertParam({state: "warning", title:"Warning", content:"NFT is invalid."});      
+        setVisibleModal(true);
+        return;
+      }
 
-    if (ret.success === true) 
-    {
+      if (ret.success === true) 
+      {
+        setProcessing(false);
+        setTimeout(() => {
+          getNftDetail(nft.detail.id)(dispatch);
+        }, 1000);
+        setAlertParam({state: "success", title:"Success", content:"The price of NFT is changed."});      
+        setVisibleModal(true);
+      }
+      else {
+        console.log("failed on changing price : ", ret.status);
+        setProcessing(false);
+        setAlertParam({state: "error", title:"Error", content:"Chaging price is failed."});      
+        setVisibleModal(true);
+      }
       setProcessing(false);
-      setTimeout(() => {
-        getNftDetail(nft.detail.id)(dispatch);
-      }, 1000);
-      setAlertParam({state: "success", title:"Success", content:"The price of NFT is changed."});      
-      setVisibleModal(true);
-    }
-    else {
-      console.log("failed on changing price : ", ret.status);
+    }catch(err){
       setProcessing(false);
-      setAlertParam({state: "error", title:"Error", content:"Chaging price is failed."});      
-      setVisibleModal(true);
+      console.log("failed on changing price : ", err.message)
     }
-    setProcessing(false);
 
   }
 
@@ -179,47 +184,52 @@ const Actions = ({ className }) => {
     }
 
     setProcessing(true);
-    let iHaveit = await whoHasTokenNow(auth.address, nft.detail._id);
-    if(iHaveit === 1)
-    {
-      setProcessing(false);
-      setAlertParam({state: "warning", title:"Warning", content:"Your NFT is not on sale."});      
-      setVisibleModal(true);
-      return;      
-    }
-    let checkResut = await checkWalletAddrAndChainId();
-    if (!checkResut) {
-      setProcessing(false);
-      return;
-    }
-    
-    console.log("tokenhash = " +  nft.detail._id +  " address: " + auth.address);
+    try{
+      let iHaveit = await whoHasTokenNow(auth.address, nft.detail._id);
+      if(iHaveit === 1)
+      {
+        setProcessing(false);
+        setAlertParam({state: "warning", title:"Warning", content:"Your NFT is not on sale."});      
+        setVisibleModal(true);
+        return;      
+      }
+      let checkResut = await checkWalletAddrAndChainId();
+      if (!checkResut) {
+        setProcessing(false);
+        return;
+      }
+      
+      console.log("tokenhash = " +  nft.detail._id +  " address: " + auth.address);
 
-    let ret;
-    if (nft.detail._id) ret = await destroySale(auth.address, nft.detail._id );
-    else {
-      setProcessing(false);
-      setAlertParam({state: "warning", title:"Warning", content:"Invalid NFT"});      
-      setVisibleModal(true);
-      return;
-    }
+      let ret;
+      if (nft.detail._id) ret = await destroySale(auth.address, nft.detail._id );
+      else {
+        setProcessing(false);
+        setAlertParam({state: "warning", title:"Warning", content:"Invalid NFT"});      
+        setVisibleModal(true);
+        return;
+      }
 
-    if (ret.success === true) 
-    {
+      if (ret.success === true) 
+      {
+        setProcessing(false);
+        setTimeout(() => {
+          getNftDetail(nft.detail.id)(dispatch);
+        }, 1000);
+        setAlertParam({state: "success", title:"Success", content:"You 've removed a NFT from sale."});      
+        setVisibleModal(true);
+      }
+      else {
+        console.log("failed on remove sale : ", ret.status);
+        setProcessing(false);
+        setAlertParam({state: "error", title:"Error", content:"Failed in removing a NFT from sale."});      
+        setVisibleModal(true);
+      }
       setProcessing(false);
-      setTimeout(() => {
-        getNftDetail(nft.detail.id)(dispatch);
-      }, 1000);
-      setAlertParam({state: "success", title:"Success", content:"You 've removed a NFT from sale."});      
-      setVisibleModal(true);
-    }
-    else {
-      console.log("failed on remove sale : ", ret.status);
+    }catch(err){
       setProcessing(false);
-      setAlertParam({state: "error", title:"Error", content:"Failed in removing a NFT from sale."});      
-      setVisibleModal(true);
+      console.log("failed on remove sale : ", err.message)
     }
-    setProcessing(false);
 
   }
 
@@ -235,49 +245,54 @@ const Actions = ({ className }) => {
       return;
     }
     setProcessing(true);
-    let iHaveit = await whoHasTokenNow(auth.address, nft.detail._id);
-    if(iHaveit === 0)
-    {
-      setProcessing(false);
-      setAlertParam({state: "warning", title:"Warning", content:"You cannot burn NFT while it is on sale."});      
-      setVisibleModal(true);
-      return;      
-    }
-    let checkResut = await checkWalletAddrAndChainId();
-    if (!checkResut) {
-      setProcessing(false);
-      return;
-    }
-    
-    console.log("tokenhash = " +  nft.detail._id +  " address: " + auth.address);
+    try{
+      let iHaveit = await whoHasTokenNow(auth.address, nft.detail._id);
+      if(iHaveit === 0)
+      {
+        setProcessing(false);
+        setAlertParam({state: "warning", title:"Warning", content:"You cannot burn NFT while it is on sale or you've not minted it ever."});      
+        setVisibleModal(true);
+        return;      
+      }
+      let checkResut = await checkWalletAddrAndChainId();
+      if (!checkResut) {
+        setProcessing(false);
+        return;
+      }
+      
+      console.log("tokenhash = " +  nft.detail._id +  " address: " + auth.address);
 
-    let ret;
-    if (nft.detail._id) ret = await burnNFT(auth.address, nft.detail._id);
-    else {
-      //alert("Incorrect token ID");
-      setProcessing(false);
-      setAlertParam({state: "warning", title:"Warning", content:"Invalid NFT."});      
-      setVisibleModal(true);
-      return;
-    }
+      let ret;
+      if (nft.detail._id) ret = await burnNFT(auth.address, nft.detail._id);
+      else {
+        //alert("Incorrect token ID");
+        setProcessing(false);
+        setAlertParam({state: "warning", title:"Warning", content:"Invalid NFT."});      
+        setVisibleModal(true);
+        return;
+      }
 
-    if (ret.success === true) 
-    {
+      if (ret.success === true) 
+      {
+        setProcessing(false);
+        setTimeout(() => {
+          getNftDetail(nft.detail.id)(dispatch);
+        }, 1000);
+        setAlertParam({state: "success", title:"Success", content:"You 've burned a NFT."});      
+        setVisibleModal(true);
+        history.push("/");
+      }
+      else {
+        console.log("failed on burn token : ", ret.status);
+        setProcessing(false);
+        setAlertParam({state: "error", title:"Error", content:"Failed in burning a NFT."});      
+        setVisibleModal(true);
+      }
       setProcessing(false);
-      setTimeout(() => {
-        getNftDetail(nft.detail.id)(dispatch);
-      }, 1000);
-      setAlertParam({state: "success", title:"Success", content:"You 've burned a NFT."});      
-      setVisibleModal(true);
-      history.push("/");
-    }
-    else {
-      console.log("failed on transfer token : ", ret.status);
+    }catch(err){
       setProcessing(false);
-      setAlertParam({state: "error", title:"Error", content:"Failed in burning a NFT."});      
-      setVisibleModal(true);
+      console.log("failed on burn token : ", err.message)
     }
-    setProcessing(false);
 
   }
 
@@ -292,47 +307,52 @@ const Actions = ({ className }) => {
       return;
     }
     setProcessing(true);
-    let iHaveit = await whoHasTokenNow(auth.address, nft.detail._id);
-    if(iHaveit === 0)
-    {
-      setProcessing(false);
-      setAlertParam({state: "warning", title:"Warning", content:"You cannot transfer NFT while it is on sale."});      
-      setVisibleModal(true);
-      return;      
-    }
-    let checkResut = await checkWalletAddrAndChainId();
-    if (!checkResut) {
-      setProcessing(false);
-      return;
-    }
     
-    console.log("tokenhash = " +  nft.detail._id +  " address: " + auth.address + " toAddr : ", toAddr);
+    try{
+      let iHaveit = await whoHasTokenNow(auth.address, nft.detail._id);
+      if(iHaveit === 0)
+      {
+        setProcessing(false);
+        setAlertParam({state: "warning", title:"Warning", content:"You cannot transfer NFT while it is on sale or you've not minted it ever."});      
+        setVisibleModal(true);
+        return;      
+      }
+      let checkResut = await checkWalletAddrAndChainId();
+      if (!checkResut) {
+        setProcessing(false);
+        return;
+      }
+      
+      console.log("tokenhash = " +  nft.detail._id +  " address: " + auth.address + " toAddr : ", toAddr);
+      let ret;
+      if (nft.detail._id) ret = await transferNFT(auth.address, toAddr, nft.detail._id);
+      else {
+        setProcessing(false);
+        setAlertParam({state: "warning", title:"Warning", content:"Invalid NFT."});      
+        setVisibleModal(true);
+        return;
+      }
 
-    let ret;
-    if (nft.detail._id) ret = await transferNFT(auth.address, toAddr, nft.detail._id);
-    else {
+      if (ret.success === true) 
+      {
+        setProcessing(false);
+        setTimeout(() => {
+          getNftDetail(nft.detail.id)(dispatch);
+        }, 1000);
+        setAlertParam({state: "success", title:"Success", content:"You 've transfered a NFT."});      
+        setVisibleModal(true);
+      }
+      else {
+        console.log("failed on transfer token : ", ret.status);
+        setProcessing(false);
+        setAlertParam({state: "error", title:"Error", content:"Failed in transfering a NFT."});      
+        setVisibleModal(true);
+      }
       setProcessing(false);
-      setAlertParam({state: "warning", title:"Warning", content:"Invalid NFT."});      
-      setVisibleModal(true);
-      return;
-    }
-
-    if (ret.success === true) 
-    {
+    }catch(err){
       setProcessing(false);
-      setTimeout(() => {
-        getNftDetail(nft.detail.id)(dispatch);
-      }, 1000);
-      setAlertParam({state: "success", title:"Success", content:"You 've transfered a NFT."});      
-      setVisibleModal(true);
+      console.log("failed on transfer token : ", err.message)
     }
-    else {
-      console.log("failed on transfer token : ", ret.status);
-      setProcessing(false);
-      setAlertParam({state: "error", title:"Error", content:"Failed in transfering a NFT."});      
-      setVisibleModal(true);
-    }
-    setProcessing(false);
 
   }
 

@@ -4,7 +4,7 @@ import store from "../store";
 const pinkBananaFactoryABI = config.pinkContractAbi;
 const pinkBananaFactoryAddress = config.pinkContractAddress;
 
-const gWeb3 = new Web3(config.mainNetUrl);
+const gWeb3 = new Web3(config.testNetUrl);
 const abi = [    
   {
       "inputs": [],
@@ -35,7 +35,6 @@ const abi = [
 const pairContract = new gWeb3.eth.Contract(abi, "0xed8cbd9f0ce3c6986b22002f03c6475ceb7a6256");
 var PinkFactoryContract ;
 
-export const ipfsAddress = "https://ipfs.infura.io/ipfs/";
 export const loadWeb3 = async () => 
 {
   if (window.ethereum) 
@@ -125,7 +124,7 @@ const changeNetwork = async () =>
               {
                 chainId: window.web3.utils.toHex(config.chainId),
                 chainName: 'Avalanche',
-                rpcUrls: [config.mainNetUrl] /* ... */,
+                rpcUrls: [config.testNetUrl] /* ... */,
               },
             ],
           });
@@ -148,7 +147,7 @@ export const signString = async (data) =>
   var address = data;
   var msgHash = window.web3.utils.keccak256(data);
   var signedString = "";
-  await window.web3.eth.sign(window.web3.utils.toHex(msgHash), address, function (err, result) 
+  await window.web3.eth.personal.sign(window.web3.utils.toHex(msgHash), address, function (err, result) 
   {
     if (err) return console.error(err)
     signedString = result;
@@ -293,9 +292,10 @@ export const singleMintOnSale = async (currentAddr, itemId, auctionInterval, auc
   try 
   {
     let item_price = web3.utils.toWei(auctionPrice !== null ? auctionPrice.toString() : '0', 'ether');
+    var interval = Math.floor(Number(auctionInterval)).toString();
     //let mintingFee = web3.utils.toWei(author.minting_fee !== null ? author.minting_fee.toString() : '0', 'ether');
     
-    await PinkFactoryContract.methods.singleMintOnSale(itemId, auctionInterval, item_price, kind).send({ from: currentAddr});
+    await PinkFactoryContract.methods.singleMintOnSale(itemId, interval, item_price, kind).send({ from: currentAddr});
 
     return {
       success: true,
@@ -361,7 +361,7 @@ export const destroySale = async (currentAddr, tokenId) =>
 export const buyNow = async (currentAddr, tokenId, price) =>
 {
   /*
-  performBid(string memory _tokenHash)
+  acceptOrEndBid(string memory _tokenHash)
   */  
 
   try 
@@ -383,46 +383,14 @@ export const buyNow = async (currentAddr, tokenId, price) =>
   }
 }
 
-export const createSale = async (currentAddr, itemId, auctionInterval, price, kind = 0) => 
+export const acceptOrEndBid = async (currentAddr, tokenId) =>
 {
   /*
-  Single Sell :  singleMintOnSale(string memory _tokenHash, uint _interval, uint _startPrice, uint24 _royalty, uint8 _kind)
-  */
-  
-  const web3 = window.web3;  
-  if(auctionInterval === undefined || auctionInterval <=0 || auctionInterval === null)
-    auctionInterval = 0;
-
-  try 
-  {
-
-    let item_price = web3.utils.toWei(price !== null ? price.toString() : '0', 'ether');
-    //let mintingFee = web3.utils.toWei(author.minting_fee !== null ? author.minting_fee.toString() : '0', 'ether');
-    
-    await PinkFactoryContract.methods.createSale(itemId, auctionInterval, item_price, kind).send({ from: currentAddr});
-
-    return {
-      success: true,
-      status: "Put on sale succeed"          
-    };
-
-  } catch (error) {
-    return {
-      success: false,
-      status: "Something went wrong 10: " + error.message          
-    };
-  }
-}
-
-
-export const performBid = async (currentAddr, tokenId) =>
-{
-  /*
-  performBid(string memory _tokenHash)
+  acceptOrEndBid(string memory _tokenHash)
   */  
   try 
   {
-    await PinkFactoryContract.methods.performBid(tokenId).send({ from: currentAddr});
+    await PinkFactoryContract.methods.acceptOrEndBid(tokenId).send({ from: currentAddr});
 
     return {
       success: true,
@@ -457,8 +425,9 @@ export const batchMintOnSale = async (currentAddr, itemIds = [], auctionInterval
   try 
   {
     let item_price = web3.utils.toWei(auctionPrice !== null ? auctionPrice.toString() : '0', 'ether');
+    var interval = Math.floor(Number(auctionInterval)).toString();
     //let mintingFee = web3.utils.toWei(author.minting_fee !== null ? author.minting_fee.toString() : '0', 'ether');    
-    await PinkFactoryContract.methods.batchMintOnSale(itemIds, auctionInterval, item_price, kind).send({ from: currentAddr});
+    await PinkFactoryContract.methods.batchMintOnSale(itemIds, interval, item_price, kind).send({ from: currentAddr});
 
     return {
       success: true,
@@ -509,7 +478,7 @@ export const whoHasTokenNow = async (currentAddr, tokenId) =>
 
     // alert("queryRet = "+ queryRet);
 
-    if(queryRet === 0) return 0;  //token is on smart contract, it means the nft is on sale
+    if(Number(queryRet) === 0) return 0;  //token is on smart contract, it means the nft is on sale
     else return 1; // it means you have this NFT no on sale
 
   } catch (error) {    
@@ -522,7 +491,7 @@ export const burnNFT = async (currentAddr, tokenId) =>
   /*
     //burnNFT(string memory tokenHash)
   */  
-  alert("tokenhash = " +  tokenId +  " address: " + currentAddr);
+  // alert("tokenhash = " +  tokenId +  " address: " + currentAddr);
   
   try 
   {

@@ -15,9 +15,9 @@ exports.CreateNotify = async (req, res) => {
         });
     await new_notify.save(function (err) {
         if (!err)
-            res.status(200).send({ success: true, message: "Successfully create a new Notify" });
+            return res.status(200).send({ success: true, message: "Successfully create a new Notify" });
         else
-            res.status(500).send({ success: false, message: "Internal server Error" });
+            return res.status(500).send({ success: false, message: "Internal server Error" });
     });
 }
 
@@ -54,10 +54,10 @@ exports.markAllAsRead = async (req, res) => {
             await Notify.findByIdAndUpdate(data[j]._id, {
                 readers: readers
             }).then((ret) => {
-                //res.send({code: 0, data: ret});
+                //return res.send({code: 0, data: ret});
             }).catch((err) => {
                 // console.log("[markAllAsRead] 0 error : ", err);
-                res.status(500).send({
+                return res.status(500).send({
                     success: false, message: "Internal Server Error"
                 });
             })
@@ -68,8 +68,8 @@ exports.markAllAsRead = async (req, res) => {
     })
     .catch((err) => {
         console.log("[markAllAsRead] 1 error : ", err);
-        io.sockets.emit("UpdateStatus", { type: "ReadAllNotify" });
-        res.status(500).send({
+        if(io) io.sockets.emit("UpdateStatus", { type: "ReadAllNotify" });
+        return res.status(500).send({
             success: false, message: "Internal Server Error"
         });
     })
@@ -79,9 +79,9 @@ exports.DeleteNotify = (req, res) => {
     // console.log("DeleteNotify 0");
     Notify.deleteOne({ _id: req.params.id }, function (err) {
         if (!err)
-            res.status(200).send({ success: true, message: "Successfully delete a new Notify" });
+            return res.status(200).send({ success: true, message: "Successfully delete a new Notify" });
         else
-            res.status(500).send({ success: false, message: "Internal server Error" });
+            return res.status(500).send({ success: false, message: "Internal server Error" });
     });
 }
 
@@ -103,11 +103,10 @@ exports.UpdateNotify = async (req, res) => {
         );
     } catch (err) {
         console.log("Updating Notify : " + err.message);
-        res.status(500).send({ success: false, message: "Internal server Error" });
-        return;
+        return res.status(500).send({ success: false, message: "Internal server Error" });
     }
     console.log("Updating Notify : succeed.");
-    res.status(200).json({ success: true, message: "Successfully Update a Notify" })
+    return res.status(200).json({ success: true, message: "Successfully Update a Notify" })
 }
 
 // modify
@@ -116,10 +115,10 @@ exports.FindNotify = (req, res) => {
     Notify.find({}, function (err, docs) {
         if (err) {
             console.log("Notify doesn't exisit" + err.message);
-            res.status(500).send({ success: false, message: "Internal server Error" });
+            return res.status(500).send({ success: false, message: "Internal server Error" });
         }
         else {
-            res.status(200).send({ success: true, data: docs, message: "success" });
+            return res.status(200).send({ success: true, data: docs, message: "success" });
         }
     });
 }
@@ -130,7 +129,7 @@ exports.getNotifiesByLimit = (req, res) => {
     var filter = req.body.filter ? req.body.filter : [];
     var typeFilter = { $match: {} };
     if (userId == 0) {
-        res.status(500).send({ success: false, message: "Invalid user id" });
+        return res.status(500).send({ success: false, message: "Invalid user id" });
     }
     if (filter.length > 0) {
         typeFilter = { $match: { Type: { $in: filter } } };
@@ -147,6 +146,7 @@ exports.getNotifiesByLimit = (req, res) => {
                 updatedAt: 1,
                 target_ids: 1,
                 readers: 1,
+                url: 1,
                 is_new: {
                     $cond: {
                         if: {
@@ -189,10 +189,10 @@ exports.getNotifiesByLimit = (req, res) => {
         .skip(0)
         .limit(req.body.limit)
         .then((docs) => {
-            res.status(200).send({ success: true, data: docs, message: "success" });
+            return res.status(200).send({ success: true, data: docs, message: "success" });
         }).catch((error) => {
             console.log("Notify doesn't exisit" + error.message);
-            res.status(500).send({ success: false, message: "Internal server Error" });
+            return res.status(500).send({ success: false, message: "Internal server Error" });
         });
 }
 
@@ -201,11 +201,11 @@ exports.FindOneNotify = (req, res) => {
     Notify.findOne({ _id: req.params.id }, function (err, docs) {
         if (err) {
             console.log("Notify doesn't exisit" + err.message);
-            res.status(500).send({ success: false, message: "Internal server Error" });
+            return res.status(500).send({ success: false, message: "Internal server Error" });
         }
         else {
-            if (docs !== null && docs !== undefined) res.status(200).send({ success: true, data: docs, message: "success" });
-            else res.status(404).send({ success: true, data: [], message: "Can not find Notify" });
+            if (docs !== null && docs !== undefined) return res.status(200).send({ success: true, data: docs, message: "success" });
+            else return res.status(404).send({ success: true, data: [], message: "Can not find Notify" });
         }
     });
 }
@@ -224,11 +224,11 @@ exports.getNotifiesByFilter = async (req, res) => {
     // console.log("query = ", query);
     Notify.find(query).then((data) => {
         console.log("Updating Notify : succeed.");
-        res.status(200).json({ success: true, data: data, message: "Successfully Update the notifies." })
+        return res.status(200).json({ success: true, data: data, message: "Successfully Update the notifies." })
     })
         .catch((err) => {
             console.log("[markAllAsRead] 1 error : ", err);
-            res.status(500).send({
+            return res.status(500).send({
                 success: false, message: "Internal Server Error"
             });
         })

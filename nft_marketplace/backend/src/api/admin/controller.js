@@ -18,9 +18,9 @@ exports.getUsers = async (req, res) => {
     promise.push(Users.find(query).skip((page - 1) * itemsByPage).limit(itemsByPage));
     promise.push(Users.count(query));
     Promise.all(promise).then((result) => {
-        res.send({ count: result[1], data: result[0] });
+        return res.send({ count: result[1], data: result[0] });
     }).catch((err) => {
-        res.status(500).send({
+        return res.status(500).send({
             message: err.message || "some error occured while retrieving user data"
         });
     });
@@ -38,13 +38,13 @@ exports.updateUserInfo = (req, res) => {
     )
         .then((data) => {
             if (!data) {
-                res.status(404).send({
+                return res.status(404).send({
                     message: `Cannot update User with id = ${_id}. Maybe User was not found.`,
                 });
-            } else res.send({ message: "User was updated successfully" });
+            } else return res.send({ message: "User was updated successfully" });
         })
         .catch((err) => {
-            res.status(500).send({
+            return res.status(500).send({
                 message: "Error updating User with id = " + _id,
             });
         });
@@ -69,10 +69,10 @@ exports.create = (req, res) => {
     user
         .save(user)
         .then((data) => {
-            res.send(data);
+            return res.send(data);
         })
         .catch((err) => {
-            res.status(500).send({
+            return res.status(500).send({
                 message: err.message || "Some error occurred while creating the User.",
             });
         });
@@ -84,10 +84,10 @@ exports.findAll = (req, res) => {
 
     Users.find(condition)
         .then((data) => {
-            res.send(data);
+            return res.send(data);
         })
         .catch((err) => {
-            res.status(500).send({
+            return res.status(500).send({
                 message:
                     err.message || "Some error occured while retrieving tutorials.",
             });
@@ -99,11 +99,12 @@ exports.findOne = (req, res) => {
     Users.findOne({ address: address })
         .then((data) => {
             if (!data) {
-                res
+                return res
                     .status(404)
                     .send({ message: "Not found User with address " + adderss });
+                
             } else {
-                res.send(data);
+                return res.send(data);
             }
         })
         .catch((err) => {
@@ -114,7 +115,7 @@ exports.findOne = (req, res) => {
 
 exports.update = (req, res) => {
     if (!req.body) {
-         res.status(400).send({
+        return res.status(400).send({
             message: "Data to update can not be empty!",
         });
     }
@@ -143,13 +144,13 @@ exports.update = (req, res) => {
     )
         .then((data) => {
             if (!data) {
-                res.status(404).send({
+                return res.status(404).send({
                     message: `Cannot update User with id = ${id}. Maybe User was not found.`,
                 });
-            } else res.send({ message: "User was updated successfully" });
+            } else return res.send({ message: "User was updated successfully" });
         })
         .catch((err) => {
-            res.status(500).send({
+            return res.status(500).send({
                 message: "Error updating User with id = " + id,
             });
         });
@@ -161,17 +162,17 @@ exports.delete = (req, res) => {
     Users.findByIdAndRemove(id)
         .then((data) => {
             if (!data) {
-                res.status(404).send({
+                return res.status(404).send({
                     message: `Cannot delete User with id = ${id}. Maybe User was not found.`,
                 });
             } else {
-                res.send({
+                return res.send({
                     message: "User was deleted successfully!",
                 });
             }
         })
         .catch((err) => {
-            res.status(500).send({
+            return res.status(500).send({
                 message: "Could not delete User with id = " + id,
             });
         });
@@ -181,12 +182,12 @@ exports.delete = (req, res) => {
 exports.deleteAll = (req, res) => {
     Users.deleteMany({})
         .then((data) => {
-            res.send({
+            return res.send({
                 message: `${data.deletedCount} Users were deleted succesfully!`,
             });
         })
         .catch((err) => {
-            res.status(500).send({
+            return res.status(500).send({
                 message: err.message || "Some error occurred while removing all Users.",
             });
         });

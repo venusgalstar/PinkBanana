@@ -20,34 +20,42 @@
 				"type": "address"
 			},
 			{
+				"components": [
+					{
+						"internalType": "address",
+						"name": "sender",
+						"type": "address"
+					},
+					{
+						"internalType": "address",
+						"name": "seller",
+						"type": "address"
+					},
+					{
+						"internalType": "address",
+						"name": "maxBidder",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "maxBidPrice",
+						"type": "uint256"
+					},
+					{
+						"internalType": "string",
+						"name": "tokenHash",
+						"type": "string"
+					},
+					{
+						"internalType": "uint256",
+						"name": "tokenId",
+						"type": "uint256"
+					}
+				],
 				"indexed": false,
-				"internalType": "address",
-				"name": "seller",
-				"type": "address"
-			},
-			{
-				"indexed": false,
-				"internalType": "address",
-				"name": "buyer",
-				"type": "address"
-			},
-			{
-				"indexed": false,
-				"internalType": "uint256",
-				"name": "price",
-				"type": "uint256"
-			},
-			{
-				"indexed": false,
-				"internalType": "string",
-				"name": "tokenHash",
-				"type": "string"
-			},
-			{
-				"indexed": false,
-				"internalType": "uint256",
-				"name": "tokenId",
-				"type": "uint256"
+				"internalType": "struct PinkBananaFactory.BidInfo",
+				"name": "bidInfo",
+				"type": "tuple"
 			},
 			{
 				"components": [
@@ -114,6 +122,163 @@
 			}
 		],
 		"name": "AcceptBid",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "caller",
+				"type": "address"
+			},
+			{
+				"components": [
+					{
+						"internalType": "address",
+						"name": "sender",
+						"type": "address"
+					},
+					{
+						"internalType": "address",
+						"name": "seller",
+						"type": "address"
+					},
+					{
+						"internalType": "address",
+						"name": "maxBidder",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "maxBidPrice",
+						"type": "uint256"
+					},
+					{
+						"internalType": "string",
+						"name": "tokenHash",
+						"type": "string"
+					},
+					{
+						"internalType": "uint256",
+						"name": "tokenId",
+						"type": "uint256"
+					}
+				],
+				"indexed": false,
+				"internalType": "struct PinkBananaFactory.BidInfo[]",
+				"name": "bidInfos",
+				"type": "tuple[]"
+			},
+			{
+				"components": [
+					{
+						"internalType": "uint256",
+						"name": "totalAmount",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "sellerAmount",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "artistAmount",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "pinkTokenAmount",
+						"type": "uint256"
+					},
+					{
+						"internalType": "address",
+						"name": "pinkTokenAddress",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "pccTeamAmount",
+						"type": "uint256"
+					},
+					{
+						"internalType": "address",
+						"name": "pccTeamAddress",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "pinkTeamAmount",
+						"type": "uint256"
+					},
+					{
+						"internalType": "address",
+						"name": "pinkTeamAddress",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "devTeamAmount",
+						"type": "uint256"
+					},
+					{
+						"internalType": "address",
+						"name": "devTeamAddress",
+						"type": "address"
+					}
+				],
+				"indexed": false,
+				"internalType": "struct PinkBananaFactory.RoyaltyInfo[]",
+				"name": "royaltyInfos",
+				"type": "tuple[]"
+			}
+		],
+		"name": "BatchEndAuction",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "seller",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "string[]",
+				"name": "tokenHashs",
+				"type": "string[]"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256[]",
+				"name": "tokenIds",
+				"type": "uint256[]"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "interval",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "price",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint8",
+				"name": "kind",
+				"type": "uint8"
+			}
+		],
+		"name": "BatchMintOnSale",
 		"type": "event"
 	},
 	{
@@ -273,114 +438,15 @@
 				"internalType": "uint256",
 				"name": "newPrice",
 				"type": "uint256"
-			}
-		],
-		"name": "ChangePrice",
-		"type": "event"
-	},
-	{
-		"anonymous": false,
-		"inputs": [
-			{
-				"indexed": false,
-				"internalType": "address",
-				"name": "seller",
-				"type": "address"
-			},
-			{
-				"indexed": false,
-				"internalType": "string",
-				"name": "tokenHash",
-				"type": "string"
-			},
-			{
-				"indexed": false,
-				"internalType": "uint256",
-				"name": "tokenId",
-				"type": "uint256"
 			},
 			{
 				"indexed": false,
 				"internalType": "uint256",
 				"name": "interval",
 				"type": "uint256"
-			},
-			{
-				"indexed": false,
-				"internalType": "uint256",
-				"name": "price",
-				"type": "uint256"
-			},
-			{
-				"indexed": false,
-				"internalType": "uint8",
-				"name": "kind",
-				"type": "uint8"
 			}
 		],
-		"name": "CreateSale",
-		"type": "event"
-	},
-	{
-		"anonymous": false,
-		"inputs": [
-			{
-				"indexed": false,
-				"internalType": "address",
-				"name": "to",
-				"type": "address"
-			},
-			{
-				"indexed": false,
-				"internalType": "uint256",
-				"name": "tokenId",
-				"type": "uint256"
-			},
-			{
-				"indexed": false,
-				"internalType": "uint256",
-				"name": "amount",
-				"type": "uint256"
-			},
-			{
-				"indexed": false,
-				"internalType": "address",
-				"name": "nftAddress",
-				"type": "address"
-			}
-		],
-		"name": "CreateToken",
-		"type": "event"
-	},
-	{
-		"anonymous": false,
-		"inputs": [
-			{
-				"indexed": false,
-				"internalType": "address",
-				"name": "sender",
-				"type": "address"
-			},
-			{
-				"indexed": false,
-				"internalType": "address",
-				"name": "to",
-				"type": "address"
-			},
-			{
-				"indexed": false,
-				"internalType": "uint256",
-				"name": "amount",
-				"type": "uint256"
-			},
-			{
-				"indexed": false,
-				"internalType": "uint8",
-				"name": "kind",
-				"type": "uint8"
-			}
-		],
-		"name": "CustomizedTransfer",
+		"name": "ChangePrice",
 		"type": "event"
 	},
 	{
@@ -418,34 +484,42 @@
 				"type": "address"
 			},
 			{
+				"components": [
+					{
+						"internalType": "address",
+						"name": "sender",
+						"type": "address"
+					},
+					{
+						"internalType": "address",
+						"name": "seller",
+						"type": "address"
+					},
+					{
+						"internalType": "address",
+						"name": "maxBidder",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "maxBidPrice",
+						"type": "uint256"
+					},
+					{
+						"internalType": "string",
+						"name": "tokenHash",
+						"type": "string"
+					},
+					{
+						"internalType": "uint256",
+						"name": "tokenId",
+						"type": "uint256"
+					}
+				],
 				"indexed": false,
-				"internalType": "address",
-				"name": "seller",
-				"type": "address"
-			},
-			{
-				"indexed": false,
-				"internalType": "address",
-				"name": "buyer",
-				"type": "address"
-			},
-			{
-				"indexed": false,
-				"internalType": "uint256",
-				"name": "price",
-				"type": "uint256"
-			},
-			{
-				"indexed": false,
-				"internalType": "string",
-				"name": "tokenHash",
-				"type": "string"
-			},
-			{
-				"indexed": false,
-				"internalType": "uint256",
-				"name": "tokenId",
-				"type": "uint256"
+				"internalType": "struct PinkBananaFactory.BidInfo",
+				"name": "bidInfo",
+				"type": "tuple"
 			},
 			{
 				"components": [
@@ -753,6 +827,49 @@
 			{
 				"indexed": false,
 				"internalType": "address",
+				"name": "seller",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "string",
+				"name": "tokenHash",
+				"type": "string"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "tokenId",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "interval",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "price",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint8",
+				"name": "kind",
+				"type": "uint8"
+			}
+		],
+		"name": "SingleMintOnSale",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "address",
 				"name": "sender",
 				"type": "address"
 			},
@@ -968,8 +1085,46 @@
 	{
 		"inputs": [
 			{
-				"internalType": "string[]",
+				"internalType": "string",
 				"name": "_tokenHash",
+				"type": "string"
+			}
+		],
+		"name": "acceptOrEndBid",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "string[]",
+				"name": "_tokenHashs",
+				"type": "string[]"
+			}
+		],
+		"name": "batchEndAuction",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "string[]",
+				"name": "_tokenHashs",
 				"type": "string[]"
 			},
 			{
@@ -1040,34 +1195,6 @@
 	{
 		"inputs": [
 			{
-				"internalType": "string[]",
-				"name": "_tokenHashs",
-				"type": "string[]"
-			},
-			{
-				"internalType": "uint256",
-				"name": "_interval",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "_price",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint8",
-				"name": "_kind",
-				"type": "uint8"
-			}
-		],
-		"name": "createBatchSale",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
 				"internalType": "string",
 				"name": "_tokenHash",
 				"type": "string"
@@ -1088,7 +1215,7 @@
 				"type": "uint8"
 			}
 		],
-		"name": "createSale",
+		"name": "createSaleReal",
 		"outputs": [
 			{
 				"internalType": "bool",
@@ -1151,6 +1278,35 @@
 				"internalType": "uint8",
 				"name": "",
 				"type": "uint8"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "user",
+				"type": "address"
+			},
+			{
+				"internalType": "string",
+				"name": "tokenHash",
+				"type": "string"
+			},
+			{
+				"internalType": "address",
+				"name": "nftAddress",
+				"type": "address"
+			}
+		],
+		"name": "getBalanceOf",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
 			}
 		],
 		"stateMutability": "view",
@@ -1449,25 +1605,6 @@
 			}
 		],
 		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "string",
-				"name": "_tokenHash",
-				"type": "string"
-			}
-		],
-		"name": "performBid",
-		"outputs": [
-			{
-				"internalType": "bool",
-				"name": "",
-				"type": "bool"
-			}
-		],
-		"stateMutability": "nonpayable",
 		"type": "function"
 	},
 	{

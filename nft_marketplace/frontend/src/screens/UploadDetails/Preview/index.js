@@ -32,32 +32,6 @@ const Preview = ({ className, onClose, imgSrc, itemTitle, itemPrice, clearAll}) 
                 <div className={styles.title}>{itemTitle}</div>
                 <div className={styles.price}>{itemPrice} AVAX</div>
               </div>
-              <div className={styles.line}>
-                <div className={styles.users}>
-                  <div className={styles.avatar}>
-                    <img src="/images/content/avatar-1.jpg" alt="Avatar" />
-                  </div>
-                  <div className={styles.avatar}>
-                    <img src="/images/content/avatar-3.jpg" alt="Avatar" />
-                  </div>
-                  <div className={styles.avatar}>
-                    <img src="/images/content/avatar-4.jpg" alt="Avatar" />
-                  </div>
-                </div>
-                <div className={styles.counter}>3 in stock</div>
-              </div>
-            </div>
-            <div className={styles.foot}>
-              <div className={styles.status}>
-                <Icon name="candlesticks-up" size="20" />
-                Highest bid <span>0.001 AVAX</span>
-              </div>
-              <div className={styles.bid}>
-                New bid
-                <span role="img" aria-label="fire">
-                  🔥
-                </span>
-              </div>
             </div>
           </div>
         </div>

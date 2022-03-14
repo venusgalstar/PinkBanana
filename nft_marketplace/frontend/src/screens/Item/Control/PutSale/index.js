@@ -19,6 +19,7 @@ const items = [
   },
 ];
 
+
 const PutSale = ({ className, onOk, onCancel }) => {
   const [instant, setInstant] = useState(false); 
   const [period, setPeriod] = useState(7);
@@ -48,10 +49,13 @@ const PutSale = ({ className, onOk, onCancel }) => {
           <input className={styles.input} type="text"  id="priceInput" placeholder="Enter your price" />
           <div className={styles.col} style={{ display: "flex", alignItems: "center" }}>AVAX</div>
         </div>
-        {
+        { //for test we chaged the value 30 to 0.005 , 0.005 days equals with 432 second, with 7.2 min
           !instant ?
             <div className={styles.row}>
               <select className={styles.select} value={period} onChange={(event) => { setPeriod(event.target.value) }} placeholder="Please select auction time">
+                <option value={0.000694}>1min</option>
+                <option value={0.00347}>5min</option>
+                <option value={0.00694}>10min</option>
                 <option value={7}>7 days</option>
                 <option value={10}>10 days</option>
                 <option value={30}>1 month</option>

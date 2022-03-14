@@ -19,6 +19,8 @@ import { useEffect } from "react";
 import { getDetailedUserInfo } from "../../store/actions/auth.actions";
 import { authLogout } from "../../store/actions/auth.actions";
 import { getNotifiesByLimit } from "../../store/actions/notify.action";
+import { setLatestUserInfo } from "../../store/actions/auth.actions";
+import Alert from "../Alert";
 
 import { io } from "socket.io-client";
 
@@ -56,12 +58,12 @@ const Headers = () => {
   const [visibleNav, setVisibleNav] = useState(false);
   const [search, setSearch] = useState("");
   const currentUsr = useSelector(state => state.auth.user);
-  const [createState, setCreateState] = useState(1);
   const history = useHistory();
   const [showVerifyModal, setShowVerifyModal] = useState(false);
-  const detailedUserInfo = useSelector(state => state.auth.detail);
   const currentAddr = useSelector(state => state.auth.currentWallet);
   const user = useSelector(state => state.auth.user);
+  const [alertParam, setAlertParam] = useState({});
+  const [visibleModal, setVisibleModal] = useState(false);
 
   useEffect(() => {
     function init() {
@@ -86,7 +88,8 @@ const Headers = () => {
             else {
               console.log("decoded = ", decoded);
               dispatch(authSet(decoded._doc));
-              window.location.href = "/";
+              dispatch(setLatestUserInfo(decoded._doc._id));
+              history.push("/");
               return;
             }
           } else {
@@ -103,6 +106,13 @@ const Headers = () => {
     if (currentUsr && currentUsr._id) dispatch(getDetailedUserInfo(currentUsr._id));
   }, [currentUsr])
 
+  const onOk = () => { 
+    setVisibleModal(false);
+  }
+
+  const onCancel = () => {
+    setVisibleModal(false);
+  }
 
   useEffect(() => {
     socket.on("UpdateStatus", data => {
@@ -122,12 +132,12 @@ const Headers = () => {
     let connection = await connectWallet();
     if (connection.success === true) {
       let signedString = "";
+      // console.log("connection address", connection.address);
       signedString = await signString(connection.address);
       if (signedString !== "") {
         const params = {};
         params.address = connection.address;
         params.password = signedString;
-        setCreateState(1);
         Login(params);
       }
     }
@@ -147,14 +157,13 @@ const Headers = () => {
           const decoded = jwt_decode(token);
           console.log(decoded);
           dispatch(authSet(decoded._doc));
-          setCreateState(0);
           history.push("/");
         }
       })
       .catch(function (error) {
         // console.log(error);
-        alert("Login failed, Please sign up. : ", error.message);
-        setCreateState(2);
+        setAlertParam({state: "info", title:"Info", content:"You 've not signed up with this wallet. Please sign up."});      
+        setVisibleModal(true);
       });
   }
 
@@ -278,6 +287,9 @@ const Headers = () => {
           onClick={() => setShowVerifyModal(false)}>
           Yes
         </button>
+      </Modal>
+      <Modal visible={visibleModal} onClose={() => setVisibleModal(false)}>
+        <Alert className={styles.steps} param={alertParam} okLabel="OK" onOk={onOk} onCancel={onCancel} />
       </Modal>
     </header>
   );

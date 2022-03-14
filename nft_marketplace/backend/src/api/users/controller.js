@@ -2,10 +2,8 @@ const { Fav, mongoose, Collection } = require("../../db");
 const db = require("../../db");
 const Users = db.User;
 const Sales = db.Sale;
-const Favs = db.Fav;
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
-const e = require("express");
 const jwt_enc_key = require("../../../env").jwt_enc_key;
 const admin_address = require("../../../env").admin_address;
 const signIn_break_timeout = require("../../../env").signIn_break_timeout;
@@ -32,26 +30,26 @@ exports.create = (req, res) => {
     //avoid re - resistering     
     Users.find({ address: req.body.adderss }, function (err, docs) {
         if (err) {
-            res.status(501).send({ success: false, message: "Internal Server Error." });
+            return res.status(501).send({ success: false, message: "Internal Server Error." });
         }
         if (docs.length > 0) {
-            res.status(501).send({ success: false, message: "Address is duplicated." });
+            return res.status(501).send({ success: false, message: "Address is duplicated." });
         } else {
             bcrypt.genSalt(10, (err, salt) => {
                 if (err) {
-                    res.status(501).send({ success: false, message: "Cannot save the new author." });
+                    return res.status(501).send({ success: false, message: "Cannot save the new author." });
                 }
                 bcrypt.hash(user.password, salt, (err, hash) => {
                     if (err) {
-                        res.status(501).send({ success: false, message: "Cannot save the new author." });
+                        return res.status(501).send({ success: false, message: "Cannot save the new author." });
                     }
                     else {
                         user.password = hash;
                         user.save(function (err) {
                             if (!err)
-                                res.status(200).send({ success: true, message: "Successfully create a new Author" });
+                                return res.status(200).send({ success: true, message: "Successfully create a new Author" });
                             else
-                                res.status(501).send({ success: false, message: "Cannot save the new author." });
+                                return res.status(501).send({ success: false, message: "Cannot save the new author." });
                         });
                     }
                 })
@@ -62,10 +60,10 @@ exports.create = (req, res) => {
     // user
     //     .save()
     //     .then((data) => {
-    //         res.send(data);
+    //         return res.send(data);
     //     })
     //     .catch((err) => {
-    //         res.status(500).send({
+    //         return res.status(500).send({
     //             message: err.message || "Some error occurred while creating the User.",
     //         });
     //     });
@@ -77,10 +75,10 @@ exports.findAll = (req, res) => {
 
     Users.find(condition)
         .then((data) => {
-            res.send(data);
+            return res.send(data);
         })
         .catch((err) => {
-            res.status(500).send({
+            return res.status(500).send({
                 message:
                     err.message || "Some error occured while retrieving tutorials.",
             });
@@ -92,15 +90,15 @@ exports.findOne = (req, res) => {
     Users.findOne({ address: address })
         .then((data) => {
             if (!data) {
-                res
+                return res
                     .status(404)
                     .send({ message: "Not found User with address " + adderss });
-            } else {
-                res.send(data);
+            } else {                
+                return res.send(data);
             }
         })
         .catch((err) => {
-            res.status(500)
+            return res.status(500)
                 .send({ message: "Error retrieving User with address = " + address });
         });
 }
@@ -111,22 +109,22 @@ exports.getDetailById = (req, res) => {
     Users.findOne({ _id: new ObjectId(userId) })
         .then((data) => {
             if (!data) {
-                res
+                return res
                     .status(404)
-                    .send({ success: false, message: "Not found User with id " + usrId });
+                    .send({ success: false, message: "Not found User with id " + userId });
             } else {
-                res.status(200).send({ success: true, data, message: "Getting detailed user info succeed" });
+                return res.status(200).send({ success: true, data, message: "Getting detailed user info succeed" });
             }
         })
         .catch((err) => {
-            res.status(500)
-                .send({ message: "Error retrieving User with address = " + address });
+            return res.status(500)
+                .send({ message: "Error retrieving User with userId : "+userId   });
         });
 }
 
 exports.update = (req, res) => {
     if (!req.body) {
-        res.status(400).send({
+        return res.status(400).send({
             success: false,
             message: "Data to update can not be empty!",
         });
@@ -144,18 +142,18 @@ exports.update = (req, res) => {
     )
         .then((data) => {
             if (!data) {
-                res.status(404).send({
+                return res.status(404).send({
                     success: false,
                     message: `Cannot update User. Maybe User was not found.`,
                 });
-            } else res.status(200).send({
+            } else return res.status(200).send({
                 success: true,
                 message: "User was updated successfully"
             });
         })
         .catch((err) => {
             console.log("User updating error : ", err);
-            res.status(500).send({
+            return res.status(500).send({
                 success: false,
                 message: "Error updating User "
             });
@@ -168,17 +166,17 @@ exports.delete = (req, res) => {
     Users.findByIdAndRemove(id)
         .then((data) => {
             if (!data) {
-                res.status(404).send({
+                return res.status(404).send({
                     message: `Cannot delete User with id = ${id}. Maybe User was not found.`,
                 });
             } else {
-                res.send({
+                return res.send({
                     message: "User was deleted successfully!",
                 });
             }
         })
         .catch((err) => {
-            res.status(500).send({
+            return res.status(500).send({
                 message: "Could not delete User with id = " + id,
             });
         });
@@ -187,12 +185,12 @@ exports.delete = (req, res) => {
 exports.deleteAll = (req, res) => {
     Users.deleteMany({})
         .then((data) => {
-            res.send({
+            return res.send({
                 message: `${data.deletedCount} Users were deleted succesfully!`,
             });
         })
         .catch((err) => {
-            res.status(500).send({
+            return res.status(500).send({
                 message: err.message || "Some error occurred while removing all Users.",
             });
         });
@@ -351,9 +349,9 @@ exports.getPopularUserList = async (req, res) => {
             sellerList.push(item);
         }
 
-        res.send({ code: 0, data: { buyer: buyerList, seller: sellerList } });
+        return res.send({ code: 0, data: { buyer: buyerList, seller: sellerList } });
     } catch (e) {
-        res.send({ code: 1, data: { buyer: [], seller: [] } });
+        return res.send({ code: 1, data: { buyer: [], seller: [] } });
     }
 }
 
@@ -366,16 +364,14 @@ exports.login = (req, res) => {
         }, function (err, docs) {
             // console.log("req.body.address = ", req.body.address);
             if (err) {
-                res.status(500).send({ success: false, message: "Internal server Error" });
-                return;
+                return res.status(500).send({ success: false, message: "Internal server Error" });
             }
             // console.log("docs = ", docs);
             if (docs === undefined || docs === null) {
-                res.status(404).send({ success: false, message: "You are unregistered customer." });
-                return;
+                return res.status(404).send({ success: false, message: "You are unregistered customer." });
             }
             if (docs.password == undefined) {
-                res.status(500).send({ success: false, message: "No registered password" });
+                return res.status(500).send({ success: false, message: "No registered password" });
             }
             else {
                 // bcrypt.compare(req.body.password, docs.password).then(ismatch => {
@@ -385,19 +381,18 @@ exports.login = (req, res) => {
                             jwt_enc_key,
                             { expiresIn: signIn_break_timeout }
                         );
-                        res.status(200).send({ success: true, token: jwtToken });
+                        return res.status(200).send({ success: true, token: jwtToken });
                 //     } else {
-                //         res.status(500).send({ success: false, message: "Password Wrong" });
+                //         return res.status(500).send({ success: false, message: "Password Wrong" });
                 //     }
                 // }).catch((err) => {
-                //     res.status(500).send({ success: false, message: "Internal server Error" });
-                //     return;
+                //     return res.status(500).send({ success: false, message: "Internal server Error" });
                 // })
             }
 
             // console.log("docs.password = ", docs.password);
             // else{
-            //      res.status(500).send({ success: false, message: "No registered password" });
+            //      return res.status(500).send({ success: false, message: "No registered password" });
             // }
         });
 
@@ -455,9 +450,9 @@ exports.getUploadUser = (req, res) => {
             $limit: limit
         }
     ]).then((data) => {
-        res.send({ code: 0, list: data });
+        return res.send({ code: 0, list: data });
     }).catch((error) => {
-        res.send({ code: 1, list: [] });
+        return res.send({ code: 1, list: [] });
     });
 }
 
@@ -483,13 +478,13 @@ exports.setFav = (req, res) => {
         Items.findByIdAndUpdate(target_id, {
             likes: likes
         }).then((ret) => {
-            res.send({ code: 0, data: ret });
+            return res.send({ code: 0, data: ret });
         }).catch(() => {
-            res.send({ code: 1 });
+            return res.send({ code: 1 });
         })
 
     }).catch(() => {
-        res.send({ code: 1, message: "not found" });
+        return res.send({ code: 1, message: "not found" });
     })
 
 
@@ -513,9 +508,9 @@ exports.putSale = (req, res) => {
         param.auctionPeriod = period;
     }
     Items.findByIdAndUpdate(item_id, param).then((data) => {
-        res.send({ code: 0 });
+        return res.send({ code: 0 });
     }).catch(() => {
-        res.send({ code: 1 });
+        return res.send({ code: 1 });
     });
 }
 
@@ -525,8 +520,8 @@ exports.removeSale = (req, res) => {
     Items.findByIdAndUpdate(item_id, {
         isSale: 0
     }).then((data) => {
-        res.send({ code: 0, data: data });
+        return res.send({ code: 0, data: data });
     }).catch(() => {
-        res.send({ code: 1, data: [] });
+        return res.send({ code: 1, data: [] });
     })
 }

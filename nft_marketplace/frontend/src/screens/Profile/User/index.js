@@ -25,7 +25,7 @@ const User = ({ className, item }) => {
   const currentUsr  =  useSelector(state=>state.auth.user);  //user_id in making follow
   const {userId} = useParams();  //taget_id in making follow
   const dispatch = useDispatch();
-  const detailedUserInfo = useSelector(state => state.auth.detail);
+  const detailedUserInfo = useSelector(state => state.auth.otherUser);
   const isFollowPairExists = useSelector(state => state.follow.isExists);
   const [compressedAddress, setCompressedAddress] = useState("");
 
@@ -41,7 +41,7 @@ const User = ({ className, item }) => {
 
   useEffect(() => 
   {
-    dispatch(getDetailedUserInfo(userId));
+    dispatch(getDetailedUserInfo(userId, false));
     dispatch(getIsExists(currentUsr._id, userId));
   }, [userId])
 
@@ -55,7 +55,7 @@ const User = ({ className, item }) => {
       setCompressedAddress(address);
     }
   }, [detailedUserInfo])
-  console.log("isFollowPairExists = ", isFollowPairExists);
+  console.log("userId = ", userId);
   console.log("detailedUserInfo = ", detailedUserInfo);
   
   return (

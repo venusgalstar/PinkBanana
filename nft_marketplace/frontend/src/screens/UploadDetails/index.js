@@ -15,6 +15,8 @@ import { getCollections } from "../../store/actions/collection.actions";
 import { singleMintOnSale } from "../../InteractWithSmartContract/interact";
 import Checkbox from '@mui/material/Checkbox';
 import Alert from "../../components/Alert";
+import Backdrop from '@mui/material/Backdrop';
+import CircularProgress from '@mui/material/CircularProgress';
 
 const royaltiesOptions = [{ value: 10, text: "10%" }, { value: 20, text: "20%" }, { value: 30, text: "30%" }];
 
@@ -56,7 +58,7 @@ const Upload = ({ asset_id = null }) => {
   const [logoImg, setLogoImg] = useState("");
   const [selectedColl, setSelectedColl] = useState({});
   let history = useHistory(); let dispatch = useDispatch();
-  const [collectionId, setCollectionId] =useState("");
+  const [collectionId, setCollectionId] = useState("");
   const currentUsr = useSelector(state => state.auth.user);
   const collections = useSelector(state => state.collection.list);
   const [colls, setColls] = useState([]);
@@ -69,6 +71,7 @@ const Upload = ({ asset_id = null }) => {
   const [checkedFields, setCheckedFields] = useState([]);
   const [metaStr, setMetaStr] = useState("");
   const [alertParam, setAlertParam] = useState({});
+  const [processing, setProcessing] = useState(false);
 
   useEffect(() => {
     if (collections && collections.length > 0) {
@@ -112,11 +115,9 @@ const Upload = ({ asset_id = null }) => {
 
   }, [asset_id]);
 
-  const onSelectCollection = (collId) => 
-  {
+  const onSelectCollection = (collId) => {
     if (collId !== null && collId !== "") {
-      if (collId === 0) 
-      {
+      if (collId === 0) {
         //create new collection
         localStorage.setItem("isNewItemCreating", true);
         localStorage.setItem("previousPageURL", "/upload-details/0");
@@ -129,43 +130,38 @@ const Upload = ({ asset_id = null }) => {
     }
   }
 
-  useEffect(() =>
-  {
+  useEffect(() => {
     setCollectionId(selectedColl.value);
     setCollectionName(selectedColl.text);
   }, [selectedColl])
 
-  useEffect(() =>
-  {
-    if(collectionId !== undefined &&  collections && collections.length>0)
-    {
+  useEffect(() => {
+    if (collectionId !== undefined && collections && collections.length > 0) {
       // console.log("collections = ", collections);
       var index = collections.findIndex((element) => {
         return element._id == collectionId
       });
 
-      if(collections[index] && collections[index].metaData)
-      {
+      if (collections[index] && collections[index].metaData) {
         let MetaTemplateArry = collections[index].metaData;
         // console.log("MetaTemplateArry = ", MetaTemplateArry);
 
         let templateFds = []; let i = 0;
-        let vals = []; let tempVals = [], tempChecks  = [];
+        let vals = []; let tempVals = [], tempChecks = [];
 
-        for(i=0; i<MetaTemplateArry.length; i++)
-        {
+        for (i = 0; i < MetaTemplateArry.length; i++) {
           var subValues = MetaTemplateArry[i].value;
           // console.log("typeof subValues = ", typeof subValues);
           let j;
-          for(j=0; j<subValues.length; j++) vals.push({value : subValues[j], text: subValues[j] });
-          templateFds.push({index: i, key: MetaTemplateArry[i].key, values: vals });          
+          for (j = 0; j < subValues.length; j++) vals.push({ value: subValues[j], text: subValues[j] });
+          templateFds.push({ index: i, key: MetaTemplateArry[i].key, values: vals });
           vals = [];
           tempVals.push("");
           tempChecks.push(true);
         }
 
         // console.log("templateFds = ", templateFds);
-        
+
         setMetaTemplateFields(templateFds);
         setMetaTemplateValues(tempVals);
         setCheckedFields(tempChecks);
@@ -177,15 +173,13 @@ const Upload = ({ asset_id = null }) => {
     let flag = "";
     flag = localStorage.getItem("isNewItemCreating");
     console.log("flag : ", flag)
-    if(flag)
-    {
+    if (flag) {
       setCollectionId(getConsideringCollectionId);
-      localStorage.removeItem("isNewItemCreating"); 
+      localStorage.removeItem("isNewItemCreating");
     }
   }, [])
 
-  const changeFile = (event) => 
-  {
+  const changeFile = (event) => {
     var file = event.target.files[0];
     if (file == null) return;
     console.log(file);
@@ -207,63 +201,66 @@ const Upload = ({ asset_id = null }) => {
     })
       .then(async function (response) {
         console.log("response = ", response);
-        if(response.status === 200 && params.isSale !== 0)
-        {
-          var aucperiod = (response.data.isSale === 1 ? 0 : response.data.auctionPeriod) ;
-          var price = (response.data.isSale === 1  ? response.data.price :  response.data.auctionPrice)
-          let ret = await singleMintOnSale(
-            currentUsr.address, 
-            response.data._id, 
-            aucperiod*24*3600 , 
-            price,
-            0);
-          if (ret.success === true) 
+        if (response.status === 200 && params.isSale !== 0) {
+          var aucperiod = (response.data.isSale === 1 ? 0 : response.data.auctionPeriod);
+          var price = (response.data.isSale === 1 ? response.data.price : response.data.auctionPrice)
+          setProcessing(true);
+          try{
+            let ret = await singleMintOnSale(
+              currentUsr.address,
+              response.data._id,
+              aucperiod * 24 * 3600,
+              price,
+              0);
+            if (ret.success === true) {
+              setProcessing(false);
+              console.log("succeed in put on sale");
+              setAlertParam({ state: "success", title: "Success", content: "You 've put a new item on sale." });
+              setVisibleModal(true);
+              return;
+            }
+            else {
+              setProcessing(false);
+              console.log("failed in put on sale : ", ret.status);
+              setAlertParam({ state: "error", title: "Error", content: "Failed in put on sale." });
+              setVisibleModal(true);
+              return;
+            }
+          }catch(err)
           {
-            console.log("succeed in put on sale") ;             
-            setAlertParam({state: "success", title:"Success", content:"You 've put a new item on sale."});      
-            setVisibleModal(true);   
-            return;
-          }
-          else {
-            console.log("failed in put on sale : ", ret.status);          
-            setAlertParam({state: "error", title:"Error", content:"Failed in put on sale."});      
-            setVisibleModal(true);    
-            return;
+            setProcessing(false);
+            console.log("multiple uploading error : ", err.message);
           }
         }
-        setAlertParam({state: "success", title:"Success", content:"Uploading succeed."});      
+        setAlertParam({ state: "success", title: "Success", content: "Uploading succeed." });
         setVisibleModal(true);
       })
       .catch(function (error) {
         console.log(error);
-        setAlertParam({state: "error", title:"Error", content:"Uploading failed."});      
+        setAlertParam({ state: "error", title: "Error", content: "Uploading failed." });
         setVisibleModal(true);
       });
-      
+
   }
 
   // console.log("getConsideringCollectionId = ", getConsideringCollectionId);
 
-  const createItem = () => 
-  {
-    if(Object.keys(currentUsr).length === 0)
-    {
+  const createItem = () => {
+    if (Object.keys(currentUsr).length === 0) {
       console.log("Invalid account.");
-      setAlertParam({state: "warning", title:"Warning", content:"You have to sign in before creting a item."});      
+      setAlertParam({ state: "warning", title: "Warning", content: "You have to sign in before creting a item." });
       setVisibleModal(true);
       return;
     }
-    if (collectionId === 0 || collectionId === undefined || collectionId === null) 
-    {
+    if (collectionId === 0 || collectionId === undefined || collectionId === null) {
       console.log("Invalid collection id.");
-      setAlertParam({state: "warning", title:"Warning", content:"You have to select a collection."});      
+      setAlertParam({ state: "warning", title: "Warning", content: "You have to select a collection." });
       setVisibleModal(true);
       return;
     }
-    if (selectedFile == null) 
-    {
+    if (selectedFile == null) {
       console.log("Invalid file.");
-      setAlertParam({state: "warning", title:"Warning", content:"Image is not selected."});      
+      setAlertParam({ state: "warning", title: "Warning", content: "Image is not selected." });
       setVisibleModal(true);
       return;
     }
@@ -273,7 +270,7 @@ const Upload = ({ asset_id = null }) => {
     formData.append("collectionName", collectionName);
     console.log(selectedFile);
 
-    
+
     axios({
       method: "post",
       url: `${config.baseUrl}utils/upload_file`,
@@ -292,35 +289,35 @@ const Upload = ({ asset_id = null }) => {
         params.collectionId = collectionId;
         params.creator = currentUsr._id;
         params.owner = currentUsr._id;
-        params.isSale = !sale? 0 : (instant? 1: 2);
-        if(instant) {
-          params.price = !sale? 0 : price;
+        params.isSale = !sale ? 0 : (instant ? 1 : 2);
+        if (instant) {
+          params.price = !sale ? 0 : price;
           params.auctionPrice = 0;
-        }else {
-          params.auctionPrice = !sale? 0 : price;
+        } else {
+          params.auctionPrice = !sale ? 0 : price;
           params.price = 0;
         }
-        params.auctionPeriod = !sale? 0 : period;
+        params.auctionPeriod = !sale ? 0 : period;
         params.metaData = metaStr;
-        
+
         saveItem(params);
       })
       .catch(function (error) {
         // console.log("single creation, file uploading error : ", error);
-        setAlertParam({state: "error", title:"Error", content:"Uploading failed."});      
+        setAlertParam({ state: "error", title: "Error", content: "Uploading failed." });
         setVisibleModal(true);
       });
   }
 
   const clearAll = () => {
+    document.getElementById("fileInput1").value = "";
     setSelectedFile(null);
     setTextName("");
     setPrice(0);
   }
 
-  const setSelectedMetaValue = (x, index) =>
-  {
-    let valsforDisplay  = metaTemplateValues;
+  const setSelectedMetaValue = (x, index) => {
+    let valsforDisplay = metaTemplateValues;
     valsforDisplay[index] = x;
     setMetaTemplateValues(valsforDisplay);
 
@@ -342,7 +339,7 @@ const Upload = ({ asset_id = null }) => {
     let chFields = checkedFields;
     chFields[index] = event.target.checked;
     setCheckedFields(chFields);
-    
+
     var list = [];
     for (var i = 0; i < chFields.length; i++) {
       if (chFields[i] === true) {
@@ -354,9 +351,8 @@ const Upload = ({ asset_id = null }) => {
     setMetaStr(list.toString());
   };
 
-  const onOk = () => { 
+  const onOk = () => {
     setVisibleModal(false);
-    history.push("/");
   }
 
   const onCancel = () => {
@@ -398,7 +394,7 @@ const Upload = ({ asset_id = null }) => {
                           selectedFile.name
                       }
                     </div>
-                    <input className={styles.load} type="file" onChange={changeFile}
+                    <input className={styles.load} type="file" id="fileInput1" onChange={changeFile}
                       accept="image/*, video/*"
                     />
                   </div>
@@ -430,10 +426,10 @@ const Upload = ({ asset_id = null }) => {
                       }}
                       required
                     />
-                    <div className={styles.row}>
+                    {/* <div className={styles.row}>
                       <div className={styles.col}>
                         <div className={styles.field}>
-                          <div className={styles.label} style={{marginTop:"12px"}}>Royalties</div>
+                          <div className={styles.label} style={{ marginTop: "12px" }}>Royalties</div>
                           <Dropdown
                             className={styles.dropdown}
                             value={royalties}
@@ -470,7 +466,7 @@ const Upload = ({ asset_id = null }) => {
                           required
                         />
                       </div>
-                    </div>
+                    </div> */}
                   </div>
                 </div>
               </div>
@@ -553,6 +549,9 @@ const Upload = ({ asset_id = null }) => {
                         !instant ?
                           <div className={styles.rowForSale}>
                             <select className={styles.selectForSale} value={period} onChange={(event) => { setPeriod(event.target.value) }} placeholder="Please select auction time">
+                              <option value={0.000694}>1min</option>
+                              <option value={0.00347}>5min</option>
+                              <option value={0.00694}>10min</option>
                               <option value={7}>7 days</option>
                               <option value={10}>10 days</option>
                               <option value={30}>1 month</option>
@@ -612,6 +611,12 @@ const Upload = ({ asset_id = null }) => {
       <Modal visible={visibleModal} onClose={() => setVisibleModal(false)}>
         <Alert className={styles.steps} param={alertParam} okLabel="OK" onOk={onOk} onCancel={onCancel} />
       </Modal>
+      {<Backdrop
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={processing}
+      >
+        <CircularProgress color="inherit" />
+      </Backdrop>}
     </>
   );
 };

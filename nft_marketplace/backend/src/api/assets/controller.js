@@ -17,10 +17,10 @@ exports.create = (req, res) => {
     item
         .save()
         .then((data) => {
-            res.send(data);
+            return res.send(data);
         })
         .catch((err) => {
-            res.status(500).send({
+            return res.status(500).send({
                 message: err.message || "Some error occurred while creating the User.",
             });
         });
@@ -40,11 +40,11 @@ exports.get = (req, res) => {
 		// console.log("err : " + err);
 		if (err) {
 			console.log("Author doesn't exisit" + err.message);
-			 res.status(500).send({ success: false, message: "Internal server Error" });
+			return res.status(500).send({ success: false, message: "Internal server Error" });
 		}
 		else {
-			if (docs !== null && docs !== undefined)  res.status(200).send({ success: true, data: docs, message: "success" });
-			else  res.status(404).send({ success: false, data: [], message: "Can't find such asset." });
+			if (docs !== null && docs !== undefined) return res.status(200).send({ success: true, data: docs, message: "success" });
+			else return res.status(404).send({ success: false, data: [], message: "Can't find such asset." });
 		}
 	});
 };
@@ -54,10 +54,10 @@ exports.getBannerList = (req, res) => {
     
     Assets.find({sort: {createAt: -1}}).limit(req.body.limit)
     .then((data) => {
-        res.send(data);
+        return res.send(data);
     })
     .catch((err) => {
-        res.status(500).send({
+        return res.status(500).send({
             message:
                 err.message || "Some error occured while retrieving tutorials.",
         });
@@ -70,13 +70,13 @@ exports.findOne = (req, res) => {
     Assets.findOne({_id: id}).
     then((data) => {
         if (!data) {
-            res.status(404)
+            return res.status(404)
             .send({message: "Not found Asset"});
         } else {
-            res.send(data);
+            return res.send(data);
         }
     }).catch((err) => {
-        res.status(500)
+        return res.status(500)
         .send({message: "Error retrieving Assets with id = " + id});
     });
 }

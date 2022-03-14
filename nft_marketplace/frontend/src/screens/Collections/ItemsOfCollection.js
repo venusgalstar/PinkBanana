@@ -17,7 +17,6 @@ const SlickArrow = ({ currentSlide, slideCount, children, ...props }) => (
   
 const ItemsOfCollection = () =>
 {       
-    const itemsOfCol = useSelector(state => state.nft.list);
     const collection = useSelector(state => state.collection.detail);
     const [items, setItems] = useState([]);
     const dispatch = useDispatch();
@@ -64,7 +63,6 @@ const ItemsOfCollection = () =>
       
     }, [dispatch, collectionId]);
     
-    console.log("collection = ", collection);
 
     useEffect(() => {
       setStart(0);
@@ -73,16 +71,22 @@ const ItemsOfCollection = () =>
     }, [])
 
     const onLoadMore = () => {
-      setStart(last);
-      setLast(last + 8);
       itemsOfCollectionList();                   
     }
+
+    useEffect(() => 
+    {
+      setItems(items)
+    }, [last, start])
 
     const itemsOfCollectionList = () =>
     {      
       var params = { start: start, last: last, date: 0, colId : collectionId };
      
+      console.log( "start:", start, "last:", last );
+
       axios.post(`${config.baseUrl}item/get_items_of_collection`, params).then((result) => {
+        console.log( "result.data.data = ", result.data.data );
         if (start === 0) {
           setItems(result.data.data);
         } else {
@@ -92,8 +96,9 @@ const ItemsOfCollection = () =>
           if(moreItems.length > 0)
             for(i=0; i<moreItems.length; i++) curItems.push(moreItems[i]);
           setItems(curItems);
-        }
-   
+        }   
+        setStart(last);
+        setLast(last + 8);
       }).catch(() => {
 
       });
@@ -145,7 +150,7 @@ const ItemsOfCollection = () =>
             <div className={styles.collectionName} style={{marginTop: "5rem", textAlign:"center"}}>{collection && collection.name}</div>           
             <div className={styles.createdBy} style={{textAlign:"center"}}>
                 {
-                    collection && 
+                    collection && collection.owner &&
                     <>
                         <span>Created by </span>
                         <a href={`/profile/${collection.owner._id}`}>{`${collection.owner.username}`}</a>

@@ -25,6 +25,7 @@
     "mongoose": "^6.2.2",
     "mongose": "^0.0.2-security",
     "nodemon": "^2.0.15",
+    "set-interval-async": "^2.0.3",
     "socket.io": "^4.4.1",
     "web3": "^1.7.1"
   }
