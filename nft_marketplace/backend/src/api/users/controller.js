@@ -28,12 +28,12 @@ exports.create = (req, res) => {
     });
 
     //avoid re - resistering     
-    Users.find({ address: req.body.adderss }, function (err, docs) {
-        if (err) {
-            return res.status(501).send({ success: false, message: "Internal Server Error." });
-        }
+    Users.find({ address: req.body.address })
+    .then((docs) =>        
+    {
+        console.log("[Create user] docs = ", docs);
         if (docs.length > 0) {
-            return res.status(501).send({ success: false, message: "Address is duplicated." });
+            return res.send({ code: 1 });
         } else {
             bcrypt.genSalt(10, (err, salt) => {
                 if (err) {
@@ -56,7 +56,9 @@ exports.create = (req, res) => {
             })
         }
     })
-
+    .catch((error) =>{       
+        return res.status(501).send({ success: false, message: "Internal Server Error." });        
+    })
     // user
     //     .save()
     //     .then((data) => {
@@ -93,7 +95,7 @@ exports.findOne = (req, res) => {
                 return res
                     .status(404)
                     .send({ message: "Not found User with address " + adderss });
-            } else {                
+            } else {
                 return res.send(data);
             }
         })
@@ -111,14 +113,16 @@ exports.getDetailById = (req, res) => {
             if (!data) {
                 return res
                     .status(404)
-                    .send({ success: false, message: "Not found User with id " + userId });
+                    // .send({ success: false, message: "Not found User with id " + userId });
+                    .send({ code: 1, data: {} });
             } else {
-                return res.status(200).send({ success: true, data, message: "Getting detailed user info succeed" });
+                // return res.status(200).send({ success: true, data, message: "Getting detailed user info succeed" });
+                return res.status(200).send({ code: 0, data });
             }
         })
         .catch((err) => {
             return res.status(500)
-                .send({ message: "Error retrieving User with userId : "+userId   });
+                .send({ message: "Error retrieving User with userId : " + userId });
         });
 }
 
@@ -287,7 +291,7 @@ exports.getPopularUserList = async (req, res) => {
                     "price": 1,
                     "createdAt": 1,
                     "updatedAt": 1,
-                    "follows":1,
+                    "follows": 1,
                     created: {
                         $toLong: "$createdAt"
                     }
@@ -365,12 +369,12 @@ exports.login = (req, res) => {
             else {
                 // bcrypt.compare(req.body.password, docs.password).then(ismatch => {
                 //     if (ismatch) {
-                        const jwtToken = jwt.sign(
-                            { id: docs._id, isAdmin: (docs.address === admin_address) ? 1 : 0, ...docs },
-                            jwt_enc_key,
-                            { expiresIn: signIn_break_timeout }
-                        );
-                        return res.status(200).send({ success: true, token: jwtToken });
+                const jwtToken = jwt.sign(
+                    { id: docs._id, isAdmin: (docs.address === admin_address) ? 1 : 0, ...docs },
+                    jwt_enc_key,
+                    { expiresIn: signIn_break_timeout }
+                );
+                return res.status(200).send({ success: true, token: jwtToken });
                 //     } else {
                 //         return res.status(500).send({ success: false, message: "Password Wrong" });
                 //     }

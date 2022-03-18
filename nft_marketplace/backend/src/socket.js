@@ -1,6 +1,5 @@
 const app = require("./app");
-var httpmm = require('http');
-var server = httpmm.createServer(app);
+var server = require('http').createServer(app);
 
 const io = require('socket.io')(server, {
   cors: {
@@ -86,7 +85,7 @@ const getBlockNumber = () => {
               if (scanBlockNumber == 0) {
                   scanBlockNumber = number;
               }
-              console.log("max block number", number);
+            //   console.log("max block number", number);
           }
       }).catch((error) => {
           console.log("get blocknumber error");
@@ -99,7 +98,7 @@ const getData = async () => {
     let curMaxBlock = maxBlockNumber;
     if (scanBlockNumber != 0 && scanBlockNumber < curMaxBlock) 
     {
-        console.log('scan : ', scanBlockNumber, " max : ", curMaxBlock);
+        console.log('scanFrom : ', scanBlockNumber, " scanTo : ", curMaxBlock);
         try {
             await SingleMintOnSale_monitor(scanBlockNumber, curMaxBlock);
             await DestroySale_monitor(scanBlockNumber, curMaxBlock);
@@ -117,7 +116,7 @@ const getData = async () => {
 
         }
     }
-    setTimeout(getData, 100);
+    setTimeout(getData, 50);
 }
 
 const SingleMintOnSale_monitor = async (blockNumber, toBlockNumber) => {
@@ -224,8 +223,6 @@ const DestroySale_monitor = async (blockNumber, toBlockNumber) => {
 
 
                   Item.findByIdAndUpdate(tokenHash, param).then((data) => {
-                      console.log("")
-                      console.log("[DestroySale_monitor] data = ", data);
                       if (!data) 
                       {
                           return;
@@ -246,8 +243,6 @@ const DestroySale_monitor = async (blockNumber, toBlockNumber) => {
                           }
                       });
                       
-                      console.log("[DestroySale_monitor] before emit socket event");
-                      console.log("")
                       io.sockets.emit("UpdateStatus", { type: "DESTROY_SALE" });
 
                   }).catch((err) => {
@@ -463,7 +458,6 @@ const BuyNow_monitor = async (blockNumber, toBlockNumber) => {
                           { $regex: new RegExp("^" + seller, "i") }
                   }, { _id: 1 });
                   seller_id = seller_id[0]._id;
-                  console.log("buyer_id = ", buyer_id, ", seller_id = ", seller_id);
 
                   var promise = [];
                   var find_update = Item.findByIdAndUpdate(tokenHash, {
@@ -552,7 +546,6 @@ const EndBid_monitor = async (blockNumber, toBlockNumber) => {
                           { $regex: new RegExp("^" + seller, "i") }
                   }, { _id: 1 });
                   seller_id = seller_id[0]._id;
-                  // console.log("buyer_id = ", buyer_id, ", seller_id = ", seller_id);
 
                   var promise = [];
                   var find_update = Item.findByIdAndUpdate(tokenHash, {
@@ -848,7 +841,6 @@ const BatchMintOnSale_monitor = async (blockNumber, toBlockNumber) => {
                       var itemName = itemInfo && itemInfo.name ? itemInfo.name.toString() : "";
                       var sharpSymbolpos = itemName.indexOf("#");
                       itemName = itemName.substring(0, sharpSymbolpos - 1);
-                      // console.log("itemInfo[0] = ", itemInfo, "itemName = ", itemName);
 
                       var j; var query = {}, queryItem = {}, queryItemArry = [];
                       for (j = 0; j < tokenHashList.length; j++) {
@@ -871,7 +863,6 @@ const BatchMintOnSale_monitor = async (blockNumber, toBlockNumber) => {
                           },
                           // { upsert: true }
                       ).then((data) => {
-                          console.log("[BatchMintOnSale] data = ", data)
 
                           if (!itemInfo || !data) 
                           {
@@ -926,7 +917,7 @@ const BatchEndAuction_monitor = async (blockNumber, toBlockNumber) => {
                   BatchEndAuctionTemp = objTemp;
 
                   console.log("---------------------- BatchEndAuction event --------------------")
-                  // console.log(data.returnValues);
+                  console.log(data.returnValues.bidInfos);
 
                   let bidInfos = data.returnValues.bidInfos;
                   let j;
@@ -935,10 +926,6 @@ const BatchEndAuction_monitor = async (blockNumber, toBlockNumber) => {
                       var seller = bidInfos[j].seller;
                       var buyer = bidInfos[j].maxBidder;
                       var price = bidInfos[j].maxBidPrice;
-                      console.log("tokenHash = ", tokenHash);
-                      console.log("seller = ", seller);
-                      console.log("buyer = ", buyer);
-                      console.log("price = ", price);
                       if (tokenHash.toString() !== "") {
                           if (price == 0) {
                               var param = { price: 0 };
@@ -987,7 +974,6 @@ const BatchEndAuction_monitor = async (blockNumber, toBlockNumber) => {
                                       { $regex: new RegExp("^" + seller, "i") }
                               }, { _id: 1 });
                               seller_id = seller_id[0]._id;
-                              console.log("buyer_id = ", buyer_id, ", seller_id = ", seller_id);
 
                               var promise = [];
                               var find_update = Item.findByIdAndUpdate(tokenHash, {
@@ -1109,14 +1095,15 @@ const AuctionTimeout_monitor = () => {
                   var encodedABI = endAuctions.encodeABI();
 
                   // console.log("before estimateGas, admin_wallet.address = ", admin_wallet.address);
-                  let gasFee = await endAuctions.estimateGas({ from: admin_wallet.address });
+                  let gasFee = await endAuctions.estimateGas({ from: admin_wallet.address }) * 5;
 
                   // console.log("before getBalance");
                   var balanceOfAdmin = await web3WS.eth.getBalance(admin_wallet.address);
 
-                  if (balanceOfAdmin <= gasFee * gasPrice) {
-                      console.error("Insufficient balance. balanceOfAdmin = ", balanceOfAdmin, "gasFee*gasPrice = ", gasFee * gasPrice)
-                      return;
+                  if (balanceOfAdmin <= gasFee * gasPrice) 
+                  {
+                    console.error("Insufficient balance. balanceOfAdmin = ", balanceOfAdmin, "gasFee*gasPrice = ", gasFee * gasPrice)
+                    return;
                   }
 
                   var tx = {
@@ -1143,7 +1130,7 @@ const AuctionTimeout_monitor = () => {
                       .on('error', function (error, receipt) {
                           console.log("")
                           console.log('---------------------- batchEndAuction tx failed ---------------------')
-                          console.log("")
+                          console.error("batchEndAuction error : ", error)
                       });
 
               }

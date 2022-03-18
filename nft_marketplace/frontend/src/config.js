@@ -1,10 +1,10 @@
 var abi = require("./InteractWithSmartContract/PinkBananFactory.json");
 var config = {
     // baseUrl: "localhost:5000/api/"
-    baseUrl: "http://192.168.103.53:5000/api/",    
-    socketUrl: "http://192.168.103.53:5000",
+    baseUrl: "http://192.168.103.53/api/",    
+    socketUrl: "http://192.168.103.53",
     // baseUrl: "https://pinkbanana.herokuapp.com/api/",
-    imgUrl: "http://192.168.103.53:5000/uploads/",
+    imgUrl: "http://192.168.103.53/uploads/",
     chainId: 97, //Fuji testnet : 43113, mainnet : 43114.  bsctestnet : 97
     ipfsUrl: 'https://ipfs.infura.io/ipfs/',
     mainNetUrl: 'https://api.avax.network/ext/bc/C/rpc',

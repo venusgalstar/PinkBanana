@@ -6,10 +6,10 @@ import UploadVariants from "./screens/UploadVariants";
 import UploadDetails from "./screens/UploadDetails";
 import UploadMultiple from "./screens/UploadMultiple";
 import ConnectWallet from "./screens/ConnectWallet";
-import CreateCollection from "./screens/Collections/createCollection";  
-import CollectionList from "./screens/Collections/collectionList";  
-import ItemsOfCollection from "./screens/Collections/ItemsOfCollection";  
-import Faq from "./screens/Faq";   
+import CreateCollection from "./screens/Collections/createCollection";
+import CollectionList from "./screens/Collections/collectionList";
+import ItemsOfCollection from "./screens/Collections/ItemsOfCollection";
+import Faq from "./screens/Faq";
 import Activity from "./screens/Activity";
 import Search01 from "./screens/Search01";
 import Search02 from "./screens/Search02";
@@ -33,7 +33,12 @@ import { setAvaxPrice } from "./store/actions/user.action";
 
 import { UPDATE_SERVER_TIME } from "./store/actions/action.types";
 
+import { getNotifiesByLimit } from "./store/actions/notify.action";
+
+
+
 import { io } from 'socket.io-client';
+import { useDispatch, useSelector } from "react-redux";
 
 var socket = io(`${config.socketUrl}`);
 
@@ -61,31 +66,36 @@ const avaxPrice = async () => {
 
 avaxPrice();
 
-const App = () =>
-{  
+const App = () => {
   const [visibleModal, setVisibleModal] = useState(false);
-  const [alertParam, setAlertParam] = useState({});  
+  const [alertParam, setAlertParam] = useState({});
+  const user = useSelector(state => state.auth.user);
+  const dispatch = useDispatch();
 
-  useEffect(() =>
-  {    
-    socket.on("disconnect", () =>
-    {  
+  useEffect(() => {
+    socket.on("disconnect", () => {
       //require alert
-      setAlertParam( {state: "info", title:"Information", content:"We've lost connection to server !"} );      
-      setVisibleModal( true );  
+      setAlertParam({ state: "info", title: "Information", content: "We've lost connection to server !" });
+      setVisibleModal(true);
       console.log("disconnected");
-    })    
+    })
   }, [])
 
-  useEffect( () =>
-  {
-    async function checkValidLogin () {
+  useEffect(() => {
+    socket.on("UpdateStatus", data => {
+      if (user._id) {
+        dispatch(getNotifiesByLimit(50, user._id))
+      }
+    });
+  }, [user])
+
+  useEffect(() => {
+    async function checkValidLogin() {
 
       let connection = await getValidWallet();
-      if(connection.address === "")
-      {
-        setAlertParam( {state: "info", title:"Information", content:"No connected wallet. You should consider trying MetaMask!"} );      
-        setVisibleModal( true );
+      if (connection.address === "") {
+        setAlertParam({ state: "info", title: "Information", content: "No connected wallet. Please connect a wallet." });
+        setVisibleModal(true);
       }
 
       if (localStorage.jwtToken !== undefined &&
@@ -93,15 +103,13 @@ const App = () =>
         localStorage.jwtToken !== null) {
         const decoded = jwt_decode(localStorage.jwtToken);
         const currTime = Date.now() / 1000;
-        if (connection.success === true) 
-        {
-          if (decoded.app < currTime ) 
-          {
+        if (connection.success === true) {
+          if (decoded.app < currTime) {
             // console.log(decoded);
             store.dispatch(authLogout());
             localStorage.removeItem("jwtToken");
-            setAlertParam( {state: "info", title:"Information", content:"Session timeouted. Please sign in again"} );     
-            setVisibleModal( true );
+            setAlertParam({ state: "info", title: "Information", content: "Session timeouted. Please sign in again" });
+            setVisibleModal(true);
           }
           else {
             // console.log(decoded);      
@@ -114,12 +122,12 @@ const App = () =>
     checkValidLogin();
   }, [])
 
-  const onOk = () => { 
-    setVisibleModal( false );
+  const onOk = () => {
+    setVisibleModal(false);
   }
 
   const onCancel = () => {
-    setVisibleModal( false );
+    setVisibleModal(false);
   }
 
   return (
@@ -151,7 +159,7 @@ const App = () =>
               <CollectionList />
             </Page>
           )}
-        /> 
+        />
         <Route
           exact
           path="/collectionItems/:collectionId"
@@ -274,12 +282,12 @@ const App = () =>
           path="/admin"
           render={() => (
             // <Page>
-              <Admin />
+            <Admin />
             // </Page>
           )}
         />
-      </Switch>      
-      <Modal visible={visibleModal} onClose={() => setVisibleModal(false) }>
+      </Switch>
+      <Modal visible={visibleModal} onClose={() => setVisibleModal(false)}>
         <Alert className={styles.steps} param={alertParam} okLabel="Yes" onOk={onOk} onCancel={onCancel} />
       </Modal>
     </Router>

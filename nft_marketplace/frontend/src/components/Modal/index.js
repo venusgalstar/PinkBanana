@@ -5,7 +5,6 @@ import OutsideClickHandler from "react-outside-click-handler";
 import cn from "classnames";
 import styles from "./Modal.module.sass";
 import Icon from "../Icon";
-import FolowSteps from "./FolowSteps";
 
 const Modal = ({
   outerClassName,
@@ -13,6 +12,7 @@ const Modal = ({
   visible,
   onClose,
   children,
+  showClose = true
 }) => {
   const escFunction = useCallback(
     (e) => {
@@ -46,9 +46,12 @@ const Modal = ({
           <OutsideClickHandler onOutsideClick={onClose}>
             <div className={cn(styles.container, containerClassName)}>
               {children}
-              <button className={styles.close} onClick={onClose}>
-                <Icon name="close" size="14" />
-              </button>
+              {
+                showClose &&
+                <button className={styles.close} onClick={onClose}>
+                  <Icon name="close" size="14" />
+                </button>
+              }
             </div>
           </OutsideClickHandler>
         </div>

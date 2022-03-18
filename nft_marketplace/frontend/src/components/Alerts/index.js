@@ -5,7 +5,6 @@ import OutsideClickHandler from "react-outside-click-handler";
 import cn from "classnames";
 import styles from "./Modal.module.sass";
 import Icon from "../Icon";
-import FolowSteps from "./FolowSteps";
 
 const Modal = ({
   outerClassName,

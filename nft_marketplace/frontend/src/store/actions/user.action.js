@@ -2,7 +2,6 @@ import { UPDATE_POPULAR_USERS, SET_AVAX_PRICE, SET_THEME_THEME } from "./action.
 import config from '../../config';
 import axios from 'axios';
 import { getNftDetail } from "./nft.actions";
-import { getAvaxPrice } from "../../InteractWithSmartContract/interact";
 
 export const getPopularUserList = (time, limit) => dispatch => {
     // time : timeframe, 0: all, 1: today, 2: this month, 3: 3 months, 4: year

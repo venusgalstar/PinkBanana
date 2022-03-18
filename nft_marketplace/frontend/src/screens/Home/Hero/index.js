@@ -58,6 +58,7 @@ const Hero = () => {
   const currentWalletAddress = useSelector(state => state.auth.currentWallet);
   const currentChainId = useSelector(state => state.auth.currentChainId);
   const [biddingNftId, setBiddingNftId] = useState(0);
+  const [biddingNft, setBiddingNft] = useState(0);
   const [alertParam, setAlertParam] = useState({});
   const [visibleModal, setVisibleModal] = useState(false);
   const tradingResult = useSelector(state => state.nft.tradingResult);
@@ -70,7 +71,7 @@ const Hero = () => {
   {
     if(Object.keys(auth).length === 0)
     {
-      setAlertParam({state: "warning", title:"Warning", content:"You have to sign in before creting a item."});      
+      setAlertParam({state: "warning", title:"Warning", content:"You have to sign in before doing a trading."});      
       setVisibleModal(true);
       console.log("Invalid account.");
       return false;
@@ -106,7 +107,7 @@ const Hero = () => {
           {
             setAlertParam({state: "success", title:"Success", content:"You 've placed a bid."});      
           }else{
-            setAlertParam({state: "error", title:"Error", content:"You 've failed in placing a bid."});  
+            setAlertParam({state: "error", title:"Error", content: tradingResult.message });  
           }
           setVisibleModal(true);      
           break;
@@ -116,7 +117,14 @@ const Hero = () => {
     }
   }, [tradingResult])
 
-  const onBid = async () => {
+  const getDelta2EndTime = (created, period, curTime) => {
+
+    var createdTime = (new Date(created)).getTime();
+    var diff = createdTime + period * 24 * 3600 * 1000 - curTime;
+    return diff = diff / 1000;
+  }
+
+  const onBid = async (bidPrice) => {
    
     setVisibleModalBid(false);
     
@@ -126,7 +134,14 @@ const Hero = () => {
       setProcessing(false);
       return;
     }
-    await placeBid(auth.address, biddingNftId, bidPrice);     
+
+    if(getDelta2EndTime(nft.auctionStarted, nft.auctionPeriod, curTime) <= 12)
+    {
+      setTimeout(() => {
+        setProcessing(false);
+      }, 15000)
+    }
+    await placeBid(auth.address, biddingNftId, Number(bidPrice));     
   }
 
   useEffect(()=>{
@@ -262,7 +277,7 @@ const Hero = () => {
                               auth && x.owner._id && auth._id && x.owner._id.toLowerCase() === auth._id.toLowerCase()? <></> :
                               <button
                                 className={cn("button", styles.button)}
-                                onClick={() => { setVisibleModalBid(true); setActiveIndex(index); setBiddingNftId(x._id) }}
+                                onClick={() => { setVisibleModalBid(true); setActiveIndex(index); setBiddingNft(x); setBiddingNftId(x._id) }}
                               >
                                 Place a bid
                               </button>
@@ -287,7 +302,7 @@ const Hero = () => {
         onClose={() => setVisibleModalBid(false)}
       >
         {/* <Connect /> */}
-        <Bid onChange={onChangeBidPrice} onOk={onBid} onCancel={() => setVisibleModalBid(false)} />
+        <Bid onOk={onBid} onCancel={() => setVisibleModalBid(false)} nft={biddingNft} />
       </Modal>      
       <Modal visible={visibleModal} onClose={() => setVisibleModal(false)}>
         <Alert className={styles.steps} param={alertParam} okLabel="OK" onOk={onOk} onCancel={onCancel} />

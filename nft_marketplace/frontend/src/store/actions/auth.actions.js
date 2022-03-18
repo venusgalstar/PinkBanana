@@ -1,4 +1,4 @@
-import { AUTH_LOGOUT, AUTH_SUCCESS, GET_USER_DETAIL, SET_CHAIN_ID, SET_OTHER_USER_DETAIL, SET_WALLET_ADDR, CURRENT_USER} from "./action.types"
+import { AUTH_LOGOUT, AUTH_SUCCESS, GET_USER_DETAIL, SET_CHAIN_ID, UPDATE_USER_BALANCE, SET_OTHER_USER_DETAIL, SET_WALLET_ADDR, CURRENT_USER } from "./action.types"
 import axios from "axios";
 import config from "../../config";
 
@@ -16,9 +16,8 @@ export const authLogout = () => dispatch => {
     })
 }
 
-export const setLatestUserInfo = (userId) => dispatch =>
-{    
-    axios.post(`${config.baseUrl}users/findOne`, {userId}, {
+export const setLatestUserInfo = (userId) => dispatch => {
+    axios.post(`${config.baseUrl}users/findOne`, { userId }, {
         headers:
         {
             "x-access-token": localStorage.getItem("jwtToken")
@@ -33,30 +32,27 @@ export const setLatestUserInfo = (userId) => dispatch =>
     });
 }
 
-export const getCurrentUser = () => dispatch =>
-{
+export const getCurrentUser = () => dispatch => {
     dispatch({
         type: CURRENT_USER,
         payload: {}
     })
 }
 
-export const getDetailedUserInfo = (userId, isForMine = true) => dispatch =>
-{    
-    axios.post(`${config.baseUrl}users/findOne`, {userId}, {
+export const getDetailedUserInfo = (userId, isForMine = true) => dispatch => {
+    axios.post(`${config.baseUrl}users/findOne`, { userId }, {
         headers:
         {
             "x-access-token": localStorage.getItem("jwtToken")
         }
     }).then((result) => {
-        if(isForMine)
-        {
+        if (isForMine) {
             dispatch({
                 type: GET_USER_DETAIL,
                 payload: result.data.data
             })
         }
-        else{
+        else {
             dispatch({
                 type: SET_OTHER_USER_DETAIL,
                 payload: result.data.data
@@ -67,8 +63,7 @@ export const getDetailedUserInfo = (userId, isForMine = true) => dispatch =>
     });
 }
 
-export const setConnectedWalletAddress = (address) => dispatch =>
-{
+export const setConnectedWalletAddress = (address) => dispatch => {
     // console.log("[ACTION] address  = ", address);
     dispatch({
         type: SET_WALLET_ADDR,
@@ -76,11 +71,20 @@ export const setConnectedWalletAddress = (address) => dispatch =>
     })
 }
 
-export const setConnectedChainId = (chainId) => dispatch =>
-{
+export const setConnectedChainId = (chainId) => dispatch => {
     // console.log("[ACTION] chainId  = ", chainId);
     dispatch({
         type: SET_CHAIN_ID,
         payload: chainId
-    })    
+    })
 }
+
+export const updateBalanceOfUser =  (balance) => dispatch =>
+{
+    //UPDATE_USER_BALANCE
+    dispatch({
+        type: UPDATE_USER_BALANCE,
+        payload: balance
+    })
+}
+

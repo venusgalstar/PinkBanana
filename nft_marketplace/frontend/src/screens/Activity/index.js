@@ -16,13 +16,13 @@ import { useHistory } from "react-router-dom";
 // import config from "../../config";
 
 const _breadcrumbs = [
-  {
-    title: "Profile",
-    url: "/profile",
-  },
-  {
-    title: "Activity",
-  },
+  // {
+  //   title: "Profile",
+  //   url: "/profile",
+  // },
+  // {
+  //   title: "Activity",
+  // },
 ];
 
 const items = [
@@ -60,11 +60,11 @@ const Activity = () => {
 
   const history = useHistory();
 
-  useEffect(() => {
-    var temp = breadcrumbs;
-    temp[0].url += `/${currentUsr._id}`;
-    setBreadCrumbs(temp);
-  }, [currentUsr, breadcrumbs])
+  // useEffect(() => {
+  //   var temp = breadcrumbs;
+  //   temp[0].url = `/profile/${currentUsr._id}`;
+  //   setBreadCrumbs(temp);
+  // }, [currentUsr, breadcrumbs])
 
 
   const dispatch = useDispatch();
@@ -79,6 +79,7 @@ const Activity = () => {
       let idList = []; let j;
       for (j = 0; j < notifiesList.length; j++) idList.push(notifiesList[j]._id);
       dispatch(markAllAsRead(idList, currentUsr._id));
+      dispatch(getNotifiesByLimit(50, currentUsr._id));
     }
   }
 

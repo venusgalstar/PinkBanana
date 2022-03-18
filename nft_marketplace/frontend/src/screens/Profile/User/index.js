@@ -87,6 +87,7 @@ const User = ({ className, item }) => {
           <Icon name="globe" size="16" />
           <span>{detailedUserInfo && detailedUserInfo.customURL}</span>
         </a>
+        <br></br>
         <div className={styles.control}>
           <div className={styles.btns}>
             {

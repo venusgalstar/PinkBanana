@@ -7,7 +7,7 @@ const Preview = ({ className, onClose, imgSrc, itemTitle, itemPrice, clearAll}) 
 
   const clearPreviewCard = () =>
   {
-    document.getElementById("previewImg").src = "";
+    // document.getElementById("previewImg").src = "";
     clearAll();
   }
 

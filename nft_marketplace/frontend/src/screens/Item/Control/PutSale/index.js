@@ -18,6 +18,11 @@ const PutSale = ({ className, onOk, onCancel }) => {
 
   const onContinue = () => {
     var price  = document.getElementById("priceInput").value;
+    if(isNaN(price) || Number(price) < 0.00001)
+    {
+      document.getElementById("priceInput").value = 0.00001;
+      return;
+    }
     onOk(price, instant, period);
   }
   

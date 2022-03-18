@@ -79,7 +79,8 @@ const Search = () => {
 
   useEffect(()=>{
     onResetFilter();
-    setTimeout(onLoadMore, 50);
+    setTimeout(onLoadMore, 150);
+    console.log("first start searching page");
     // onLoadMore();
   }, [])
 

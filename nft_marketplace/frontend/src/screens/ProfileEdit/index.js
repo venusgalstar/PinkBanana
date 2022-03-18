@@ -48,7 +48,6 @@ const ProfileEdit = () => {
   const [twitterText, setTwitterText] = useState("");
   const [bioText, setBioText] = useState("");
   const [visibleModal, setVisibleModal] = useState(false);
-  const [createState, setCreateState] = useState(1);
   let history = useHistory();
   let dispatch = useDispatch();
   const [addSocial, setAddSocial] = useState(false);
@@ -115,7 +114,6 @@ const ProfileEdit = () => {
     const params = {};
     params.address = address;
     params.password = password;
-    setCreateState(1);
     Login(params);
   }
 
@@ -127,21 +125,22 @@ const ProfileEdit = () => {
       data: params
     })
       .then(function (response) {
-        console.log(response);
+        console.log("edit profile resonse : " , response);
         if (response.data.success === true) {
           //set the token to sessionStroage   
           const token = response.data.token;
           localStorage.setItem("jwtToken", response.data.token);
           const decoded = jwt_decode(token);
-          console.log(decoded);
+          console.log("edit profile token decodec :", decoded);
           dispatch(authSet(decoded._doc));
-          setCreateState(0);
+          if(decoded.id) dispatch(getDetailedUserInfo(decoded.id))
           history.push("/");
         }
       })
       .catch(function (error) {
         console.log(error);
-        setCreateState(2);
+        setAlertParam({ state: "error", title: "Error", content: "You 've failed in registering. "+error.message });
+        setVisibleModal(true);
       });
   }
 
@@ -151,17 +150,11 @@ const ProfileEdit = () => {
   }, [currentWalletAddress])
 
   const saveUser = async (params) => {
-    let signedString = "";
-    try {
-      signedString = await signString(address);
-    } catch (err) {
-      setAlertParam({ state: "warning", title: "Warning", content: "Failed in metamask sign" });
-      setVisibleModal(true);
-      return;
-    }
-    if (signedString !== "") 
+    let signingResult = "";
+    signingResult = await signString(address);
+    if (signingResult.success === true) 
     {
-      params.password = signedString;
+      params.password = signingResult.message;
       if (saveMode === 0) {
         await axios({
           method: "post",
@@ -169,13 +162,21 @@ const ProfileEdit = () => {
           data: params
         })
           .then(function (response) {
-            console.log(response);
-            setCreateState(0);
-            doLogin(params.address, params.password);
+            console.log("response", response);            
+            if(response.data.code === 1) 
+            {
+              let errMsg = "";
+              errMsg = "Address is duplicated.";
+              setAlertParam({ state: "error", title: "Error", content: "You 've failed in registering. "+ errMsg });
+              setVisibleModal(true);              
+            }else {
+              doLogin(params.address, params.password);
+            }
           })
           .catch(function (error) {
-            console.log(error);
-            setCreateState(2);
+            console.log("error : ", error);
+            setAlertParam({ state: "error", title: "Error", content: "You 've failed in registering. " });
+            setVisibleModal(true);
           });
       }
       if (saveMode === 1) {
@@ -186,28 +187,28 @@ const ProfileEdit = () => {
         })
           .then(function (response) {
             console.log(response);
-            if (saveMode === 0) {
-              setAlertParam({ state: "success", title: "Success", content: "Registering succeed." });
-              setVisibleModal(true);
-            }
-            else {
               setAlertParam({ state: "success", title: "Success", content: "Updating succeed." });
               setVisibleModal(true);
-            }
+            if (detailedUserInfo && detailedUserInfo._id) dispatch(getDetailedUserInfo(detailedUserInfo._id));
           })
           .catch(function (error) {
             console.log(error);
+            setAlertParam({ state: "error", title: "Error", content: error.message });
+            setVisibleModal(true);
           });
       }
+    }else{      
+      setAlertParam({ state: "warning", title: "Warning", content: signingResult.message });
+      setVisibleModal(true);
     }
   }
 
   const onClickUpdate = async () => {
     
     let connection = await getValidWallet();
-    if(connection.address === "")
+    if(connection.success === false)
     {
-      setAlertParam( {state: "info", title:"Information", content:"No connected wallet. You should consider trying MetaMask!"} );      
+      setAlertParam( {state: "info", title:"Information", content: "Please connect a wallet." } );      
       setVisibleModal( true );
       return;
     }
@@ -294,7 +295,7 @@ const ProfileEdit = () => {
         saveUser(params);
         return;
       } else {
-        setAlertParam({ state: "warning", title: "Warning", content: "Invalid logo." });
+        setAlertParam({ state: "warning", title: "Warning", content: "Plese select a photo." });
         setVisibleModal(true);
         return;
       }
@@ -304,7 +305,6 @@ const ProfileEdit = () => {
     formData.append("authorId", "hch");
     console.log(selectedAvatarFile);
 
-    setCreateState(1);
     await axios({
       method: "post",
       url: `${config.baseUrl}utils/upload_file`,
@@ -317,10 +317,9 @@ const ProfileEdit = () => {
       })
       .catch(function (error) {
         console.log(error);
-        setAlertParam({ state: "error", title: "Error", content: "Uploading failed." });
+        setAlertParam({ state: "error", title: "Error", content: "Uploading photo failed." });
         setVisibleModal(true);
       });
-
   }
 
   const onAddSocial = () => {
@@ -354,10 +353,6 @@ const ProfileEdit = () => {
     console.log("socs = ", socs);
   }
 
-  const navigate2Next = () => {
-    history.push("/")
-  }
-
   const onCliearAll = () => {
     setLogoImg("");
     setSelectedAvatarFile(null);
@@ -367,7 +362,6 @@ const ProfileEdit = () => {
     setTwitterText("");
     setBioText("");
     setVisibleModal(false);
-    setCreateState(1);
     setSocials("");
   }
 

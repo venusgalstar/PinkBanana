@@ -17,27 +17,49 @@ var socket = io(`${config.socketUrl}`);
 
 const User = ({ className }) => {
   const [visible, setVisible] = useState(false);
-  const currentUsr  = useSelector(state=>state.auth.user);
+  const currentUsr  = useSelector(state=>state.auth.detail);
   const dispatch = useDispatch();
   const history = useHistory();
   const [balance, setBalance] = useState(0);
   const [compressedAddress, setCompressedAddress] = useState("");
+  const currentBalanceOfUser = useSelector(state => state.auth.balance)
+  const [items, setItems] = useState([]);
 
   useEffect(() => {
     
     socket.on("UpdateStatus", data => 
     {
       console.log("status updated!:", data);      
-      setTimeout(async () =>{
-        if(currentUsr.address )
+      setTimeout( () => {
+        if(currentUsr && currentUsr.address )
         {
-          let bal = 0;
-          bal  = await  getBalanceOfAccount(currentUsr.address);
-          setBalance(bal.balance);     
+          getBalanceOfAccount(currentUsr.address);
         }
-      }, 200);
+      }, 100);
     });
-    
+    if(currentUsr && currentUsr._id)
+    {
+      setItems( [
+      {
+        title: "My profile",
+        icon: "user",
+        url: "/profile/"+currentUsr._id,
+      },
+      {
+        title: "My Collections",
+        icon: "image",
+        url: "/collectionList",
+      },
+      {
+        title: "Dark theme",
+        icon: "bulb",
+      },
+      {
+        title: "Disconnect",
+        icon: "exit"
+      },
+    ])
+  }
   }, [currentUsr])
 
   useEffect(() =>
@@ -47,43 +69,22 @@ const User = ({ className }) => {
       let address = currentUsr.address;
       address = address.toString();
       address = address.substring(0, 10)+"..."+address.substring(36, 42);
-      setCompressedAddress(address);
-      dispatch(getDetailedUserInfo(currentUsr._id));
+      setCompressedAddress(address);    
     }
-  }, [currentUsr, dispatch])
+  }, [currentUsr])
 
-  useEffect(  () =>
+  useEffect(() =>
   {
-    setTimeout(async () =>{
-      if(currentUsr.address )
-      {
-        let bal = 0;
-        bal  = await  getBalanceOfAccount(currentUsr.address);
-        setBalance(bal.balance);   
-      }
-    }, 200);
+    if(currentUsr && currentUsr.address )
+    {
+      getBalanceOfAccount(currentUsr.address);
+    }
   }, [currentUsr]);
 
-  const items = [
-    {
-      title: "My profile",
-      icon: "user",
-      url: "/profile/"+currentUsr._id,
-    },
-    {
-      title: "My Collections",
-      icon: "image",
-      url: "/collectionList",
-    },
-    {
-      title: "Dark theme",
-      icon: "bulb",
-    },
-    {
-      title: "Disconnect",
-      icon: "exit"
-    },
-  ];
+  useEffect(() =>
+  {
+    if(currentBalanceOfUser) setBalance(currentBalanceOfUser);
+  }, [currentBalanceOfUser])
   
   const onDisconnect = () =>
   {

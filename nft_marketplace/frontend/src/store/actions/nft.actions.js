@@ -126,6 +126,7 @@ export const setNFTTradingResult  = (functionName, success, message) => dispatch
         }
     });
 }
+
 export const emptyNFTTradingResult = () => dispatch =>
 {
     dispatch({

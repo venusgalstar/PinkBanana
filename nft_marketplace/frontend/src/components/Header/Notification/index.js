@@ -9,8 +9,8 @@ import { getNotifiesByLimit } from "../../../store/actions/notify.action";
 import config from "../../../config";
 import moment from "moment";
 
-
-
+import { io } from "socket.io-client";
+var socket = io(`${config.socketUrl}`);
 
 const Notification = ({ className }) => {
   const [visible, setVisible] = useState(false);
@@ -18,6 +18,7 @@ const Notification = ({ className }) => {
   const dispatch = useDispatch();
   const user = useSelector(state => state.auth.user);
   const [hasNew, setHasNew] = useState(false);
+  const [randomKey, setRandomKey] = useState(1);
 
   useEffect(() => {
     if(user._id) dispatch(getNotifiesByLimit(50, user._id))
@@ -33,17 +34,33 @@ const Notification = ({ className }) => {
         }
       }
       setHasNew(temp);
+      setRandomKey(Math.random());
     }
   }, [notifiesList]);
+
+
+
+  useEffect(() => {
+    socket.on("UpdateStatus", data => {
+      if(user._id) {
+        console.log("update notifies list");
+        dispatch(getNotifiesByLimit(50, user._id))
+      }
+    })
+  }, [])
 
 
   return (
     <OutsideClickHandler onOutsideClick={() => setVisible(false)}>
       <div className={cn(styles.notification, className)}>
-        <button
+
+
+        <button key={randomKey}
           className={cn(styles.head, hasNew ? styles.active : "")}
           onClick={() => setVisible(!visible)}
         >
+        
+        
           <Icon name="notification" size="24" />
         </button>
         {visible && (

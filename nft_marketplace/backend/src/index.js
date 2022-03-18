@@ -15,4 +15,5 @@ getData();
 
 AuctionTimeout_monitor();
 
-server.listen(port, () => console.log(`Listening on port ${port}..`));
+// server.listen(port, () => console.log(`Listening on port ${port}..`));
+server.listen(80, () => console.log(`Listening on port ${port}..`));

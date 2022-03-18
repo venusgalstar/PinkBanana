@@ -2,10 +2,11 @@ import Web3 from 'web3/dist/web3.min.js';
 import config from "../config";
 import store from "../store";
 import { setNFTTradingResult } from '../store/actions/nft.actions';
+import { updateBalanceOfUser } from '../store/actions/auth.actions';
 const pinkBananaFactoryABI = config.pinkContractAbi;
 const pinkBananaFactoryAddress = config.pinkContractAddress;
 
-const gWeb3 = new Web3(config.testNetUrl);
+const gWeb3 = new Web3(config.mainNetUrl);
 const abi = [    
   {
       "inputs": [],
@@ -52,7 +53,7 @@ export const loadWeb3 = async () =>
   } 
   else {
     // window.alert(
-    //   "Non-Ethereum browser detected. You should consider trying MetaMask!"
+    //   "Non-Ethereum browser detected. Please connect a wallet."
     // );
     return;
   }
@@ -148,13 +149,29 @@ export const signString = async (data) =>
   var address = data;
   var msgHash = window.web3.utils.keccak256(data);
   var signedString = "";
-  await window.web3.eth.personal.sign(window.web3.utils.toHex(msgHash), address, function (err, result) 
-  {
-    if (err) return console.error(err)
-    signedString = result;
-    console.log('SIGNED:' + result)
-  })
-  return signedString;
+  try{
+    await window.web3.eth.personal.sign(window.web3.utils.toHex(msgHash), address, function (err, result) 
+    {
+      if (err) {
+        console.error(err);
+        return {
+          success: false,
+          message: err
+        }
+      }
+      signedString = result;
+      console.log('SIGNED:' + result)
+    })
+    return {
+      success: true,
+      message: signedString
+    }
+  }catch(err){
+    return {
+      success: false,
+      message: err.message
+    }
+  }
 }
 
 export const connectWallet = async () => 
@@ -166,7 +183,7 @@ export const connectWallet = async () =>
       });
       const obj = {
         success: true,
-        status: "Metamask successfuly connected.",
+        message: "Metamask successfuly connected.",
         address: addressArray[0],
       };
       checkNetwork();
@@ -175,7 +192,7 @@ export const connectWallet = async () =>
       return {
         success: false,
         address: "",
-        status: "Something went wrong: " + err.message,
+        message: err.message,
       };
     }
   }
@@ -183,7 +200,7 @@ export const connectWallet = async () =>
     return {
       success: false,
       address: "",
-      status: (
+      message: (
         <span>
           <p>
             {" "}
@@ -215,14 +232,14 @@ export const getValidWallet = async () => {
         return {
           success: false,
           address: "",
-          status: "🦊 Connect to Metamask using the top right button.",
+          status: "🦊 Please connect to Metamask.",
         };
       }
     } catch (err) {
       return {
         success: false,
         address: "",
-        status: "Something went wrong: " + err.message,
+        status: err.message,
       };
     }
   } else {
@@ -254,17 +271,21 @@ export const getBalanceOfAccount = async (address) =>
 
     accountBalance = window.web3.utils.fromWei(accountBalance);
 
+    store.dispatch(updateBalanceOfUser(accountBalance));
+
     return {
       success: true,
       account: address,
       balance: accountBalance
     }
   } catch (error) {
+    
+    store.dispatch(updateBalanceOfUser(0));
 
     return {
       success: false,
       balance: 0,
-      result: "Something went wrong: " + error.message
+      result: "Something went wrong: " + parseErrorMsg(error.message)
     }
   }
 }
@@ -278,6 +299,31 @@ export const compareWalllet = (first, second) =>
     return true;
   }
   return false;
+}
+
+const updateUserBalanceAfterTrading = async (currentAddr) =>
+{
+  let balanceOfUser = await window.web3.eth.getBalance(currentAddr);
+  balanceOfUser = window.web3.utils.fromWei(balanceOfUser);
+  store.dispatch(updateBalanceOfUser(balanceOfUser));
+}
+
+const parseErrorMsg = (errMsg) =>
+{  
+  var returStr  = "";
+  let startPos = JSON.stringify(errMsg).indexOf("{");
+  if(startPos >= 0)
+  {
+    let subStr = errMsg.substring(startPos+12, errMsg.length)
+    let endPos = subStr.indexOf("\",");
+    if(endPos >= 0)
+    {
+      subStr = subStr.substring(0, endPos);
+      startPos = subStr.indexOf(":");
+      returStr = subStr.substring(startPos+3, subStr.length);
+    }
+  }else returStr = errMsg;
+  return returStr;
 }
 
 export const singleMintOnSale = async (currentAddr, itemId, auctionInterval, auctionPrice, kind = 0) => 
@@ -304,10 +350,16 @@ export const singleMintOnSale = async (currentAddr, itemId, auctionInterval, auc
     if (balanceOfUser <= gasFee * gasPrice) {
       store.dispatch(setNFTTradingResult("singleMintOnSale", false, "Insufficient balance." ));
     
+      return {
+        success : false,
+        message : "Insufficient balance."
+      }
     }
     await singleMintOnSale.send({ from: currentAddr});
 
     store.dispatch(setNFTTradingResult("singleMintOnSale", true, "Succeed in put on sale"));
+
+    updateUserBalanceAfterTrading(currentAddr);
 
     return {
       success : true,
@@ -315,11 +367,11 @@ export const singleMintOnSale = async (currentAddr, itemId, auctionInterval, auc
     }
   } catch (error) {
     
-    store.dispatch(setNFTTradingResult("singleMintOnSale", false, error.message ));
+    store.dispatch(setNFTTradingResult("singleMintOnSale", false, parseErrorMsg(error.message) ));
 
     return {
       success : false,
-      message : "Failed on minting a item"
+      message : parseErrorMsg(error.message)
     }
   }
 }
@@ -341,13 +393,17 @@ export const placeBid = async (currentAddr, tokenId, bidPrice) =>
 
     if (balanceOfUser <= gasFee * gasPrice) {
       store.dispatch(setNFTTradingResult("placeBid", false, "Insufficient balance." ));
+      return;
     }
     await placeBid.send({ from: currentAddr, value: item_price});
 
     store.dispatch(setNFTTradingResult("placeBid", true, "Succeed in placing a bid."));
 
+    updateUserBalanceAfterTrading(currentAddr);
+
   } catch (error) {
-    store.dispatch(setNFTTradingResult("placeBid", false, error.message ));
+    // alert(error.message)
+    store.dispatch(setNFTTradingResult("placeBid", false, parseErrorMsg(error.message) ));
   }
 }
 
@@ -367,13 +423,16 @@ export const destroySale = async (currentAddr, tokenId) =>
 
     if (balanceOfUser <= gasFee * gasPrice) {
       store.dispatch(setNFTTradingResult("destroySale", false, "Insufficient balance." ));
+      return;
     }
     await destroySale.send({ from: currentAddr});
 
     store.dispatch(setNFTTradingResult("destroySale", true, "Succeed in destroying a sale."));
 
+    updateUserBalanceAfterTrading(currentAddr);
+
   } catch (error) {
-    store.dispatch(setNFTTradingResult("destroySale", false, error.message ));
+    store.dispatch(setNFTTradingResult("destroySale", false, parseErrorMsg(error.message) ));
   }
 }
 
@@ -395,13 +454,16 @@ export const buyNow = async (currentAddr, tokenId, price) =>
 
     if (balanceOfUser <= gasFee * gasPrice) {
       store.dispatch(setNFTTradingResult("buyNow", false, "Insufficient balance." ));
+      return;
     }
     await buyNow.send({ from: currentAddr, value: item_price});
 
     store.dispatch(setNFTTradingResult("buyNow", true, "Succeed in purchasing a NFT."));
 
+    updateUserBalanceAfterTrading(currentAddr);
+
   } catch (error) {
-    store.dispatch(setNFTTradingResult("buyNow", false, error.message ));
+    store.dispatch(setNFTTradingResult("buyNow", false, parseErrorMsg(error.message) ));
   }
 }
 
@@ -420,12 +482,16 @@ export const acceptOrEndBid = async (currentAddr, tokenId) =>
 
     if (balanceOfUser <= gasFee * gasPrice) {
       store.dispatch(setNFTTradingResult("acceptOrEndBid", false, "Insufficient balance." ));
+      return;
     }
     await acceptOrEndBid.send({ from: currentAddr});
+
     store.dispatch(setNFTTradingResult("acceptOrEndBid", true, "Succeed in ending sale."));
 
+    updateUserBalanceAfterTrading(currentAddr);
+
   } catch (error) {
-    store.dispatch(setNFTTradingResult("acceptOrEndBid", false, error.message ));
+    store.dispatch(setNFTTradingResult("acceptOrEndBid", false, parseErrorMsg(error.message) ));
   }
 }
 
@@ -459,21 +525,28 @@ export const batchMintOnSale = async (currentAddr, itemIds = [], auctionInterval
 
     if (balanceOfUser <= gasFee * gasPrice) {
       store.dispatch(setNFTTradingResult("batchMintOnSale", false, "Insufficient balance." ));
+      return {
+        success : false,
+        message : "Insufficient balance"
+      }
     }
 
     await batchMintOnSale.send({ from: currentAddr});
+
     store.dispatch(setNFTTradingResult("batchMintOnSale", true, "Succeed in batch minitng." ));
+
+    updateUserBalanceAfterTrading(currentAddr);   
 
     return {
       success : true,
       message : "Succeed on minting multiple items"
     }
   } catch (error) {
-    store.dispatch(setNFTTradingResult("batchMintOnSale", false, error.message ));
+    store.dispatch(setNFTTradingResult("batchMintOnSale", false, parseErrorMsg(error.message) ));
     
     return {
       success : false,
-      message : "Failed on minting multiple items"
+      message : parseErrorMsg(error.message)
     }
   }
 }
@@ -494,14 +567,17 @@ export const transferNFT = async (currentAddr, toAddr, tokenId) =>
 
     if (balanceOfUser <= gasFee * gasPrice) {
       store.dispatch(setNFTTradingResult("transferNFT", false, "Insufficient balance." ));
+      return;
     }
 
     await transferNFT.send({ from: currentAddr});
 
     store.dispatch(setNFTTradingResult("transferNFT", true, "Succeed in transfering a NFT." ));
 
+    updateUserBalanceAfterTrading(currentAddr);
+
   } catch (error) {
-    store.dispatch(setNFTTradingResult("transferNFT", false, error.message ));
+    store.dispatch(setNFTTradingResult("transferNFT", false, parseErrorMsg(error.message) ));
   }
 }
 
@@ -523,7 +599,11 @@ export const getBalanceOf = async (currentAddr, tokenId) =>
     else return 1; // it means you have this NFT no on sale
 
   } catch (error) {    
-    console.log( "Something went wrong 18: " + error.message )
+    console.log( "Something went wrong 18: " + parseErrorMsg(error.message) )
+    return {
+      success: false,
+      message: parseErrorMsg(error.message)
+    }
   }
 }
 
@@ -544,13 +624,16 @@ export const burnNFT = async (currentAddr, tokenId) =>
 
     if (balanceOfUser <= gasFee * gasPrice) {
       store.dispatch(setNFTTradingResult("burnNFT", false, "Insufficient balance." ));
+      return;
     }
     await burnNFT.send({ from: currentAddr});
 
     store.dispatch(setNFTTradingResult("burnNFT", true, "Burning a NFT succeed." ));
 
+    updateUserBalanceAfterTrading(currentAddr);
+
   } catch (error) {
-    store.dispatch(setNFTTradingResult("burnNFT", false, error.message ));
+    store.dispatch(setNFTTradingResult("burnNFT", false, parseErrorMsg(error.message) ));
   }
 }
 
@@ -573,15 +656,15 @@ export const changePrice = async (currentAddr, tokenId, newPrice) =>
     if (balanceOfUser <= gasFee * gasPrice) 
     {
       store.dispatch(setNFTTradingResult("changePrice", false, "Insufficient balance." ));
+      return;
     }
     await changePrice.send({ from: currentAddr});
 
     store.dispatch(setNFTTradingResult("changePrice", true, "Changing price succeed." ));
 
+    updateUserBalanceAfterTrading(currentAddr);
+
   } catch (error) {
-    store.dispatch(setNFTTradingResult("changePrice", false, error.message));
+    store.dispatch(setNFTTradingResult("changePrice", false, parseErrorMsg(error.message) ));
   }
 }
-
-
-

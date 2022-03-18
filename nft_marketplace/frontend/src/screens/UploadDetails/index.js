@@ -15,8 +15,9 @@ import { getCollections } from "../../store/actions/collection.actions";
 import { getValidWallet, singleMintOnSale } from "../../InteractWithSmartContract/interact";
 import Checkbox from '@mui/material/Checkbox';
 import Alert from "../../components/Alert";
-import Backdrop from '@mui/material/Backdrop';
-import CircularProgress from '@mui/material/CircularProgress';
+import FolowSteps from "./FolowSteps";
+import { emptyNFTTradingResult } from "../../store/actions/nft.actions";
+
 
 // const royaltiesOptions = [{ value: 10, text: "10%" }, { value: 20, text: "20%" }, { value: 30, text: "30%" }];
 
@@ -27,7 +28,7 @@ const Upload = ({ asset_id = null }) => {
   // const [textProperty, setTextProperty] = useState("");
   // const [royalties, setRoyalties] = useState(royaltiesOptions[0]);
   const [sale, setSale] = useState(true);
-  const [price, setPrice] = useState(0);
+  const [price, setPrice] = useState(0.00001);
   const [selectedFile, setSelectedFile] = useState(null);
 
   const [visibleModal, setVisibleModal] = useState(false);
@@ -48,7 +49,9 @@ const Upload = ({ asset_id = null }) => {
   const [checkedFields, setCheckedFields] = useState([]);
   const [metaStr, setMetaStr] = useState("");
   const [alertParam, setAlertParam] = useState({});
-  const [processing, setProcessing] = useState(false);
+  const [creatingStep, setCreatingStep] = useState(0);
+  const [visibleStepModal, setVisibleStepModal] = useState(false);
+  const tradingResult = useSelector(state => state.nft.tradingResult);
 
   useEffect(() => {
     if (collections && collections.length > 0) {
@@ -171,7 +174,23 @@ const Upload = ({ asset_id = null }) => {
     }
   }
 
+  useEffect(() =>
+  {
+    if(tradingResult)
+    {
+      switch(tradingResult.function)
+      {
+        default : 
+          break;
+        case "singleMintOnSale":
+          dispatch(emptyNFTTradingResult());
+          break;
+      }
+    }
+  }, [tradingResult, dispatch])
+
   const saveItem = (params) => {
+    setCreatingStep(4);
     axios({
       method: "post",
       url: `${config.baseUrl}item/create`,
@@ -181,11 +200,12 @@ const Upload = ({ asset_id = null }) => {
         console.log("response = ", response);
         if (response.status === 200) 
         {
-          if (params.isSale !== 0) 
+          setCreatingStep(5);
+          if (sale > 0) 
           {
-            var aucperiod = (response.data.isSale === 1 ? 0 : response.data.auctionPeriod);
-            var price = (response.data.isSale === 1 ? response.data.price : response.data.auctionPrice)
-            setProcessing(true);
+            var aucperiod = (instant === true ? 0 : response.data.auctionPeriod);
+            var price = (instant === true ? response.data.price : response.data.auctionPrice)
+            setCreatingStep(7);
             try {
               let ret = await singleMintOnSale(
                 currentUsr.address,
@@ -194,34 +214,28 @@ const Upload = ({ asset_id = null }) => {
                 price,
                 0);
               if (ret.success === true) {
-                setProcessing(false);
                 console.log("succeed in put on sale");
-                setAlertParam({ state: "success", title: "Success", content: "You 've put a new item on sale." });
-                setVisibleModal(true);
-                history.push(`/collectionItems/${params.collectionId}`)
+                setCreatingStep(8);
               }
               else {
-                setProcessing(false);
-                setAlertParam({ state: "error", title: "Error", content: "Failed in put on sale." });
-                setVisibleModal(true);
-                console.log("failed in put on sale : ", ret.status);
+                setCreatingStep(9);
+                console.log("failed in put on sale : ", ret.message);
                 return;
               }
-            } catch (err) {
-              setProcessing(false);
+            } catch (err) {              
+              setCreatingStep(9);
               console.log("multiple uploading error : ", err.message);
             }
-          } else {
-            setAlertParam({ state: "success", title: "Success", content: "You 've created a new item." });
-            setVisibleModal(true);
-            history.push(`/collectionItems/${params.collectionId}`)
           }
+        }else { 
+          setCreatingStep(6);
+          if(sale>0) setCreatingStep(9);
         }
       })
       .catch(function (error) {
         console.log(error);
-        setAlertParam({ state: "error", title: "Error", content: "Uploading failed." });
-        setVisibleModal(true);
+          setCreatingStep(6);
+          if(sale>0) setCreatingStep(9);
       });
 
   }
@@ -231,25 +245,28 @@ const Upload = ({ asset_id = null }) => {
   const createItem = async () => {
     if(sale)
     {      
-      if (price <= 0) {
-        setAlertParam({ state: "error", title: "Error", content: "Invalid price." });
+      if (Number(price) < 0.00001 || isNaN(price)) {
+        setPrice(0.00001);
+        setAlertParam({ state: "error", title: "Error", content: "Invalid price. Price must be equal or higher than 0.00001" });
         setVisibleModal(true);
         return;
+      }else{
+        setPrice(Number(price))
       }
     }
     if(instant === true)
     {    
       let connection = await getValidWallet();
-      if(connection.address === "")
+      if(connection.success === false )
       {
-        setAlertParam( {state: "info", title:"Information", content:"No connected wallet. You should consider trying MetaMask!"} );      
+        setAlertParam( {state: "warning", title:"Warning", content: "Please connect a wallet." } );      
         setVisibleModal( true );
         return;
       }
     }
     if (Object.keys(currentUsr).length === 0) {
       console.log("Invalid account.");
-      setAlertParam({ state: "warning", title: "Warning", content: "You have to sign in before creting a item." });
+      setAlertParam({ state: "warning", title: "Warning", content: "You have to sign in before doing a trading." });
       setVisibleModal(true);
       return;
     }
@@ -265,12 +282,18 @@ const Upload = ({ asset_id = null }) => {
       setVisibleModal(true);
       return;
     }
+    if (textName === "") {
+      setAlertParam({ state: "error", title: "Error", content: "Item name cannot be empty." });
+      setVisibleModal(true);
+      return;
+    }
+    setVisibleStepModal(true);
+    setCreatingStep(1);
     const formData = new FormData();
     formData.append("itemFile", selectedFile);
     formData.append("authorId", "hch");
     formData.append("collectionName", collectionName);
     console.log(selectedFile);
-
 
     axios({
       method: "post",
@@ -279,13 +302,9 @@ const Upload = ({ asset_id = null }) => {
       headers: { "Content-Type": "multipart/form-data" },
     })
       .then(function (response) {
+        setCreatingStep(2);
         // console.log(response);
         const params = {};
-        if (textName === "") {
-          setAlertParam({ state: "error", title: "Error", content: "Item name cannot be empty." });
-          setVisibleModal(true);
-          return;
-        }
         params.itemName = textName;
         params.itemLogoURL = response.data.path;
         params.itemDescription = textDescription;
@@ -295,7 +314,7 @@ const Upload = ({ asset_id = null }) => {
         params.collectionId = collectionId;
         params.creator = currentUsr._id;
         params.owner = currentUsr._id;
-        params.isSale = !sale ? 0 : (instant ? 1 : 2);
+        params.isSale = 0;
         if (instant) {
           params.price = !sale ? 0 : Number(price);
           params.auctionPrice = 0;
@@ -310,8 +329,10 @@ const Upload = ({ asset_id = null }) => {
       })
       .catch(function (error) {
         // console.log("single creation, file uploading error : ", error);
-        setAlertParam({ state: "error", title: "Error", content: "Uploading failed." });
-        setVisibleModal(true);
+        // setAlertParam({ state: "error", title: "Error", content: "Uploading failed." });
+        // setVisibleModal(true);
+        setCreatingStep(3); 
+        setCreatingStep(6); 
       });
   }
 
@@ -358,12 +379,19 @@ const Upload = ({ asset_id = null }) => {
     setMetaStr(list.toString());
   };
 
+  const go2Collection = () =>
+  {
+    setVisibleStepModal(false);
+    history.push(`/collectionItems/${collectionId}`)
+  }
+
   const onOk = () => {
     setVisibleModal(false);
   }
 
   const onCancel = () => {
     setVisibleModal(false);
+    setVisibleStepModal(false);
   }
 
   return (
@@ -548,8 +576,7 @@ const Upload = ({ asset_id = null }) => {
                     <div className={styles.table}>
                       <div className={styles.rowForSale}>
                         <input className={styles.inputForSale}
-                          type="number" min="0" step="0.001"
-                          value={price || ""} onChange={(e) => setPrice(e.target.value)} placeholder="Enter your price" />
+                          type="text" value={price || ""} onChange={(e) => setPrice(e.target.value)} placeholder="Enter your price" />
                         <div className={styles.colForSale} style={{ display: "flex", alignItems: "center" }}>AVAX</div>
                       </div>
                       {
@@ -618,12 +645,9 @@ const Upload = ({ asset_id = null }) => {
       <Modal visible={visibleModal} onClose={() => setVisibleModal(false)}>
         <Alert className={styles.steps} param={alertParam} okLabel="OK" onOk={onOk} onCancel={onCancel} />
       </Modal>
-      {<Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={processing}
-      >
-        <CircularProgress color="inherit" />
-      </Backdrop>}
+      <Modal visible={visibleStepModal} onClose={() => {} } showClose={false} >
+        <FolowSteps className={styles.steps} state={creatingStep} sale={sale} navigate2Next={go2Collection} onClose={onCancel}/>
+      </Modal>
     </>
   );
 };

@@ -62,7 +62,7 @@ const Card = ({ className, item }) => {
         <div className={styles.foot}>
           <div className={styles.status}>
             <Icon name="candlesticks-up" size="20" />
-            Highest bid <span>{(item.bids && item.bids.length > 1) ? item.bids[item.bids.length - 1].price : 0} AVAX</span>
+            Highest bid <span>{(item.bids && item.bids.length > 0) ? item.bids[item.bids.length - 1].price : 0} AVAX</span>
           </div>
           <div
             className={styles.bid}

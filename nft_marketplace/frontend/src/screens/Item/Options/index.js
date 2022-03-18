@@ -57,7 +57,7 @@ const Options = ({ className, setProcessing}) => {
         <Icon name="heart-fill" size="24" />
       </button>
       {
-        nft && auth && auth._id &&
+        nft && auth && auth._id && nft.owner &&
         nft.owner._id.toLowerCase() == auth._id.toLowerCase() &&
         (nft.bids.length === 0) &&
         <Actions className={styles.actions} setProcessing={setProcessing} />

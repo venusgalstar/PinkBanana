@@ -63,7 +63,8 @@ const Headers = () => {
         //do logout      
         dispatch(authLogout({}));
       }
-      else if (currentAddr !== "") {
+      else if (currentAddr !== "") 
+      {
         if (localStorage.jwtToken !== undefined &&
           localStorage.jwtToken !== "" &&
           localStorage.jwtToken !== null) {
@@ -74,7 +75,8 @@ const Headers = () => {
             if (decoded.app < currTime) {
               dispatch(authLogout());
               localStorage.removeItem("jwtToken");
-              alert("Session timeouted. Plese sign in again.")
+              setAlertParam({state: "info", title:"Info", content:"Session timeouted. Plese sign in again."});      
+              setVisibleModal(true);
             }
             else {
               console.log("decoded = ", decoded);
@@ -126,12 +128,20 @@ const Headers = () => {
       let signedString = "";
       // console.log("connection address", connection.address);
       signedString = await signString(connection.address);
-      if (signedString !== "") {
+      if (signedString.success === true) 
+      {
         const params = {};
         params.address = connection.address;
-        params.password = signedString;
+        params.password = signedString.message;
         Login(params);
       }
+      else{
+        setAlertParam({state: "warning", title:"Warning", content: signedString.message});      
+        setVisibleModal(true);
+      }
+    }else{      
+      setAlertParam({state: "warning", title:"Warning", content: "Please connect a wallet." });      
+      setVisibleModal(true);
     }
   }
 
@@ -154,7 +164,7 @@ const Headers = () => {
       })
       .catch(function (error) {
         // console.log(error);
-        setAlertParam({state: "info", title:"Info", content:"You 've not signed up with this wallet. Please sign up."});      
+        setAlertParam({state: "info", title:"Info", content:"Please sign up."});      
         setVisibleModal(true);
       });
   }
@@ -165,6 +175,9 @@ const Headers = () => {
       dispatch(setConnectedWalletAddress(connection.address));
       // history.push("/profile-edit/new");
       history.push({ pathname: "/profile-edit/new" });
+    }else{     
+        setAlertParam({state: "info", title:"Info", content: "Please connect a wallet." });      
+        setVisibleModal(true);
     }
   }
 

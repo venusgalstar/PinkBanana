@@ -17,7 +17,8 @@ import { destroySale } from "../../InteractWithSmartContract/interact";
 import Alert from "../../components/Alert";
 import { useHistory } from "react-router-dom";
 
-const Actions = ({ className, setProcessing }) => {
+const Actions = ({ className, setProcessing }) => 
+{
   const [visible, setVisible] = useState(false);
   const [visibleModalTransfer, setVisibleModalTransfer] = useState(false);
   const [visibleModalRemoveSale, setVisibleModalRemoveSale] = useState(false);
@@ -39,7 +40,7 @@ const Actions = ({ className, setProcessing }) => {
 
   const checkWalletAddrAndChainId = async () => {
     if (Object.keys(auth).length === 0) {
-      setAlertParam({ state: "warning", title: "Warning", content: "You have to sign in before creting a item." });
+      setAlertParam({ state: "warning", title: "Warning", content: "You have to sign in before doing a trading." });
       setVisibleModal(true);
       console.log("Invalid account.");
       return false;
@@ -112,9 +113,8 @@ const Actions = ({ className, setProcessing }) => {
         case "changePrice":
           if (tradingResult.success) {
             setAlertParam({ state: "success", title: "Success", content: "The price of NFT is changed." });
-
           } else {
-            setAlertParam({ state: "error", title: "Error", content: "Chaging price is failed." });
+            setAlertParam({ state: "error", title: "Error", content: tradingResult.message });
           }
           setVisibleModal(true);
           break;
@@ -122,7 +122,7 @@ const Actions = ({ className, setProcessing }) => {
           if (tradingResult.success) {
             setAlertParam({ state: "success", title: "Success", content: "You 've removed a NFT from sale." });
           } else {
-            setAlertParam({ state: "error", title: "Error", content: "Failed in removing a NFT from sale." });
+            setAlertParam({ state: "error", title: "Error", content:  tradingResult.message });
           }
           setVisibleModal(true);
           break;
@@ -130,7 +130,7 @@ const Actions = ({ className, setProcessing }) => {
           if (tradingResult.success) {
             setAlertParam({ state: "success", title: "Success", content: "You 've burned a NFT." });
           } else {
-            setAlertParam({ state: "error", title: "Error", content: "Failed in burning a NFT." });
+            setAlertParam({ state: "error", title: "Error", content:  tradingResult.message });
           }
           setVisibleModal(true);
           history.push("/collectionItems/"+ nftDetail.collection_id._id);
@@ -139,7 +139,7 @@ const Actions = ({ className, setProcessing }) => {
           if (tradingResult.success) {
             setAlertParam({ state: "success", title: "Success", content: "You 've transfered a NFT." });
           } else {
-            setAlertParam({ state: "error", title: "Error", content: "You 've failed in transfering a NFT." });
+            setAlertParam({ state: "error", title: "Error", content:  tradingResult.message });
           }
           setVisibleModal(true);
           break;
@@ -171,13 +171,19 @@ const Actions = ({ className, setProcessing }) => {
     }
 
     setProcessing(true);
+    let iHaveit;
     try {
-      let iHaveit = await getBalanceOf(auth.address, nft.detail._id);
+      iHaveit = await getBalanceOf(auth.address, nft.detail._id);
       if (iHaveit === 1) {
         setProcessing(false);
         setAlertParam({ state: "warning", title: "Warning", content: "Your NFT is not on sale." });
         setVisibleModal(true);
         return;
+      }
+      if(iHaveit && iHaveit.message)
+      {
+        setAlertParam({ state: "warning", title: "Warning", content: iHaveit.message });
+        setVisibleModal(true);
       }
       let checkResut = await checkWalletAddrAndChainId();
       if (!checkResut) {
@@ -219,13 +225,19 @@ const Actions = ({ className, setProcessing }) => {
     }
 
     setProcessing(true);
+    let iHaveit;
     try {
-      let iHaveit = await getBalanceOf(auth.address, nft.detail._id);
+      iHaveit = await getBalanceOf(auth.address, nft.detail._id);
       if (iHaveit === 1) {
         setProcessing(false);
         setAlertParam({ state: "warning", title: "Warning", content: "Your NFT is not on sale." });
         setVisibleModal(true);
         return;
+      }
+      if(iHaveit && iHaveit.message)
+      {
+        setAlertParam({ state: "warning", title: "Warning", content: iHaveit.message });
+        setVisibleModal(true);
       }
       let checkResut = await checkWalletAddrAndChainId();
       if (!checkResut) {
@@ -260,13 +272,19 @@ const Actions = ({ className, setProcessing }) => {
       return;
     }
     setProcessing(true);
+    let iHaveit;
     try {
-      let iHaveit = await getBalanceOf(auth.address, nft.detail._id);
+      iHaveit = await getBalanceOf(auth.address, nft.detail._id);
       if (iHaveit === 0) {
         setProcessing(false);
         setAlertParam({ state: "warning", title: "Warning", content: "You cannot burn NFT while it is on sale or you've not minted it ever." });
         setVisibleModal(true);
         return;
+      }
+      if(iHaveit && iHaveit.message)
+      {
+        setAlertParam({ state: "warning", title: "Warning", content: iHaveit.message });
+        setVisibleModal(true);
       }
       let checkResut = await checkWalletAddrAndChainId();
       if (!checkResut) {
@@ -301,14 +319,19 @@ const Actions = ({ className, setProcessing }) => {
       return;
     }
     setProcessing(true);
-
+    let iHaveit;
     try {
-      let iHaveit = await getBalanceOf(auth.address, nft.detail._id);
+      iHaveit = await getBalanceOf(auth.address, nft.detail._id);
       if (iHaveit === 0) {
         setProcessing(false);
         setAlertParam({ state: "warning", title: "Warning", content: "You cannot transfer NFT while it is on sale or you've not minted it ever." });
         setVisibleModal(true);
         return;
+      }
+      if(iHaveit && iHaveit.message)
+      {
+        setAlertParam({ state: "warning", title: "Warning", content: iHaveit.message });
+        setVisibleModal(true);
       }
       let checkResut = await checkWalletAddrAndChainId();
       if (!checkResut) {

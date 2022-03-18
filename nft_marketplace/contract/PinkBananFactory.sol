@@ -218,7 +218,7 @@ contract PinkBananaFactory is Ownable,ERC1155Receiver {
         _isMinting = false;
     }
 
-    function destroySale(string memory _tokenHash) external onlyReseller nonReentrant returns (bool) {
+    function destroySale(string memory _tokenHash) external onlyNFTSeller(_tokenHash) nonReentrant returns (bool) {
         require(_tokenHashExists[_tokenHash], "Non-Existing NFT hash value....");
         require(getAuctionState(_tokenHash) != AuctionState.CANCELLED, "Auction state is already cancelled...");
 
@@ -457,7 +457,7 @@ contract PinkBananaFactory is Ownable,ERC1155Receiver {
 
     function changePrice(string memory tokenHash, uint256 newPrice) external onlyNFTSeller(tokenHash){
         uint256 saleId = _getSaleId[tokenHash];
-        require(getAuctionState(tokenHash) == AuctionState.DIRECT_BUY || (getAuctionState(tokenHash) == AuctionState.OPEN && _allSaleInfo[saleId].maxBidder == msg.sender), "can't change price");
+        require(getAuctionState(tokenHash) == AuctionState.DIRECT_BUY || (getAuctionState(tokenHash) == AuctionState.OPEN && _allSaleInfo[saleId].maxBidder == address(0)), "can't change price");
         uint256 oldPrice = _allSaleInfo[saleId].startPrice;
         _allSaleInfo[saleId].startPrice = newPrice;
         emit ChangePrice(msg.sender, tokenHash, oldPrice, newPrice, _allSaleInfo[saleId].interval);

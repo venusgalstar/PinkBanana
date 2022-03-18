@@ -13,8 +13,6 @@ import FormControl from '@mui/material/FormControl';
 import Select from '@mui/material/Select';
 import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
-import { registerArtist } from "../../InteractWithSmartContract/interact";
-import Header from "../../components/Header";
 import { useSelector } from "react-redux";
 import Web3 from 'web3/dist/web3.min.js';
 
