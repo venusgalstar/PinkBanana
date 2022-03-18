@@ -2,10 +2,10 @@ import React, { useEffect, useState } from "react";
 import cn from "classnames";
 import styles from "./Activity.module.sass";
 import Control from "../../components/Control";
-import Loader from "../../components/Loader";
+// import Loader from "../../components/Loader";
 import Icon from "../../components/Icon";
 import Filters from "./Filters";
-import { getNotifiesByFilter, getNotifiesByLimit } from "../../store/actions/notify.action";
+import {  getNotifiesByLimit } from "../../store/actions/notify.action";
 import { useDispatch } from "react-redux";
 import { useSelector } from "react-redux";
 import { markAllAsRead } from "../../store/actions/notify.action";
@@ -64,14 +64,14 @@ const Activity = () => {
     var temp = breadcrumbs;
     temp[0].url += `/${currentUsr._id}`;
     setBreadCrumbs(temp);
-  }, [currentUsr])
+  }, [currentUsr, breadcrumbs])
 
 
   const dispatch = useDispatch();
 
   useEffect(() => {
-    dispatch(getNotifiesByLimit(50, currentUsr._id))
-  }, []);
+    if(currentUsr._id) dispatch(getNotifiesByLimit(50, currentUsr._id))
+  }, [currentUsr, dispatch]);
 
 
   const onClickMarkAllAsRead = () => {
@@ -116,15 +116,15 @@ const Activity = () => {
       }
     }
     dispatch(getNotifiesByLimit(50, currentUsr._id, reshapedFilters));
-  }, [selectedFilters]);
+  }, [selectedFilters, currentUsr, dispatch]);
 
   useEffect(() => {
-    if (activeIndex == 1) {
+    if (activeIndex === 1) {
       dispatch(getNotifiesByLimit(50, currentUsr._id, [5]));
     } else {
       dispatch(getNotifiesByLimit(50, currentUsr._id));
     }
-  }, [activeIndex])
+  }, [activeIndex, dispatch, currentUsr])
 
   const goDetail = (url) => {
     history.push(url);
@@ -201,7 +201,7 @@ const Activity = () => {
                     <></>
                 }
               </div>
-              <Loader className={styles.loader} />
+              {/* <Loader className={styles.loader} /> */}
             </div>
             <button
               className={cn(

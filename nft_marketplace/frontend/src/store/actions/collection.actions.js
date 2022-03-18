@@ -19,7 +19,6 @@ export const getCollectionBannerList = (limit) => dispatch => {
 }
 
 export const getCollectionDetail = (id) => dispatch => {
-    console.log("[getCollectionDetail] id = ", id);
     axios.post(`${config.baseUrl}collection/detail`, {id}, {
         headers:
         {

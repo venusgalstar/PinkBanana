@@ -2,9 +2,9 @@ import React, { useEffect, useState } from "react";
 import cn from "classnames";
 import styles from "./User.module.sass";
 import Icon from "../../../components/Icon";
-import Report from "../../../components/Report";
-import Modal from "../../../components/Modal";
-import { FacebookShareButton, TwitterShareButton } from "react-share";
+// import Report from "../../../components/Report";
+// import Modal from "../../../components/Modal";
+// import { FacebookShareButton, TwitterShareButton } from "react-share";
 import { useDispatch, useSelector } from "react-redux";
 import config from "../../../config";
 import { useParams } from "react-router-dom";
@@ -12,16 +12,12 @@ import {toggleFollow, getIsExists} from "../../../store/actions/follow.actions";
 import { getDetailedUserInfo } from "../../../store/actions/auth.actions";
 import moment from "moment";
 
-
 // import { isStepDivisible } from "react-range/lib/utils";
-
-const shareUrlFacebook = "https://ui8.net";
-const shareUrlTwitter = "https://ui8.net";
 
 const User = ({ className, item }) => {
   const [visible, setVisible] = useState(false);
-  const [visibleShare, setVisibleShare] = useState(false);
-  const [visibleModalReport, setVisibleModalReport] = useState(false);
+  // const [visibleShare, setVisibleShare] = useState(false);
+  // const [visibleModalReport, setVisibleModalReport] = useState(false);
   const currentUsr  =  useSelector(state=>state.auth.user);  //user_id in making follow
   const {userId} = useParams();  //taget_id in making follow
   const dispatch = useDispatch();
@@ -43,7 +39,7 @@ const User = ({ className, item }) => {
   {
     dispatch(getDetailedUserInfo(userId, false));
     dispatch(getIsExists(currentUsr._id, userId));
-  }, [userId])
+  }, [userId, currentUsr, dispatch])
 
   useEffect(() =>
   {
@@ -55,8 +51,6 @@ const User = ({ className, item }) => {
       setCompressedAddress(address);
     }
   }, [detailedUserInfo])
-  console.log("userId = ", userId);
-  console.log("detailedUserInfo = ", detailedUserInfo);
   
   return (
     <>
@@ -86,9 +80,9 @@ const User = ({ className, item }) => {
         </div>
         <a
           className={styles.site}
-          href={detailedUserInfo && detailedUserInfo.customURL}
+          href={detailedUserInfo && "https://"+detailedUserInfo.customURL}
           target="_blank"
-          rel="noopener noreferrer"
+          rel="noreferrer noopener"
         >
           <Icon name="globe" size="16" />
           <span>{detailedUserInfo && detailedUserInfo.customURL}</span>
@@ -110,7 +104,7 @@ const User = ({ className, item }) => {
                   <span onClick={() => onClickUnfollow() }>Unfollow</span>              
               </button>
             }
-            <button
+            {/* <button
               className={cn(
                 "button-circle-stroke button-small",
                 { [styles.active]: visibleShare },
@@ -125,9 +119,9 @@ const User = ({ className, item }) => {
               onClick={() => setVisibleModalReport(true)}
             >
               <Icon name="report" size="20" />
-            </button>
+            </button> */}
           </div>
-          <div className={cn(styles.box, { [styles.active]: visibleShare })}>
+          {/* <div className={cn(styles.box, { [styles.active]: visibleShare })}>
             <div className={styles.stage}>Share link to this page</div>
             <div className={styles.share}>
               <TwitterShareButton
@@ -147,7 +141,7 @@ const User = ({ className, item }) => {
                 </span>
               </FacebookShareButton>
             </div>
-          </div>
+          </div> */}
         </div>
         <div className={styles.socials}>
           {item.map((x, index) => (
@@ -164,12 +158,12 @@ const User = ({ className, item }) => {
         </div>
         <div className={styles.note}>Member since {detailedUserInfo && moment(detailedUserInfo.createdAt).format("YYYY-MM-DD")}</div>
       </div>
-      <Modal
+      {/* <Modal
         visible={visibleModalReport}
         onClose={() => setVisibleModalReport(false)}
       >
         <Report />
-      </Modal>
+      </Modal> */}
     </>
   );
 };

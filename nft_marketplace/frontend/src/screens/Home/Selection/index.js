@@ -8,14 +8,6 @@ import config from "../../../config";
 import { io } from 'socket.io-client';
 
 var socket = io(`${config.socketUrl}`);
-socket.on("disconnect", () =>
-{
-  console.log("disconnected");
-  setTimeout(() =>
-  {
-    socket.connect();
-  }, 1000)
-})
 
 
 const Selection = () => {
@@ -74,6 +66,7 @@ const Selection = () => {
                         // srcSet={`${x.image2x} 2x`}
                         src={x.bannerURL ? config.imgUrl + x.bannerURL : ""}
                         // src={x.image}
+                        style={{height: "400px"}}
                         alt="Selection"
                       />
                     </div>
@@ -108,6 +101,7 @@ const Selection = () => {
                       <img
                         srcSet={`${x.image2x} 2x`}
                         src={x.bannerURL ? config.imgUrl + x.bannerURL : ""}
+                        style={{height: "100px"}}
                         alt="Selection"
                       />
                     </div>
@@ -121,14 +115,14 @@ const Selection = () => {
                         {/* <div className={styles.content}>{x.content}</div> */}
                         <div className={styles.content}>floor price</div>
                       </div>
-                      <button
+                      {/* <button
                         className={cn(
                           "button-stroke button-small",
                           styles.button
                         )}
                       >
                         Place a bid
-                      </button>
+                      </button> */}
                     </div>
                   </Link>
                 )

@@ -4,7 +4,7 @@ import styles from "./Transfer.module.sass";
 import Modal from "../../components/Modal";
 import Alert from "../../components/Alert";
 
-const Transfer = ({ className, onOk = null }) => 
+const Transfer = ({ className, onOk = null, onCancel = null}) => 
 {
   const regexForWallet = /^(0x[a-fA-F0-9]{40})$/gm;
   const [toAddr, setToAddr] = useState("");
@@ -44,7 +44,7 @@ const Transfer = ({ className, onOk = null }) =>
     setVisibleModal(false);
   }
 
-  const onCancel = () => {
+  const onCanc = () => {
     setVisibleModal(false);
   }
 
@@ -67,11 +67,11 @@ const Transfer = ({ className, onOk = null }) =>
       </div>
       <div className={styles.btns}>
         <button className={cn("button", styles.button)} onClick={() => onContinue() }>Continue</button>
-        <button className={cn("button-stroke", styles.button)}>Cancel</button>
+        <button className={cn("button-stroke", styles.button)} onClick={() => onCancel()}>Cancel</button>
       </div>
       
       <Modal visible={visibleModal} onClose={() => setVisibleModal(false)}>
-        <Alert className={styles.steps} param={alertParam} okLabel="Yes" onOk={onYes} onCancel={onCancel}/>
+        <Alert className={styles.steps} param={alertParam} okLabel="Yes" onOk={onYes} onCancel={onCanc}/>
       </Modal>
     </div>
   );

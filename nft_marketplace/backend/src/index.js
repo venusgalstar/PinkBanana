@@ -1,5 +1,7 @@
 const server = require("./socket").server;
-const {getBlockNumber, getData, AuctionTimeout_monitor} =  require("./web3events");
+const getBlockNumber = require("./socket").getBlockNumber;
+const getData = require("./socket").getData;
+const AuctionTimeout_monitor = require("./socket").AuctionTimeout_monitor;
 
 const port = process.env.PORT || 5000;
 

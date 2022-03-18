@@ -20,7 +20,6 @@ const socket = io(`${config.socketUrl}`);
 
 
 
-
 const colors = ["#3772FF", "#9757D7", "#45B26B", "#23262F", "#777E90", "#3772FF", "#9757D7", "#45B26B"];
 
 
@@ -86,8 +85,8 @@ const Popular = () => {
     dispatch(getPopularUserList(date, 20));
   }, [date, dispatch]);
 
-  useEffect(()=>{
-    socket.on("UpdateStatus", data=>{
+  useEffect(() => {
+    socket.on("UpdateStatus", data => {
       console.log("update status:", data);
       dispatch(getPopularUserList(date, 20));
     });
@@ -108,8 +107,6 @@ const Popular = () => {
     }
   }
 
-
-
   const onToggleFollow = (index) => {
     if (auth && items) {
       dispatch(toggleFollow(auth._id, items[index]._id));
@@ -121,7 +118,7 @@ const Popular = () => {
       return false;
     } else if (auth._id) {
       var index = item.follows.findIndex((element) => {
-        return element._id == auth._id;
+        return element.toLowerCase() == auth._id.toLowerCase();
       });
       if (index != -1) {
         return true;
@@ -174,7 +171,10 @@ const Popular = () => {
                         <div className={styles.number}>#{index + 1}</div>
                       </div>
                       <div className={styles.control}>
-                        <Add className={styles.button} isFollow={isFollowed(x)} onToggle={() => { onToggleFollow(index) }} />
+                        {
+                          auth && x._id != auth._id &&
+                          <Add className={styles.button} isFollow={isFollowed(x)} onToggle={() => { onToggleFollow(index) }} />
+                        }
                         <Link className={styles.button} to={x && x._id && "/profile/" + x._id}>
                           <Icon name="arrow-expand" size="24" />
                         </Link>

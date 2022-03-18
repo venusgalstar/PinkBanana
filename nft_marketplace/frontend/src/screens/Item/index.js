@@ -7,6 +7,8 @@ import Control from "./Control";
 import Options from "./Options";
 import { useSelector } from "react-redux";
 import config from "../../config";
+import Backdrop from '@mui/material/Backdrop';
+import CircularProgress from '@mui/material/CircularProgress';
 
 import 'react-perfect-scrollbar/dist/css/styles.css';
 import PerfectScrollbar from 'react-perfect-scrollbar'
@@ -45,10 +47,10 @@ const categories = [
 const Item = () => {
   const [activeIndex, setActiveIndex] = useState(0);
   const { id } = useParams();
+  const [processing, setProcessing] = useState(false);
 
   const nft = useSelector(state => state.nft);
   const [itemDetail, setItemDetail] = useState();
-  const auth = useSelector(state => state.auth);
   const [users, setUsers] = useState();
   const avax = useSelector(state => state.user.avax);
   const curTime = useSelector(state => state.bid.system_time);
@@ -56,7 +58,7 @@ const Item = () => {
 
   useEffect(() => {
     var list = [];
-    if (activeIndex == 0) {
+    if (activeIndex === 0) {
       list = [
         {
           name: itemDetail && itemDetail.owner ? itemDetail.owner.username : "",
@@ -72,10 +74,10 @@ const Item = () => {
           avatar: itemDetail  && itemDetail.creator ? config.imgUrl + itemDetail.creator.avatar : "",
         }
       ];
-    } else if (activeIndex == 1) {
+    } else if (activeIndex === 1) {
       if (nft.history) {
         list = [];
-        for (var i = 0; i < nft.history.length; i++) {
+        for (let i = 0; i < nft.history.length; i++) {
           list.push({
             name: nft.history[i].owner.username,
             id: nft.history[i].owner._id,
@@ -85,12 +87,12 @@ const Item = () => {
           })
         }
       }
-    } else if (activeIndex == 2) {
+    } else if (activeIndex === 2) {
       if (itemDetail) {
         list = [];
         var bids = [...itemDetail.bids];
         bids = bids.reverse();
-        for (var i = 0; i < itemDetail.bids.length; i++) {
+        for (let i = 0; i < itemDetail.bids.length; i++) {
           list.push({
             name: bids[i].username,
             id: bids[i]._id,
@@ -110,9 +112,9 @@ const Item = () => {
     }
   }, [nft])
 
-  const getFormatString = (str) => {
-    return String(str).replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1,');
-  }
+  // const getFormatString = (str) => {
+  //   return String(str).replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1,');
+  // }
 
   const getLeftDuration = (created, period, curTime) => {
 
@@ -189,10 +191,14 @@ const Item = () => {
                 alt="Item"
               />
             </div>
-            <Options className={styles.options} />
+            <Options className={styles.options} setProcessing={setProcessing}/>
           </div>
           <div className={styles.details}>
-            <h1 className={cn("h3", styles.title)}>{itemDetail ? itemDetail.name : ""}</h1>
+            <h1 className={cn("h3", styles.title)}>{itemDetail ? itemDetail.name : ""}              
+             </h1>             
+             {itemDetail && 
+               <a href={`/collectionItems/${itemDetail.collection_id._id}`}><h3>{itemDetail.collection_id.name}</h3></a>
+             }
             <div className={styles.cost}>
               <div className={cn("status-stroke-green", styles.price)}>
                 {itemDetail && (itemDetail.isSale === 1 ? itemDetail.price : itemDetail.auctionPrice)} AVAX
@@ -220,7 +226,7 @@ const Item = () => {
               </a> */}
             </div>
             {
-              itemDetail && itemDetail.isSale == 2 ?
+              itemDetail && itemDetail.isSale === 2 ?
                 <div className={styles.timer} style={{ marginBottom: "10px" }}>
                   <div className={styles.box}>
                     <div className={styles.number}>{getLeftDuration(itemDetail.auctionStarted, itemDetail.auctionPeriod, curTime).hours()}</div>
@@ -256,6 +262,13 @@ const Item = () => {
             <Control className={styles.control} id={id} />
           </div>
         </div>
+        
+      {<Backdrop
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={processing}
+      >
+        <CircularProgress color="inherit" />
+      </Backdrop>}
       </div>
     </>
   );

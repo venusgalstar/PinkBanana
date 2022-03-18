@@ -9,14 +9,6 @@ const items = [
   //   title: "Enter your price",
   //   value: "AVAX",
   // },
-  {
-    title: "Service fee",
-    value: "1.5%",
-  },
-  {
-    title: "Total bid amount",
-    value: "0 AVAX",
-  },
 ];
 
 
@@ -37,7 +29,7 @@ const PutSale = ({ className, onOk, onCancel }) => {
           <Icon name="coin" size="24" />
         </div>
         <div className={styles.details}>
-          <div className={styles.info}>{instant ? "Instant sale price" : "Auction Sale"}</div>
+          <div className={styles.info}>{instant ? "Instant sale" : "Auction Sale"}</div>
           <div className={styles.text}>
             Enter the price for which the item will be sold
           </div>

@@ -37,7 +37,7 @@ const Preview = ({ className, onClose, imgSrc, itemTitle, itemPrice, clearAll}) 
         </div>
         <button className={styles.clear} onClick={() => clearPreviewCard()}>
           <Icon name="circle-close" size="24" />
-          Clear all
+          Clear
         </button>
       </div>
     </div>

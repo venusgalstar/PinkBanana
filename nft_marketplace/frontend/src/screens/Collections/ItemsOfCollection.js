@@ -136,12 +136,8 @@ const ItemsOfCollection = () =>
                         marginTop : "-5rem"                
                         }}>
                     <div className={styles.logoImg } >
-                        {collection && collection.logoURL !=="" &&<img id="avatarImg" 
-                            style={{
-                                width: "100%",
-                                height: "100%"
-                            }}
-                        src={`${config.imgUrl}${collection.logoURL}`} alt="Avatar" /> }
+                        {collection && collection.logoURL !=="" && 
+                        <img id="avatarImg"  src={`${config.imgUrl}${collection.logoURL}`} alt="Avatar" /> }
                     </div>
                 </div>   
             </div> 

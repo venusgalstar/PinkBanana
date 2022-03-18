@@ -14,14 +14,6 @@ import { getDetailedUserInfo } from "../../../store/actions/auth.actions";
 
 import { io } from 'socket.io-client';
 var socket = io(`${config.socketUrl}`);
-socket.on("disconnect", () =>
-{
-  console.log("disconnected");
-  setTimeout(() =>
-  {
-    socket.connect();
-  }, 1000)
-})
 
 const User = ({ className }) => {
   const [visible, setVisible] = useState(false);
@@ -41,13 +33,12 @@ const User = ({ className }) => {
         {
           let bal = 0;
           bal  = await  getBalanceOfAccount(currentUsr.address);
-          setBalance(bal.balance);   
-          console.log("balance = ", balance);   
+          setBalance(bal.balance);     
         }
       }, 200);
     });
     
-  }, [])
+  }, [currentUsr])
 
   useEffect(() =>
   {
@@ -59,7 +50,7 @@ const User = ({ className }) => {
       setCompressedAddress(address);
       dispatch(getDetailedUserInfo(currentUsr._id));
     }
-  }, [currentUsr])
+  }, [currentUsr, dispatch])
 
   useEffect(  () =>
   {
@@ -69,7 +60,6 @@ const User = ({ className }) => {
         let bal = 0;
         bal  = await  getBalanceOfAccount(currentUsr.address);
         setBalance(bal.balance);   
-        console.log("balance = ", balance);   
       }
     }, 200);
   }, [currentUsr]);
@@ -131,7 +121,7 @@ const User = ({ className }) => {
               <div className={styles.line}>
                 <div className={styles.preview}>
                   <img
-                    src="/images/content/etherium-circle.jpg"
+                    src="/images/content/AVAX_logo.png"
                     alt="Etherium"
                   />
                 </div>
@@ -177,7 +167,7 @@ const User = ({ className }) => {
                     </Link>
                   )
                 ) 
-                : x.title=="Disconnect"?
+                : x.title === "Disconnect"?
                 (
                   <div className={styles.item}  style={{cursor:"pointer"}} key={index}>
                     <div className={styles.icon}>

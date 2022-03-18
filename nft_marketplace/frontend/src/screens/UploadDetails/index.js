@@ -12,43 +12,20 @@ import config from "../../config";
 import { useHistory } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { getCollections } from "../../store/actions/collection.actions";
-import { singleMintOnSale } from "../../InteractWithSmartContract/interact";
+import { getValidWallet, singleMintOnSale } from "../../InteractWithSmartContract/interact";
 import Checkbox from '@mui/material/Checkbox';
 import Alert from "../../components/Alert";
 import Backdrop from '@mui/material/Backdrop';
 import CircularProgress from '@mui/material/CircularProgress';
 
-const royaltiesOptions = [{ value: 10, text: "10%" }, { value: 20, text: "20%" }, { value: 30, text: "30%" }];
-
-// const items = [
-//   {
-//     id: 0,
-//     title: "Create collection",
-//     color: "#4BC9F0",
-//   },
-//   {
-//     id: 23,
-//     title: "Crypto Legend - Professor",
-//     color: "#45B26B",
-//   },
-//   {
-//     id: 245,
-//     title: "Crypto Legend - Professor",
-//     color: "#EF466F",
-//   },
-//   {
-//     id: 342,
-//     title: "Legend Photography",
-//     color: "#9757D7",
-//   },
-// ];
+// const royaltiesOptions = [{ value: 10, text: "10%" }, { value: 20, text: "20%" }, { value: 30, text: "30%" }];
 
 const Upload = ({ asset_id = null }) => {
   const [textName, setTextName] = useState("");
   const [textDescription, setTextDescription] = useState("");
-  const [textSize, setTextSize] = useState("");
-  const [textProperty, setTextProperty] = useState("");
-  const [royalties, setRoyalties] = useState(royaltiesOptions[0]);
+  // const [textSize, setTextSize] = useState("");
+  // const [textProperty, setTextProperty] = useState("");
+  // const [royalties, setRoyalties] = useState(royaltiesOptions[0]);
   const [sale, setSale] = useState(true);
   const [price, setPrice] = useState(0);
   const [selectedFile, setSelectedFile] = useState(null);
@@ -76,12 +53,12 @@ const Upload = ({ asset_id = null }) => {
   useEffect(() => {
     if (collections && collections.length > 0) {
       let tempOptions = [];
-      collections.map((coll, index) => {
+      collections.map((coll, index) => (
         tempOptions.push({
           value: coll._id,
           text: coll.name
         })
-      })
+      ))
       setColls(tempOptions);
     }
   }, [collections]);
@@ -105,8 +82,8 @@ const Upload = ({ asset_id = null }) => {
         // setItemId(item._id);
         setTextName(item.name);
         setTextDescription(item.description);
-        setTextProperty(item.royalty);
-        setRoyalties(item.royalty);
+        // setTextProperty(item.royalty);
+        // setRoyalties(item.royalty);
         setLogoImg(`${config.baseUrl}utils/view_file/${item.logoURL}`);
       })
       .catch(function (error) {
@@ -121,6 +98,7 @@ const Upload = ({ asset_id = null }) => {
         //create new collection
         localStorage.setItem("isNewItemCreating", true);
         localStorage.setItem("previousPageURL", "/upload-details/0");
+        setVisibleModal(false);
         history.push("/createCollection")
       }
       else {
@@ -139,7 +117,7 @@ const Upload = ({ asset_id = null }) => {
     if (collectionId !== undefined && collections && collections.length > 0) {
       // console.log("collections = ", collections);
       var index = collections.findIndex((element) => {
-        return element._id == collectionId
+        return element._id.toString() === collectionId.toString()
       });
 
       if (collections[index] && collections[index].metaData) {
@@ -177,7 +155,7 @@ const Upload = ({ asset_id = null }) => {
       setCollectionId(getConsideringCollectionId);
       localStorage.removeItem("isNewItemCreating");
     }
-  }, [])
+  }, [getConsideringCollectionId])
 
   const changeFile = (event) => {
     var file = event.target.files[0];
@@ -201,39 +179,44 @@ const Upload = ({ asset_id = null }) => {
     })
       .then(async function (response) {
         console.log("response = ", response);
-        if (response.status === 200 && params.isSale !== 0) {
-          var aucperiod = (response.data.isSale === 1 ? 0 : response.data.auctionPeriod);
-          var price = (response.data.isSale === 1 ? response.data.price : response.data.auctionPrice)
-          setProcessing(true);
-          try{
-            let ret = await singleMintOnSale(
-              currentUsr.address,
-              response.data._id,
-              aucperiod * 24 * 3600,
-              price,
-              0);
-            if (ret.success === true) {
-              setProcessing(false);
-              console.log("succeed in put on sale");
-              setAlertParam({ state: "success", title: "Success", content: "You 've put a new item on sale." });
-              setVisibleModal(true);
-              return;
-            }
-            else {
-              setProcessing(false);
-              console.log("failed in put on sale : ", ret.status);
-              setAlertParam({ state: "error", title: "Error", content: "Failed in put on sale." });
-              setVisibleModal(true);
-              return;
-            }
-          }catch(err)
+        if (response.status === 200) 
+        {
+          if (params.isSale !== 0) 
           {
-            setProcessing(false);
-            console.log("multiple uploading error : ", err.message);
+            var aucperiod = (response.data.isSale === 1 ? 0 : response.data.auctionPeriod);
+            var price = (response.data.isSale === 1 ? response.data.price : response.data.auctionPrice)
+            setProcessing(true);
+            try {
+              let ret = await singleMintOnSale(
+                currentUsr.address,
+                response.data._id,
+                aucperiod * 24 * 3600,
+                price,
+                0);
+              if (ret.success === true) {
+                setProcessing(false);
+                console.log("succeed in put on sale");
+                setAlertParam({ state: "success", title: "Success", content: "You 've put a new item on sale." });
+                setVisibleModal(true);
+                history.push(`/collectionItems/${params.collectionId}`)
+              }
+              else {
+                setProcessing(false);
+                setAlertParam({ state: "error", title: "Error", content: "Failed in put on sale." });
+                setVisibleModal(true);
+                console.log("failed in put on sale : ", ret.status);
+                return;
+              }
+            } catch (err) {
+              setProcessing(false);
+              console.log("multiple uploading error : ", err.message);
+            }
+          } else {
+            setAlertParam({ state: "success", title: "Success", content: "You 've created a new item." });
+            setVisibleModal(true);
+            history.push(`/collectionItems/${params.collectionId}`)
           }
         }
-        setAlertParam({ state: "success", title: "Success", content: "Uploading succeed." });
-        setVisibleModal(true);
       })
       .catch(function (error) {
         console.log(error);
@@ -245,7 +228,25 @@ const Upload = ({ asset_id = null }) => {
 
   // console.log("getConsideringCollectionId = ", getConsideringCollectionId);
 
-  const createItem = () => {
+  const createItem = async () => {
+    if(sale)
+    {      
+      if (price <= 0) {
+        setAlertParam({ state: "error", title: "Error", content: "Invalid price." });
+        setVisibleModal(true);
+        return;
+      }
+    }
+    if(instant === true)
+    {    
+      let connection = await getValidWallet();
+      if(connection.address === "")
+      {
+        setAlertParam( {state: "info", title:"Information", content:"No connected wallet. You should consider trying MetaMask!"} );      
+        setVisibleModal( true );
+        return;
+      }
+    }
     if (Object.keys(currentUsr).length === 0) {
       console.log("Invalid account.");
       setAlertParam({ state: "warning", title: "Warning", content: "You have to sign in before creting a item." });
@@ -280,21 +281,26 @@ const Upload = ({ asset_id = null }) => {
       .then(function (response) {
         // console.log(response);
         const params = {};
+        if (textName === "") {
+          setAlertParam({ state: "error", title: "Error", content: "Item name cannot be empty." });
+          setVisibleModal(true);
+          return;
+        }
         params.itemName = textName;
         params.itemLogoURL = response.data.path;
         params.itemDescription = textDescription;
-        params.itemProperty = textProperty;
-        params.itemSize = textSize;
-        params.itemRoyalty = royalties.value;
+        // params.itemProperty = textProperty;
+        // params.itemSize = textSize;
+        // params.itemRoyalty = royalties.value;
         params.collectionId = collectionId;
         params.creator = currentUsr._id;
         params.owner = currentUsr._id;
         params.isSale = !sale ? 0 : (instant ? 1 : 2);
         if (instant) {
-          params.price = !sale ? 0 : price;
+          params.price = !sale ? 0 : Number(price);
           params.auctionPrice = 0;
         } else {
-          params.auctionPrice = !sale ? 0 : price;
+          params.auctionPrice = !sale ? 0 : Number(price);
           params.price = 0;
         }
         params.auctionPeriod = !sale ? 0 : period;
@@ -314,6 +320,7 @@ const Upload = ({ asset_id = null }) => {
     setSelectedFile(null);
     setTextName("");
     setPrice(0);
+    setLogoImg("");
   }
 
   const setSelectedMetaValue = (x, index) => {
@@ -389,13 +396,13 @@ const Upload = ({ asset_id = null }) => {
                     <div className={styles.format}>
                       {
                         !selectedFile ?
-                          "PNG, GIF, WEBP, MP4 or MP3. Max 1Gb."
+                          "PNG, GIF, JPEG, WEBP. Max 100MB."
                           :
                           selectedFile.name
                       }
                     </div>
                     <input className={styles.load} type="file" id="fileInput1" onChange={changeFile}
-                      accept="image/*, video/*"
+                      accept="image/*"
                     />
                   </div>
                 </div>
@@ -531,7 +538,7 @@ const Upload = ({ asset_id = null }) => {
                         <Icon name="coin" size="24" />
                       </div>
                       <div className={styles.details}>
-                        <div className={styles.info}>{instant ? "Instant sale price" : "Auction Sale"}</div>
+                        <div className={styles.info}>{instant ? "Instant sale" : "Auction Sale"}</div>
                         <div className={styles.textForPutSale}>
                           Enter the price for which the item will be sold
                         </div>
@@ -541,7 +548,7 @@ const Upload = ({ asset_id = null }) => {
                     <div className={styles.table}>
                       <div className={styles.rowForSale}>
                         <input className={styles.inputForSale}
-                          type="number" min="0" step="0.001" defaultValue={0}
+                          type="number" min="0" step="0.001"
                           value={price || ""} onChange={(e) => setPrice(e.target.value)} placeholder="Enter your price" />
                         <div className={styles.colForSale} style={{ display: "flex", alignItems: "center" }}>AVAX</div>
                       </div>
@@ -549,7 +556,7 @@ const Upload = ({ asset_id = null }) => {
                         !instant ?
                           <div className={styles.rowForSale}>
                             <select className={styles.selectForSale} value={period} onChange={(event) => { setPeriod(event.target.value) }} placeholder="Please select auction time">
-                              <option value={0.000694}>1min</option>
+                              <option calssName={styles.inputForSale} value={0.000694}>1min</option>
                               <option value={0.00347}>5min</option>
                               <option value={0.00694}>10min</option>
                               <option value={7}>7 days</option>
@@ -560,10 +567,10 @@ const Upload = ({ asset_id = null }) => {
                           :
                           <></>
                       }
-                      <div className={styles.row} >
+                      {/* <div className={styles.row} >
                         <div className={styles.col}>Service fee</div>
                         <div className={styles.col}>1.5%</div>
-                      </div>
+                      </div> */}
                     </div>
                   </>
                 }
@@ -601,7 +608,7 @@ const Upload = ({ asset_id = null }) => {
           <Preview
             className={cn(styles.preview, { [styles.active]: visiblePreview })}
             onClose={() => setVisiblePreview(false)}
-            imgSrc={logoImg}
+            imgSrc={logoImg ? logoImg : "/images/content/blank.png"}
             itemTitle={textName}
             itemPrice={price}
             clearAll={clearAll}

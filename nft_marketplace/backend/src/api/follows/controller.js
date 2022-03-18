@@ -3,13 +3,11 @@ const Follow = db.Follow;
 var ObjectId = require('mongodb').ObjectID;
 var User = db.User;
 var Item = db.Item;
+var Notify = db.Notify;
 
 exports.toggleFollow = (req, res) => {
     var my_id = req.body.my_id;
     var target_id = req.body.target_id;
-    console.log("")
-    console.log("[toggleFollow] req.body = ", req.body)
-    console.log("")
     User.aggregate([
         {
             $match: {
@@ -33,14 +31,35 @@ exports.toggleFollow = (req, res) => {
                 $push: {
                     follows: ObjectId(my_id)
                 }
-            }).then((data) => {
+            }).then(async () => {               
+                let userInfo = await User.findOne({
+                    _id: new ObjectId(target_id)
+                }, { username: 1, avatar: 2 });
+                if(!userInfo) return res.send({ code: 0 });
+                // console.log("[toggleFollow] userInfo = ", userInfo)
+                let descriptionStr = "A following is happend to "+ userInfo.username;
+                const new_notify = new Notify(
+                    {
+                        url: "/profile/" + target_id,
+                        imgUrl: userInfo.avatar,
+                        subTitle: "Following is happend",
+                        description: descriptionStr,
+                        date: new Date(),
+                        readers: [],
+                        target_ids: [],
+                        Type: 5
+                    });
+                new_notify.save(function (err) {
+                    if (!err) {
+                    }
+                });
                 return res.send({ code: 0 });
             }).catch(() => {
                 return res.send({ code: 1 });
             });
         } else if (data.length > 0 && data[0].is_follow) {
             // pull user
-            User.update(
+            User.updateOne(
                 {
                     _id: ObjectId(target_id)
                 }, {
@@ -48,7 +67,29 @@ exports.toggleFollow = (req, res) => {
                     follows: ObjectId(my_id)
                 }
             }
-            ).then(() => {
+            ).then(async () => {
+                let userInfo = await User.findOne({
+                    _id: new ObjectId(target_id)
+                }, { username: 1, avatar: 2 });
+                if(!userInfo) return res.send({ code: 0 });
+                // console.log("[toggleFollow] userInfo = ", userInfo)
+                let descriptionStr = "A following to "+userInfo.username+" is canceled";
+
+                const new_notify = new Notify(
+                    {
+                        url: "/profile/" + target_id,
+                        imgUrl: userInfo.avatar,
+                        subTitle: "Unfollowing is happend",
+                        description: descriptionStr,
+                        date: new Date(),
+                        readers: [],
+                        target_ids: [],
+                        Type: 5
+                    });
+                new_notify.save(function (err) {
+                    if (!err) {
+                    }
+                });
                 return res.send({ code: 0 });
             }).catch(() => {
                 return res.send({ code: 1 });

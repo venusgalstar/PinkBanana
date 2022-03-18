@@ -9,24 +9,16 @@ import Modal from "../../../components/Modal";
 import Bid from "../../../components/Bid";
 
 import { useDispatch, useSelector } from 'react-redux';
-import { getNftBannerList } from '../../../store/actions/nft.actions';
+import { emptyNFTTradingResult, getNftBannerList } from '../../../store/actions/nft.actions';
 import config from "../../../config";
 import Backdrop from '@mui/material/Backdrop';
 import CircularProgress from '@mui/material/CircularProgress';
 import {getNftDetail} from "../../../store/actions/nft.actions";
-import {placeABid, checkNetworkById} from "../../../InteractWithSmartContract/interact";
+import {checkNetworkById, placeBid} from "../../../InteractWithSmartContract/interact";
 import Alert from "../../../components/Alert";
 
 import { io } from 'socket.io-client';
 var socket = io(`${config.socketUrl}`);
-socket.on("disconnect", () =>
-{
-  console.log("disconnected");
-  setTimeout(() =>
-  {
-    socket.connect();
-  }, 1000)
-})
 
 const SlickArrow = ({ currentSlide, slideCount, children, ...props }) => (
   <button {...props}>{children}</button>
@@ -68,6 +60,7 @@ const Hero = () => {
   const [biddingNftId, setBiddingNftId] = useState(0);
   const [alertParam, setAlertParam] = useState({});
   const [visibleModal, setVisibleModal] = useState(false);
+  const tradingResult = useSelector(state => state.nft.tradingResult);
 
   const onChangeBidPrice = (value) => {
     setBidPrice(value);
@@ -98,37 +91,42 @@ const Hero = () => {
     return true;
   }
 
+  useEffect(() =>
+  {
+    if(tradingResult)
+    {
+      setProcessing(false);
+      switch(tradingResult.function)
+      {
+        default : 
+          setVisibleModal(false); 
+          break;
+        case "placeBid":
+          if(tradingResult.success)
+          {
+            setAlertParam({state: "success", title:"Success", content:"You 've placed a bid."});      
+          }else{
+            setAlertParam({state: "error", title:"Error", content:"You 've failed in placing a bid."});  
+          }
+          setVisibleModal(true);      
+          break;
+      }
+      dispatch(emptyNFTTradingResult());
+      dispatch(getNftDetail(nft._id));
+    }
+  }, [tradingResult])
+
   const onBid = async () => {
-    //setBid(itemList[activeIndex]._id, auth._id, bidPrice)(dispatch);
+   
     setVisibleModalBid(false);
     
     setProcessing(true);
-    try{
-      let checkResut = await checkWalletAddrAndChainId();
-      if (!checkResut) {
-        setProcessing(false);
-        return;
-      }
-      let ret = await placeABid(auth.address, biddingNftId, bidPrice);
-      if (ret.success === true) 
-      {     
-        setProcessing(false);
-        setTimeout(() => {
-          getNftDetail(biddingNftId)(dispatch);
-        }, 1000);
-        setAlertParam({state: "success", title:"Success", content:"You 've put a bid."});      
-        setVisibleModal(true);
-      }
-      else {
-        console.log("failed on place a bid : ", ret.status);
-        setProcessing(false);
-        setAlertParam({state: "error", title:"Error", content:"Failed in place a bid."});      
-        setVisibleModal(true);
-      }
-    }catch(err){
+    let checkResut = await checkWalletAddrAndChainId();
+    if (!checkResut) {
       setProcessing(false);
-      console.log("failed on place a bid : ", err.message)
+      return;
     }
+    await placeBid(auth.address, biddingNftId, bidPrice);     
   }
 
   useEffect(()=>{
@@ -241,7 +239,7 @@ const Hero = () => {
                           </div>
                           <div className={styles.price}>
                             $
-                            {x.bids && x.bids.length > 0 ? x.bids[x.bids.length - 1].price ? Number(avax * x.bids[x.bids.length - 1].price).toFixed(2) : 0 : 0}
+                            {x.bids && avax && x.bids.length > 0 ? x.bids[x.bids.length - 1].price ? Number(avax * x.bids[x.bids.length - 1].price).toFixed(2) : 0 : 0}
                           </div>
                           <div className={styles.info}>Auction ending in</div>
                           <div className={styles.timer}>

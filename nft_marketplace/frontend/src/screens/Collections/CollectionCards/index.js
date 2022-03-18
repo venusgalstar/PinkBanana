@@ -4,53 +4,42 @@ import styles from "./Cards.module.sass";
 // import Icon from "../../../components/Icon";
 import styles1 from "../ProfileEdit.module.sass";
 import styles2 from "../UploadDetails.module.sass";
-import { useSelector } from "react-redux";
 import config from "../../../config";
 
-const Cards = ({ className, items, onSelectCollection}) => {
+const Cards = ({ className, collection, onSelectCollection}) => {
   
-  const currentUsr = useSelector(state => state.auth.user);
-
   const onSelectCard = (id) =>
   {
-    document.getElementById(`${id}`).style.border = "2px solid rgba(200,200,200, 1)";
-    document.getElementById(`${id}`).style.background = "rgba(170, 170, 170, 0.3)";
-    document.getElementById(`${id}`).style.borderRadius = "20px";
-    items.forEach(element => {
-      if(element._id !== id) {
-        document.getElementById(`${element._id}`).style.border = "none";
-        document.getElementById(`${element._id}`).style.background = "none";
-      }
-    }
-    );
+    // document.getElementById(`${id}`).style.border = "2px solid rgba(200,200,200, 1)";
+    // document.getElementById(`${id}`).style.background = "rgba(170, 170, 170, 0.3)";
+    // document.getElementById(`${id}`).style.borderRadius = "20px";
+    // items.forEach(element => {
+    //   if(element._id !== id) {
+    //     document.getElementById(`${element._id}`).style.border = "none";
+    //     document.getElementById(`${element._id}`).style.background = "none";
+    //   }
+    // }
+    // );
     onSelectCollection(id);
   }
 //{styles.card}
   return (
-    <div className={(className, styles.cards)} style={{
-      flexWrap : "wrap"}}>
-      {
-        (items && items.length> 0) && 
-      items.map((x, index) => (
-        <div key={index} id={x._id} onClick={() =>onSelectCard(x._id)}
-          style={{
-            width:"30%",
-            hight: "400px",
-            marginLeft : "1.5%"
-          }}
+    <div className={(className, styles.card)} >
+      
+        <div id={collection._id} className={styles.collection} onClick={() =>onSelectCard(collection._id)}          
         >          
           <div style={{
             width : "100%",
             position : "relative",
             height : "250px"
           }}>
-            {x.banner !== "" && <img style={{
+            {collection.banner !== "" && <img style={{
               position: "absolute",
               width:"100%",
               height:"100%",
               borderRadius: "20px"
             }}
-              id="BannerImg" src={`${config.imgUrl}${x.bannerURL}`} alt="Banner" /> }
+              id="BannerImg" src={`${config.imgUrl}${collection.bannerURL}`} alt="Banner" /> }
             <div className={styles2.file} style={{border:"2px solid rgb(204, 204, 204)", 
                 borderRadius:"50%",
                 width : "5rem",
@@ -62,24 +51,24 @@ const Cards = ({ className, items, onSelectCollection}) => {
                 marginTop : "-2.5rem"                
                 }}>
               <div className={styles1.avatar } >
-                {x.avatar !=="" &&<img id="avatarImg" src={`${config.imgUrl}${x.logoURL}`} alt="Avatar" /> }
+                {collection.avatar !=="" &&<img id="avatarImg" src={`${config.imgUrl}${collection.logoURL}`} alt="Avatar" /> }
               </div>
             </div>   
           </div>
-            <div className={styles1.stage} style={{marginTop: "4rem", textAlign:"center"}}>{x.name}</div>
+            <div className={styles1.stage} style={{marginTop: "4rem", textAlign:"center"}}>{collection.name}</div>
             <div className={styles1.text} style={{textAlign:"center"}} >
             {
-              (x.items && x.items.length>0) ?
-              x.items.length+" items"
+              (collection.items && collection.items.length>0) ?
+              collection.items.length+" items"
               :
               "0 items"
             } 
             </div>
             <div className={styles1.text} style={{textAlign:"center"}} >
-              {x.description}
+              {collection.description}
             </div>
           </div>          
-      ))}
+     
     </div>
   );
 };

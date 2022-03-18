@@ -9,7 +9,7 @@ import Theme from "../Theme";
 
 const items = [
   {
-    title: "Crypter.",
+    title: "",
     menu: [
       {
         title: "Discover",
@@ -22,7 +22,7 @@ const items = [
     ],
   },
   {
-    title: "Info",
+    title: "",
     menu: [
       {
         title: "FAQ",
@@ -88,10 +88,10 @@ const Footers = () => {
         </div>
         <div className={styles.foot}>
           <div className={styles.copyright}>
-            Copyright © 2021 UI8 LLC. All rights reserved
+            Copyright © 2022 Pink Banana. All rights reserved
           </div>
           <div className={styles.note}>
-            We use cookies for better service. <a href="/#">Accept</a>
+            {/* We use cookies for better service. <a href="/#">Accept</a> */}
           </div>
         </div>
       </div>

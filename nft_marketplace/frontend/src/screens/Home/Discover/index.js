@@ -25,7 +25,9 @@ const priceOptions = [{ value: 0, text: "Highest price" }, { value: 1, text: "Th
 const creatorOptions = [{ value: 0, text: "All" }, { value: 1, text: "Verified only" }];
 const likesOptions = [{ value: 0, text: "Most liked" }, { value: 1, text: "Least liked" }];
 const sortingOptions = [];
-if(navLinks && navLinks.length > 0 ) navLinks.map((x) => sortingOptions.push(x));
+const statusOptions = [{ value: 0, text: "All" }, { value: 1, text: "On Sale" }, { value: 2, text: "On Auction" }];
+
+if (navLinks && navLinks.length > 0) navLinks.map((x) => sortingOptions.push(x));
 
 const SlickArrow = ({ currentSlide, slideCount, children, ...props }) => (
   <button {...props}>{children}</button>
@@ -37,21 +39,12 @@ const Discover = () => {
   const [price, setPrice] = useState(priceOptions[0]);
   const [likes, setLikes] = useState(likesOptions[0]);
   const [creator, setCreator] = useState(creatorOptions[0]);
-  const [sorting, setSorting] = useState(sortingOptions[0]);
   const [range, setRange] = useState([]);
-
-  const [values, setValues] = useState([5]);
   const [visible, setVisible] = useState(false);
-
   const user = useSelector(state => state.auth);
+  const [collections, setCollections] = useState([]);
+  const [status, setStatus] = useState(statusOptions[0]);
 
-  const STEP = 0.1;
-  const MIN = 0.01;
-  const MAX = 10;
-
-  // useEffect(() => {
-    // console.log("user state:", user);
-  // }, [user]);
 
   const settings = {
     infinite: true,
@@ -82,35 +75,33 @@ const Discover = () => {
     ],
   };
 
-
-  const [collections, setCollections] = useState([]);
-  const [start, setStart] = useState(0);
-  const [last, setLast] = useState(8);
-
   useEffect(() => {
-    setStart(0);
-    setLast(start + 8);
-    getCollectionList();
-  }, [date, activeIndex, price, likes, creator, range])
+    getCollectionList(true);
+  }, [date, activeIndex, price, likes, creator, range, status])
 
-  const getCollectionList = () => {
-    var param = { start: start, last: last, date: date.value, category: navLinks[activeIndex].value };
+  const getCollectionList = (reStart) => {
+    var param = {
+      start: reStart ? 0 : collections.length,
+      last: reStart ? 8 : collections.length + 8,
+      date: date.value,
+      category: navLinks[activeIndex].value
+    };
     if (visible) {
       param.price = price.value;
       param.likes = likes.value;
       param.creator = creator.value;
       param.range = range;
+      param.status = status.value
     }
-
     axios.post(`${config.baseUrl}collection/get_collection_list`, param)
       .then((result) => {
         var list = [];
         for (var i = 0; i < result.data.list.length; i++) {
           var item = result.data.list[i].item_info;
-          item.users = [{avatar: result.data.list[i].creator_info.avatar}];
+          item.users = [{ avatar: result.data.list[i].creator_info.avatar }];
           list.push(item);
         }
-        if (start == 0) {
+        if (reStart) {
           setCollections(list);
         } else {
           setCollections((collections) => {
@@ -122,15 +113,10 @@ const Discover = () => {
   }
 
   const onLoadMore = () => {
-    setStart(last);
-    setLast(last + 8);
-    getCollectionList();
+     getCollectionList();
   }
 
-
-  // useEffect(() => {
-  //   console.log("collection list", collections);
-  // }, [collections]);
+ 
 
   return (
     <div className={cn("section", styles.section)}>
@@ -147,18 +133,18 @@ const Discover = () => {
           </div>
           <div className={styles.nav}>
             {
-             (navLinks && navLinks.length> 0) && 
-             navLinks.map((x, index) => (
-              <button
-                className={cn(styles.link, {
-                  [styles.active]: index === activeIndex,
-                })}
-                onClick={() => setActiveIndex(index)}
-                key={index}
-              >
-                {x.text}
-              </button>
-            ))}
+              (navLinks && navLinks.length > 0) &&
+              navLinks.map((x, index) => (
+                <button
+                  className={cn(styles.link, {
+                    [styles.active]: index === activeIndex,
+                  })}
+                  onClick={() => setActiveIndex(index)}
+                  key={index}
+                >
+                  {x.text}
+                </button>
+              ))}
           </div>
           {/* <div className={cn("tablet-show", styles.dropdown)}>
             <Dropdown
@@ -223,7 +209,7 @@ const Discover = () => {
             className={cn("discover-slider", styles.slider)}
             {...settings}
           >
-            {(collections && collections.length>0) ?  collections.map((x, index) => (
+            {(collections && collections.length > 0) ? collections.map((x, index) => (
               <Card className={styles.card} item={x} key={index} />
             )) : <></>}
           </Slider>

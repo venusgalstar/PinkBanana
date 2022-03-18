@@ -5,6 +5,10 @@ const MD5 = require("md5");
 const env = require("../../../env");
 const upload_path = env.upload_path;
 
+const db = require("../../db");
+const Report = db.Report;
+
+
 exports.makeUploadDir = () => {
   fsPromises.mkdir(process.cwd() + upload_path, { recursive: true }).then(function () {
     // console.log('Directory created successfully');
@@ -88,5 +92,20 @@ exports.uploadMultipleFile = async (req, res) => {
       return res.status(200).send({ success: true, paths: fileNameResultArr, message: "Successfully Update a Author" });
     }
 
+  });
+}
+
+
+exports.report = (req, res) => {
+  const Report = new Report({
+    user_id: req.body.user_id,
+    type: req.body.type,
+    content: req.body.content,
+    target_id: req.body.target_id
+  });
+  Report.save().then(() => {
+    return res.send({ code: 0 });
+  }).catch(() => {
+    return res.send({ code: 1 });
   });
 }

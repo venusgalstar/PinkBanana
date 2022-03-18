@@ -31,10 +31,16 @@ const navLinks = [{ value: 0, text: "All items" }, { value: 1, text: "Art" }, { 
 
 const dateOptions = [{ value: 0, text: "Newest" }, { value: 1, text: "Oldest" }];
 
-const colorOptions = [{ value: 0, text: "All colors" }, { value: 1, text: "Black" }, { value: 2, text: "Green" }, { value: 3, text: "Pink" }, { value: 4, text: "Purple" }];
+const colorOptions = [{ value: 0, text: "All colors" },
+{ value: 1, text: "Black" },
+{ value: 2, text: "Green" },
+{ value: 3, text: "Pink" },
+{ value: 4, text: "Purple" }];
 const priceOptions = [{ value: 0, text: "Highest price" }, { value: 1, text: "The lowest price" }];
 const likesOptions = [{ value: 0, text: "Most liked" }, { value: 1, text: "Least liked" }];
 const creatorOptions = [{ value: 0, text: "All" }, { value: 1, text: "Verified only" }];
+const statusOptions = [{ value: 0, text: "All" }, { value: 1, text: "On Sale" }, { value: 2, text: "On Auction" }];
+
 
 const ColorModeContext = React.createContext({ Search: () => { } });
 
@@ -42,18 +48,12 @@ const Search = () => {
   const [activeIndex, setActiveIndex] = useState(0);
   const [date, setDate] = useState(dateOptions[0]);
   const [likes, setLikes] = useState(likesOptions[0]);
-  const [color, setColor] = useState(colorOptions[0]);
   const [creator, setCreator] = useState(creatorOptions[0]);
   const [search, setSearch] = useState("");
   const [price, setPrice] = useState(priceOptions[0]);
-
-  const [values, setValues] = useState([5]);
   const [range, setRange] = useState([]);
-
   const [reSearch, setResearch] = useState(false);
-
   const [selectedCollection, setSelectedCollection] = useState({});
-
   const [metadatas, setMetaDatas] = useState([]);
   const [checked, setChecked] = React.useState([]);
   const [collections, setCollections] = useState([]);
@@ -62,24 +62,30 @@ const Search = () => {
   const [mode, setMode] = React.useState('light');
   const colorMode = React.useContext(ColorModeContext);
   const globalThemeMode = useSelector(state => state.user.themeMode);
+  const [colSetKey, setColSetKey] = useState();
+  const [status, setStatus] = useState(statusOptions[0]);
 
-  useEffect(() =>
-  {
+
+
+  useEffect(() => {
     setMode(globalThemeMode);
   }, [globalThemeMode])
 
-  useEffect(() =>
-  {
+  useEffect(() => {
     let thmode = localStorage.getItem("darkMode");
-    if(thmode === "true") setMode('dark');
+    if (thmode === "true") setMode('dark');
     else setMode('light');
   }, [])
 
+  useEffect(()=>{
+    onResetFilter();
+    setTimeout(onLoadMore, 50);
+    // onLoadMore();
+  }, [])
+
   useEffect(() => {
-    setStart(0);
-    setLast(start + 8);
-    getCollectionList();
-  }, [date, activeIndex, price, likes, creator, range, reSearch, selectedCollection, checked])
+    getCollectionList(true);
+  }, [date, activeIndex, price, likes, creator, range, reSearch, selectedCollection, checked, status])
 
   const onSearch = () => {
     setResearch(!reSearch);
@@ -113,12 +119,14 @@ const Search = () => {
 
   }, [selectedCollection])
 
-  useEffect(() => {
-    console.log("checked:", checked);
-  }, [checked])
-
-  const getCollectionList = () => {
-    var param = { start: start, last: last, date: date.value, category: navLinks[activeIndex].value };
+  const getCollectionList = (reStart) => {
+    var param = {
+      start: reStart ? 0 : collections.length,
+      last: reStart ? 8 : collections.length + 8,
+      date: date.value,
+      category: navLinks[activeIndex].value,
+      status: status.value
+    };
     // if (visible) {
     param.price = price.value;
     param.likes = likes.value;
@@ -139,7 +147,7 @@ const Search = () => {
           item.users = [{ avatar: result.data.list[i].creator_info.avatar }];
           list.push(item);
         }
-        if (start == 0) {
+        if (reStart) {
           setCollections(list);
         } else {
           setCollections((collections) => {
@@ -151,8 +159,6 @@ const Search = () => {
   }
 
   const onLoadMore = () => {
-    setStart(last);
-    setLast(last + 8);
     getCollectionList();
   }
 
@@ -169,6 +175,26 @@ const Search = () => {
     setChecked(newChecked);
   };
 
+  const onResetFilter = () => {
+    setDate(dateOptions[0]);
+    setLikes(likesOptions[0]);
+    setCreator(creatorOptions[0]);
+    setSearch("");
+    setPrice(priceOptions[0]);
+    setRange([]);
+    setResearch(false);
+    setSelectedCollection({});
+    setMetaDatas([]);
+    setChecked([]);
+    setColSetKey(Math.random());
+  }
+
+  const onChangeSearch = (event) => {
+    setSearch(event.target.value);
+    onSearch();
+  }
+
+
   return (
     <div className={cn("section-pt80", styles.section)}>
       <div className={cn("container", styles.container)}>
@@ -183,7 +209,9 @@ const Search = () => {
               className={styles.input}
               type="text"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => {
+                onChangeSearch(e);
+              }}
               name="search"
               placeholder="Search ..."
               required
@@ -247,6 +275,15 @@ const Search = () => {
                 />
               </div> */}
               <div className={styles.item}>
+                <div className={styles.label}>Status</div>
+                <Dropdown
+                  className={styles.dropdown}
+                  value={status}
+                  setValue={setStatus}
+                  options={statusOptions}
+                />
+              </div>
+              <div className={styles.item}>
                 <div className={styles.label}>Creator</div>
                 <Dropdown
                   className={styles.dropdown}
@@ -257,7 +294,7 @@ const Search = () => {
               </div>
               <div className={styles.item}>
                 <div className={styles.label}>Collections</div>
-                <CollectionSelect className={styles.collectionlist} selected={setSelectedCollection}>
+                <CollectionSelect key={colSetKey} className={styles.collectionlist} selected={setSelectedCollection}>
                 </CollectionSelect>
               </div>
               <div>
@@ -322,7 +359,7 @@ const Search = () => {
                 }
               </div>
             </div>
-            <div className={styles.reset}>
+            <div className={styles.reset} onClick={onResetFilter}>
               <Icon name="close-circle-fill" size="24" />
               <span>Reset filter</span>
             </div>

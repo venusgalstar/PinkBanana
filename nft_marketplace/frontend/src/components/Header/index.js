@@ -25,15 +25,6 @@ import Alert from "../Alert";
 import { io } from "socket.io-client";
 
 var socket = io(`${config.socketUrl}`);
-socket.on("disconnect", () => {
-  console.log("disconnected");
-  setTimeout(() => {
-    socket.connect();
-  }, 1000)
-})
-
-
-
 
 const nav = [
   {
@@ -117,9 +108,10 @@ const Headers = () => {
   useEffect(() => {
     socket.on("UpdateStatus", data => {
       console.log('update status', data);
-      dispatch(getNotifiesByLimit(50, user._id))
+      if(user._id) dispatch(getNotifiesByLimit(50, user._id))
     })
   }, [])
+
   const handleSubmit = (e) => {
 
   };
@@ -211,7 +203,7 @@ const Headers = () => {
                 </Link>
               ))}
           </nav>
-          <form
+          {/* <form
             className={styles.search}
             action=""
             onSubmit={() => handleSubmit()}
@@ -228,7 +220,7 @@ const Headers = () => {
             <button className={styles.result}>
               <Icon name="search" size="20" />
             </button>
-          </form>
+          </form> */}
           {
             (currentUsr && currentUsr._id !== undefined) &&
             <button

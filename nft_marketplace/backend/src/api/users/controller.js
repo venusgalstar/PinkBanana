@@ -225,6 +225,7 @@ exports.getPopularUserList = async (req, res) => {
                     "price": 1,
                     "createdAt": 1,
                     "updatedAt": 1,
+                    "follows": 1,
                     created: {
                         $toLong: "$createdAt"
                     }
@@ -257,14 +258,6 @@ exports.getPopularUserList = async (req, res) => {
                 $unwind: "$buyer"
             },
             {
-                $lookup: {
-                    from: "follows",
-                    localField: "buyer._id",
-                    foreignField: "target_id",
-                    as: "follows"
-                }
-            },
-            {
                 $project: {
 
                     "buyer.password": 0
@@ -278,9 +271,11 @@ exports.getPopularUserList = async (req, res) => {
         for (var i = 0; i < data.length; i++) {
             var item = data[i].buyer;
             item.totalPrice = data[i].totalPrice;
-            item.follows = data[i].follows;
+            // item.follows = data[i].follows;
             buyerList.push(item);
         }
+
+        buyerList = buyerList;
 
         var sellerData = await Sales.aggregate([
             {
@@ -292,6 +287,7 @@ exports.getPopularUserList = async (req, res) => {
                     "price": 1,
                     "createdAt": 1,
                     "updatedAt": 1,
+                    "follows":1,
                     created: {
                         $toLong: "$createdAt"
                     }
@@ -324,14 +320,6 @@ exports.getPopularUserList = async (req, res) => {
                 $unwind: "$owner"
             },
             {
-                $lookup: {
-                    from: "follows",
-                    localField: "owner._id",
-                    foreignField: "target_id",
-                    as: "follows"
-                }
-            },
-            {
                 $project: {
 
                     "owner.password": 0
@@ -345,9 +333,10 @@ exports.getPopularUserList = async (req, res) => {
         for (var i = 0; i < sellerData.length; i++) {
             var item = sellerData[i].owner;
             item.totalPrice = sellerData[i].totalPrice;
-            item.follows  = sellerData[i].follows;
+            // item.follows  = sellerData[i].follows;
             sellerList.push(item);
         }
+        // sellerList = sellerData;
 
         return res.send({ code: 0, data: { buyer: buyerList, seller: sellerList } });
     } catch (e) {

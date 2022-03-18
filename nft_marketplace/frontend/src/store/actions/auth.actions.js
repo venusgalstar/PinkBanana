@@ -69,7 +69,7 @@ export const getDetailedUserInfo = (userId, isForMine = true) => dispatch =>
 
 export const setConnectedWalletAddress = (address) => dispatch =>
 {
-    console.log("[ACTION] address  = ", address);
+    // console.log("[ACTION] address  = ", address);
     dispatch({
         type: SET_WALLET_ADDR,
         payload: address
@@ -78,7 +78,7 @@ export const setConnectedWalletAddress = (address) => dispatch =>
 
 export const setConnectedChainId = (chainId) => dispatch =>
 {
-    console.log("[ACTION] chainId  = ", chainId);
+    // console.log("[ACTION] chainId  = ", chainId);
     dispatch({
         type: SET_CHAIN_ID,
         payload: chainId

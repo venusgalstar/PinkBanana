@@ -1,6 +1,7 @@
 import Web3 from 'web3/dist/web3.min.js';
 import config from "../config";
 import store from "../store";
+import { setNFTTradingResult } from '../store/actions/nft.actions';
 const pinkBananaFactoryABI = config.pinkContractAbi;
 const pinkBananaFactoryAddress = config.pinkContractAddress;
 
@@ -285,53 +286,68 @@ export const singleMintOnSale = async (currentAddr, itemId, auctionInterval, auc
   Single Sell :  singleMintOnSale(string memory _tokenHash, uint _interval, uint _startPrice, uint24 _royalty, uint8 _kind)
   */
   
-  const web3 = window.web3;  
   if(auctionInterval === undefined || auctionInterval <=0 || auctionInterval === null)
     auctionInterval = 0;
 
   try 
   {
-    let item_price = web3.utils.toWei(auctionPrice !== null ? auctionPrice.toString() : '0', 'ether');
+    let item_price = window.web3.utils.toWei(auctionPrice !== null ? auctionPrice.toString() : '0', 'ether');
     var interval = Math.floor(Number(auctionInterval)).toString();
     //let mintingFee = web3.utils.toWei(author.minting_fee !== null ? author.minting_fee.toString() : '0', 'ether');
     
-    await PinkFactoryContract.methods.singleMintOnSale(itemId, interval, item_price, kind).send({ from: currentAddr});
+    var singleMintOnSale = PinkFactoryContract.methods.singleMintOnSale(itemId, interval, item_price, kind);
+    let gasFee = await singleMintOnSale.estimateGas({ from: currentAddr});
+    // console.log("before getBalance");
+    var balanceOfUser = await window.web3.eth.getBalance(currentAddr);
+    var gasPrice = 30 * (10 ** 9);
+
+    if (balanceOfUser <= gasFee * gasPrice) {
+      store.dispatch(setNFTTradingResult("singleMintOnSale", false, "Insufficient balance." ));
+    
+    }
+    await singleMintOnSale.send({ from: currentAddr});
+
+    store.dispatch(setNFTTradingResult("singleMintOnSale", true, "Succeed in put on sale"));
 
     return {
-      success: true,
-      status: "Put on sale succeed"          
-    };
-
+      success : true,
+      message : "Succeed on minting a item"
+    }
   } catch (error) {
+    
+    store.dispatch(setNFTTradingResult("singleMintOnSale", false, error.message ));
+
     return {
-      success: false,
-      status: "Something went wrong 2: " + error.message          
-    };
+      success : false,
+      message : "Failed on minting a item"
+    }
   }
 }
 
-export const placeABid = async (currentAddr, tokenId, bidPrice) =>
+export const placeBid = async (currentAddr, tokenId, bidPrice) =>
 {
   /*
   Place Bid : function placeBid(string memory _tokenHash)
   */
-  const web3 = window.web3;  
 
   try 
   {
-    let item_price = web3.utils.toWei(bidPrice !== null ? bidPrice.toString() : '0', 'ether');
-    await PinkFactoryContract.methods.placeBid(tokenId).send({ from: currentAddr, value: item_price});
+    let item_price = window.web3.utils.toWei(bidPrice !== null ? bidPrice.toString() : '0', 'ether');
+    var placeBid = PinkFactoryContract.methods.placeBid(tokenId);
+    let gasFee = await placeBid.estimateGas({ from: currentAddr, value: item_price});
+    // console.log("before getBalance");
+    var balanceOfUser = await window.web3.eth.getBalance(currentAddr);
+    var gasPrice = 30 * (10 ** 9);
 
-    return {
-      success: true,
-      status: "Placing a bid succeed"          
-    };
+    if (balanceOfUser <= gasFee * gasPrice) {
+      store.dispatch(setNFTTradingResult("placeBid", false, "Insufficient balance." ));
+    }
+    await placeBid.send({ from: currentAddr, value: item_price});
+
+    store.dispatch(setNFTTradingResult("placeBid", true, "Succeed in placing a bid."));
 
   } catch (error) {
-    return {
-      success: false,
-      status: "Something went wrong 4: " + error.message          
-    };
+    store.dispatch(setNFTTradingResult("placeBid", false, error.message ));
   }
 }
 
@@ -343,18 +359,21 @@ export const destroySale = async (currentAddr, tokenId) =>
 
   try 
   {
-    await PinkFactoryContract.methods.destroySale(tokenId).send({ from: currentAddr});
+    var destroySale = PinkFactoryContract.methods.destroySale(tokenId);
+    let gasFee = await destroySale.estimateGas({ from: currentAddr });
+    // console.log("before getBalance");
+    var balanceOfUser = await window.web3.eth.getBalance(currentAddr);
+    var gasPrice = 30 * (10 ** 9);
 
-    return {
-      success: true,
-      status: "Destroying a sale succeed"          
-    };
+    if (balanceOfUser <= gasFee * gasPrice) {
+      store.dispatch(setNFTTradingResult("destroySale", false, "Insufficient balance." ));
+    }
+    await destroySale.send({ from: currentAddr});
+
+    store.dispatch(setNFTTradingResult("destroySale", true, "Succeed in destroying a sale."));
 
   } catch (error) {
-    return {
-      success: false,
-      status: "Something went wrong 6: " + error.message          
-    };
+    store.dispatch(setNFTTradingResult("destroySale", false, error.message ));
   }
 }
 
@@ -368,18 +387,21 @@ export const buyNow = async (currentAddr, tokenId, price) =>
   {
     let item_price = window.web3.utils.toWei(price !== null ? price.toString() : '0', 'ether');
     //alert("tokenHash = " +  tokenId + ", price=" + item_price);
-    await PinkFactoryContract.methods.buyNow(tokenId).send({ from: currentAddr, value: item_price});
+    var buyNow = PinkFactoryContract.methods.buyNow(tokenId);
+    let gasFee = await buyNow.estimateGas({ from: currentAddr, value: item_price});
+    // console.log("before getBalance");
+    var balanceOfUser = await window.web3.eth.getBalance(currentAddr);
+    var gasPrice = 30 * (10 ** 9);
 
-    return {
-      success: true,
-      status: "Placing a bid succeed"          
-    };
+    if (balanceOfUser <= gasFee * gasPrice) {
+      store.dispatch(setNFTTradingResult("buyNow", false, "Insufficient balance." ));
+    }
+    await buyNow.send({ from: currentAddr, value: item_price});
+
+    store.dispatch(setNFTTradingResult("buyNow", true, "Succeed in purchasing a NFT."));
 
   } catch (error) {
-    return {
-      success: false,
-      status: "Something went wrong 8: " + error.message          
-    };
+    store.dispatch(setNFTTradingResult("buyNow", false, error.message ));
   }
 }
 
@@ -390,18 +412,20 @@ export const acceptOrEndBid = async (currentAddr, tokenId) =>
   */  
   try 
   {
-    await PinkFactoryContract.methods.acceptOrEndBid(tokenId).send({ from: currentAddr});
+    var acceptOrEndBid = PinkFactoryContract.methods.acceptOrEndBid(tokenId);
+    let gasFee = await acceptOrEndBid.estimateGas({ from: currentAddr });
+    // console.log("before getBalance");
+    var balanceOfUser = await window.web3.eth.getBalance(currentAddr);
+    var gasPrice = 30 * (10 ** 9);
 
-    return {
-      success: true,
-      status: "Placing a bid succeed"          
-    };
+    if (balanceOfUser <= gasFee * gasPrice) {
+      store.dispatch(setNFTTradingResult("acceptOrEndBid", false, "Insufficient balance." ));
+    }
+    await acceptOrEndBid.send({ from: currentAddr});
+    store.dispatch(setNFTTradingResult("acceptOrEndBid", true, "Succeed in ending sale."));
 
   } catch (error) {
-    return {
-      success: false,
-      status: "Something went wrong 12: " + error.message          
-    };
+    store.dispatch(setNFTTradingResult("acceptOrEndBid", false, error.message ));
   }
 }
 
@@ -416,7 +440,6 @@ export const batchMintOnSale = async (currentAddr, itemIds = [], auctionInterval
   Batch Sell :  batchMintOnSale(string memory _tokenHash, uint _interval, uint _startPrice, uint24 _royalty, uint8 _kind)
   */
   
-  const web3 = window.web3;  
   if(auctionInterval === undefined || auctionInterval <=0 || auctionInterval === null)
     auctionInterval = 0;
 
@@ -424,21 +447,34 @@ export const batchMintOnSale = async (currentAddr, itemIds = [], auctionInterval
 
   try 
   {
-    let item_price = web3.utils.toWei(auctionPrice !== null ? auctionPrice.toString() : '0', 'ether');
+    let item_price = window.web3.utils.toWei(auctionPrice !== null ? auctionPrice.toString() : '0', 'ether');
     var interval = Math.floor(Number(auctionInterval)).toString();
-    //let mintingFee = web3.utils.toWei(author.minting_fee !== null ? author.minting_fee.toString() : '0', 'ether');    
-    await PinkFactoryContract.methods.batchMintOnSale(itemIds, interval, item_price, kind).send({ from: currentAddr});
+    //let mintingFee = web3.utils.toWei(author.minting_fee !== null ? author.minting_fee.toString() : '0', 'ether');   
+    
+    var batchMintOnSale = PinkFactoryContract.methods.batchMintOnSale(itemIds, interval, item_price, kind);
+    let gasFee = await batchMintOnSale.estimateGas({ from: currentAddr });
+    // console.log("before getBalance");
+    var balanceOfUser = await window.web3.eth.getBalance(currentAddr);
+    var gasPrice = 30 * (10 ** 9);
+
+    if (balanceOfUser <= gasFee * gasPrice) {
+      store.dispatch(setNFTTradingResult("batchMintOnSale", false, "Insufficient balance." ));
+    }
+
+    await batchMintOnSale.send({ from: currentAddr});
+    store.dispatch(setNFTTradingResult("batchMintOnSale", true, "Succeed in batch minitng." ));
 
     return {
-      success: true,
-      status: "Put on sale succeed"          
-    };
-
+      success : true,
+      message : "Succeed on minting multiple items"
+    }
   } catch (error) {
+    store.dispatch(setNFTTradingResult("batchMintOnSale", false, error.message ));
+    
     return {
-      success: false,
-      status: "Something went wrong 14: " + error.message          
-    };
+      success : false,
+      message : "Failed on minting multiple items"
+    }
   }
 }
 
@@ -450,22 +486,26 @@ export const transferNFT = async (currentAddr, toAddr, tokenId) =>
 
   try 
   {
-    await PinkFactoryContract.methods.transferNFT(toAddr, tokenId).send({ from: currentAddr});
+    var transferNFT = PinkFactoryContract.methods.transferNFT(toAddr, tokenId);
+    let gasFee = await transferNFT.estimateGas({ from: currentAddr });
+    // console.log("before getBalance");
+    var balanceOfUser = await window.web3.eth.getBalance(currentAddr);
+    var gasPrice = 30 * (10 ** 9);
 
-    return {
-      success: true,
-      status: "Transfering a NFT succeed"          
-    };
+    if (balanceOfUser <= gasFee * gasPrice) {
+      store.dispatch(setNFTTradingResult("transferNFT", false, "Insufficient balance." ));
+    }
+
+    await transferNFT.send({ from: currentAddr});
+
+    store.dispatch(setNFTTradingResult("transferNFT", true, "Succeed in transfering a NFT." ));
 
   } catch (error) {
-    return {
-      success: false,
-      status: "Something went wrong 16: " + error.message          
-    };
+    store.dispatch(setNFTTradingResult("transferNFT", false, error.message ));
   }
 }
 
-export const whoHasTokenNow = async (currentAddr, tokenId) =>
+export const getBalanceOf = async (currentAddr, tokenId) =>
 {
   /*
     //getBalanceOf(address user, string memory tokenHash, 0)   //0: our NFT, other : NFT's from other nft marketplaces
@@ -474,6 +514,7 @@ export const whoHasTokenNow = async (currentAddr, tokenId) =>
   
   try 
   {
+   
     let queryRet = await PinkFactoryContract.methods.getBalanceOf(currentAddr, tokenId, "0x0000000000000000000000000000000000000000").call();
 
     // alert("queryRet = "+ queryRet);
@@ -495,18 +536,21 @@ export const burnNFT = async (currentAddr, tokenId) =>
   
   try 
   {
-    await PinkFactoryContract.methods.burnNFT(tokenId).send({ from: currentAddr});
+    var burnNFT = PinkFactoryContract.methods.burnNFT(tokenId);
+    let gasFee = await burnNFT.estimateGas({ from: currentAddr });
+    // console.log("before getBalance");
+    var balanceOfUser = await window.web3.eth.getBalance(currentAddr);
+    var gasPrice = 30 * (10 ** 9);
 
-    return {
-      success: true,
-      status: "Burning a NFT succeed"          
-    };
+    if (balanceOfUser <= gasFee * gasPrice) {
+      store.dispatch(setNFTTradingResult("burnNFT", false, "Insufficient balance." ));
+    }
+    await burnNFT.send({ from: currentAddr});
+
+    store.dispatch(setNFTTradingResult("burnNFT", true, "Burning a NFT succeed." ));
 
   } catch (error) {
-    return {
-      success: false,
-      status: "Something went wrong 20: " + error.message          
-    };
+    store.dispatch(setNFTTradingResult("burnNFT", false, error.message ));
   }
 }
 
@@ -515,24 +559,27 @@ export const changePrice = async (currentAddr, tokenId, newPrice) =>
   /*
     //changePrice(string memory tokenHash, uint256 newPrice)
   */  
-  const web3 = window.web3;  
   
   try 
   {
-    let item_price = web3.utils.toWei(newPrice !== null ? newPrice.toString() : '0', 'ether');
+    let item_price = window.web3.utils.toWei(newPrice !== null ? newPrice.toString() : '0', 'ether');
 
-    await PinkFactoryContract.methods.changePrice(tokenId, item_price).send({ from: currentAddr});
+    var changePrice = PinkFactoryContract.methods.changePrice(tokenId, item_price);
+    let gasFee = await changePrice.estimateGas({ from: currentAddr });
+    // console.log("before getBalance");
+    var balanceOfUser = await window.web3.eth.getBalance(currentAddr);
+    var gasPrice = 30 * (10 ** 9);
 
-    return {
-      success: true,
-      status: "Changing price of NFT succeed"          
-    };
+    if (balanceOfUser <= gasFee * gasPrice) 
+    {
+      store.dispatch(setNFTTradingResult("changePrice", false, "Insufficient balance." ));
+    }
+    await changePrice.send({ from: currentAddr});
+
+    store.dispatch(setNFTTradingResult("changePrice", true, "Changing price succeed." ));
 
   } catch (error) {
-    return {
-      success: false,
-      status: "Something went wrong 22: " + error.message          
-    };
+    store.dispatch(setNFTTradingResult("changePrice", false, error.message));
   }
 }
 

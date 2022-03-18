@@ -60,10 +60,11 @@ contract PinkBananaFactory is Ownable,ERC1155Receiver {
 
     bool _status;
     bool _isMinting;
-    mapping(uint => RoyaltyInfo) _allRoyaltyInfo;
     uint256 _royaltyIdCounter;
+    mapping(uint => RoyaltyInfo) _allRoyaltyInfo;
     mapping(address => uint256) _mintingFees;
 
+    address _withdrawToken;
     address mkNFTaddress;
     ERC1155Tradable mkNFT;
 
@@ -180,6 +181,7 @@ contract PinkBananaFactory is Ownable,ERC1155Receiver {
     function createSaleReal(string memory _tokenHash, uint _interval, uint _price, uint8 _kind) public returns (bool) {
         require(_interval >= 0, "Invalid auction interval.");
         require(_tokenHashExists[_tokenHash], "Non-Existing NFT hash value.");
+        require(_price > 0, "Price is zero");
         uint256 tokenId = _getNFTId[_tokenHash];
         SaleInfo memory saleInfo;
         if (!_isMinting) {
@@ -234,10 +236,6 @@ contract PinkBananaFactory is Ownable,ERC1155Receiver {
     function placeBidReal(string memory _tokenHash) internal noOnlyNFTSeller(_tokenHash) returns(address bidder, uint256 price, string memory tokenHash, uint256 tokenId){
         require(_tokenHashExists[_tokenHash], "Non-Existing NFT hash value....");
 
-        if (_allSaleInfo[_getSaleId[_tokenHash]].kindOfCoin > 0) {
-            //_payToken.transferFrom(msg.sender, address(this), msg.value);
-        }
-
         address lastHightestBidder = _allSaleInfo[_getSaleId[_tokenHash]].maxBidder;
         uint256 lastHighestBid = _allSaleInfo[_getSaleId[_tokenHash]].maxBid;
         _allSaleInfo[_getSaleId[_tokenHash]].maxBid = msg.value;
@@ -255,7 +253,8 @@ contract PinkBananaFactory is Ownable,ERC1155Receiver {
         string memory tokenHash;
         uint256 tokenId;
         require(getAuctionState(_tokenHash) == AuctionState.OPEN, "Auction state is not open.");
-        require(msg.value > _allSaleInfo[_getSaleId[_tokenHash]].startPrice, "less than max bid price");
+        require(msg.value > _allSaleInfo[_getSaleId[_tokenHash]].startPrice, "less than start price");
+        require(msg.value > _allSaleInfo[_getSaleId[_tokenHash]].maxBid, "less than max bid price");
         
         (bidder, price, tokenHash, tokenId) = placeBidReal(_tokenHash);
         emit PlaceBid(bidder, price, tokenHash, tokenId);
@@ -371,8 +370,12 @@ contract PinkBananaFactory is Ownable,ERC1155Receiver {
     }
 
     function getWithdrawBalance(uint8 _kind) public view returns (uint256) {
-        require(_kind >= 0, "Invalid cryptocurrency...");
-        return address(this).balance;
+        if(_kind == 0) {
+            return address(this).balance;
+        }
+        if(_withdrawToken == address(0)) return 0;
+        IERC20 token = IERC20(_withdrawToken);
+        return token.balanceOf(address(this));
     }
 
     function setAuthentication(address _addr, uint8 _flag) public onlyOwner {
@@ -408,7 +411,11 @@ contract PinkBananaFactory is Ownable,ERC1155Receiver {
         require(_to != address(0), "Invalid address...");
         if(_amount > 0) {
             if (_kind == 0) {
-            _to.transfer(_amount);
+                _to.transfer(_amount);
+            } else {
+                if(_withdrawToken == address(0)) return;
+                IERC20 token = IERC20(_withdrawToken);
+                token.transfer(_to, _amount);
             }
         }
     }
@@ -485,6 +492,7 @@ contract PinkBananaFactory is Ownable,ERC1155Receiver {
 
     function setMaxTokenId(uint256 maxTokenId) external onlyOwner {
         _maxTokenId = maxTokenId;
+        emit SetMaxTokenId(msg.sender, maxTokenId);
     }
 
     function getBalanceOf(address user, string memory tokenHash, address nftAddress) external view returns(uint256) {
@@ -495,6 +503,15 @@ contract PinkBananaFactory is Ownable,ERC1155Receiver {
             nft = ERC1155Tradable(nftAddress);
         }
         return nft.balanceOf(user, _getNFTId[tokenHash]);
+    }
+
+    function getWithdrawToken() external view returns(address) {
+        return _withdrawToken;
+    }
+
+    function setWithdrawToken(address token) external onlyOwner {
+        _withdrawToken = token;
+        emit SetWithdrawToken(msg.sender, token);
     }
 
     receive() payable external {
@@ -531,4 +548,6 @@ contract PinkBananaFactory is Ownable,ERC1155Receiver {
     event BurnNFT(address sender, string tokenHash, uint256 tokenId);
     event SetNFTAddress(address sender, address nftAddress);
     event SetTokenUri(uint256 tokenId, string uri);
+    event SetMaxTokenId(address sender, uint256 maxTokenId);
+    event SetWithdrawToken(address sender, address token);
 }

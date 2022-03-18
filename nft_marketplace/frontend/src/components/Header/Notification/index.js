@@ -20,7 +20,7 @@ const Notification = ({ className }) => {
   const [hasNew, setHasNew] = useState(false);
 
   useEffect(() => {
-    dispatch(getNotifiesByLimit(50, user._id))
+    if(user._id) dispatch(getNotifiesByLimit(50, user._id))
   }, [user]);
 
   useEffect(() => {

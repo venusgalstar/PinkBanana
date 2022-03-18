@@ -15,6 +15,7 @@ import { setConsideringCollectionId } from "../../store/actions/collection.actio
 import MultipleInput from "../../components/MultipleInput";
 import Alert from "../../components/Alert";
 import { ThemeProvider, createTheme } from '@mui/material/styles';
+import { getValidWallet } from "../../InteractWithSmartContract/interact";
 
 const ColorModeContext = React.createContext({ CollectionSelect: () => {} });
 
@@ -144,6 +145,13 @@ const CreateCollection = () =>
 
   const createCollection = async () => {
     
+    let connection = await getValidWallet();
+    if(connection.address === "")
+    {
+      setAlertParam( {state: "info", title:"Information", content:"No connected wallet. You should consider trying MetaMask!"} );      
+      setVisibleModal( true );
+      return;
+    }
     if( currentUsr  === null || currentUsr === undefined || selectedAvatarFile === null)
     {       
       console.log("Invalid user :  currentUsr = ", currentUsr);

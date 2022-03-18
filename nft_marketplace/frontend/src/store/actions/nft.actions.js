@@ -1,4 +1,4 @@
-import { UPDATE_NFT_BANNER_LIST, GET_NFT_DETAIL, BUY_NFT_SUCCESS, UPDATE_ITEMS_OF_USER_BY_CONDITION, UPDATE_ITEMS_OF_COLLECTION, UPDATE_HOT_COLLECTION_LIST } from "./action.types";
+import { UPDATE_NFT_BANNER_LIST, GET_NFT_DETAIL, BUY_NFT_SUCCESS, SET_NFT_TRADING_RESULT, UPDATE_ITEMS_OF_USER_BY_CONDITION, UPDATE_ITEMS_OF_COLLECTION } from "./action.types";
 import config from '../../config';
 import axios from 'axios';
 
@@ -84,7 +84,7 @@ export const getItemsOfCollection = (params, colllectionId) => dispatch => {
             "x-access-token": localStorage.getItem("jwtToken")
         }
     }).then((result) => {
-        console.log("reducer UPDATE_ITEMS_OF_COLLECTION", "result.data : ", result.data.data)
+        // console.log("reducer UPDATE_ITEMS_OF_COLLECTION", "result.data : ", result.data.data)
 
         dispatch({
             type: UPDATE_ITEMS_OF_COLLECTION,
@@ -111,5 +111,25 @@ export const getItemsOfUserByConditions = (params, userId) => dispatch => {
         });
     }).catch(() => {
 
+    });
+}
+
+export const setNFTTradingResult  = (functionName, success, message) => dispatch =>
+{    
+    // console.log("[SET_NFT_TRADING_RESULT action ] : ", functionName, success, message)
+    dispatch({
+        type: SET_NFT_TRADING_RESULT,
+        payload: {
+            function : functionName,
+            success : success,
+            message : message
+        }
+    });
+}
+export const emptyNFTTradingResult = () => dispatch =>
+{
+    dispatch({
+        type: SET_NFT_TRADING_RESULT,
+        payload: null
     });
 }

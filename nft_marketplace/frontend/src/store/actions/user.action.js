@@ -68,10 +68,20 @@ export const setAvaxPrice = (price) => dispatch => {
     })
 }
 
-export const setThemeMode = (mode) => dispatch =>
-{
+export const setThemeMode = (mode) => dispatch => {
     dispatch({
         type: SET_THEME_THEME,
         payload: { themeMode: mode }
     })
-} 
+}
+
+export const report = (user_id, target_id, type, content) => dispatch => {
+    axios.post(`${config.baseUrl}utils/report`, { user_id, target_id, type, content }, {
+        headers:
+        {
+            "x-access-token": localStorage.getItem("jwtToken")
+        }
+    }).then((result) => {
+    }).catch(() => {
+    });
+}

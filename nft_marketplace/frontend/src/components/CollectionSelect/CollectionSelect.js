@@ -14,91 +14,61 @@ function sleep(delay = 0) {
     });
 }
 
-const ColorModeContext = React.createContext({ CollectionSelect: () => {} });
+const ColorModeContext = React.createContext({ CollectionSelect: () => { } });
 
-const CollectionSelect = ({selected}) =>
-{
+const CollectionSelect = ({ selected }) => {
     const [open, setOpen] = React.useState(false);
     const [options, setOptions] = React.useState([]);
-    const loading = open && options.length === 0;
-    // const loading = true;
+    // const loading = open && options.length === 0;
+    const loading = false;
     const [value, setValue] = React.useState();
 
     const [mode, setMode] = React.useState('light');
     const colorMode = React.useContext(ColorModeContext);
     const globalThemeMode = useSelector(state => state.user.themeMode);
-  
-    useEffect(() =>
-    {
-      setMode(globalThemeMode);
+
+    useEffect(() => {
+        setMode(globalThemeMode);
     }, [globalThemeMode])
-  
-    useEffect(() =>
-    {
-      let thmode = localStorage.getItem("darkMode");
-      if(thmode.toString() === "true") setMode('dark');
-      else setMode('light');
+
+    useEffect(() => {
+        let thmode = localStorage.getItem("darkMode");
+        if (thmode.toString() === "true") setMode('dark');
+        else setMode('light');
     }, [])
 
     const theme = React.useMemo(
         () =>
-          createTheme({
-            palette: {
-              mode,
-            },
-            components: {
-                MuiOutlinedInput: {
-                  styleOverrides: {
-                    notchedOutline: {
-                      border: 'none !important'
+            createTheme({
+                palette: {
+                    mode,
+                },
+                components: {
+                    MuiOutlinedInput: {
+                        styleOverrides: {
+                            notchedOutline: {
+                                border: 'none !important'
+                            }
+                        }
                     }
-                  }
                 }
-            }
-          }),
+            }),
         [mode],
-      );
-
-    // React.useEffect(() => {
-    //     let active = true;
-
-    //     if (!loading) {
-    //         return undefined;
-    //     }
-
-    //     (async () => {
-    //         await sleep(1e3); // For demo purposes.
-
-    //         if (active) {
-    //             setOptions([...topFilms]);
-    //         }
-    //     })();
-
-    //     return () => {
-    //         active = false;
-    //     };
-    // }, [loading]);
-
-    React.useEffect(() => {
-        if (!open) {
-            setOptions([]);
-        }
-    }, [open]);
+    );
 
     useEffect(() => {
-        console.log("value: ", value)
-
-        axios.post(`${config.baseUrl}collection/get_collection_names`, { name: "", limit: 8 })
-        .then((data) => {
-            setOptions([...data.data.list]);
-        })
-
-    }, [value])
+        // console.log("changed value:", value);
+        axios.post(`${config.baseUrl}collection/get_collection_names`, { name: "", /*limit: 20*/ })
+            .then((data) => {
+                setOptions([...data.data.list]);
+            })
+    // }, [value])
+    }, []);
 
     return (
         <ColorModeContext.Provider value={colorMode}>
             <ThemeProvider theme={theme}>
-                <Autocomplete           
+                <Autocomplete
                     id="asynchronous-collection"
                     // sx={{ width: 300 }}
                     className={styles.collectionList}
@@ -110,7 +80,6 @@ const CollectionSelect = ({selected}) =>
                         setOpen(false);
                     }}
                     onChange={(e, v) => { setValue(v); selected(v); }}
-
                     isOptionEqualToValue={(option, value) => option.name === value.name}
                     getOptionLabel={(option) => option.name}
                     options={options}
@@ -129,7 +98,6 @@ const CollectionSelect = ({selected}) =>
                                     </React.Fragment>
                                 ),
                             }}
-
                         />
                     )}
                 />

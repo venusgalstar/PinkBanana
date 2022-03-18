@@ -63,12 +63,12 @@ exports.markAllAsRead = async (req, res) => {
             })
         }
         console.log("Updating Notify : succeed.");
-        io.sockets.emit("UpdateStatus", { type: "ReadAllNotify" });
+        // io.sockets.emit("UpdateStatus", { type: "ReadAllNotify" });
         res.status(200).json({ success: true, message: "Successfully Update the notifies." })
     })
     .catch((err) => {
         console.log("[markAllAsRead] 1 error : ", err);
-        if(io) io.sockets.emit("UpdateStatus", { type: "ReadAllNotify" });
+        // if(io) io.sockets.emit("UpdateStatus", { type: "ReadAllNotify" });
         return res.status(500).send({
             success: false, message: "Internal Server Error"
         });
@@ -127,13 +127,19 @@ exports.getNotifiesByLimit = (req, res) => {
 
     var userId = req.body.userId ? req.body.userId : 0;
     var filter = req.body.filter ? req.body.filter : [];
+    var limit = req.body.limit ? req.body.limit : 50;
+    // console.log("[getNotifiesByLimit] req.body = ", req.body)
     var typeFilter = { $match: {} };
-    if (userId == 0) {
+    if (userId == 0) 
+    {
+        // console.log("[getNotifiesByLimit] 00  ")
         return res.status(500).send({ success: false, message: "Invalid user id" });
     }
+    // console.log("[getNotifiesByLimit] 11  ")
     if (filter.length > 0) {
         typeFilter = { $match: { Type: { $in: filter } } };
     }
+    // console.log("[getNotifiesByLimit] 22  ")
     Notify.aggregate([
         {
             $project: {
@@ -187,10 +193,12 @@ exports.getNotifiesByLimit = (req, res) => {
         }
     ])
         .skip(0)
-        .limit(req.body.limit)
+        .limit(limit)
         .then((docs) => {
+            // console.log("[getNotifiesByLimit] 33  ")
             return res.status(200).send({ success: true, data: docs, message: "success" });
         }).catch((error) => {
+            // console.log("[getNotifiesByLimit] 44  ")
             console.log("Notify doesn't exisit" + error.message);
             return res.status(500).send({ success: false, message: "Internal server Error" });
         });

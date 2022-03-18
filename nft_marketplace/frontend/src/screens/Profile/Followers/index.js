@@ -63,7 +63,7 @@ const Followers = ({ className, items, buttonContent = ""}) => {
           </div>
         ))}
       </div>
-      <Loader className={styles.loader} />
+      {/* <Loader className={styles.loader} /> */}
     </div>
   );
 };

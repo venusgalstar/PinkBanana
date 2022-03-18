@@ -5,7 +5,13 @@ import Cards from "./CollectionCards";
 import { getCollections } from "../../store/actions/collection.actions";
 import { setConsideringCollectionId } from "../../store/actions/collection.actions";
 import { useHistory } from "react-router-dom";
+import Slider from "react-slick";
+import Icon from "../../components/Icon";
 import cn from "classnames";
+
+const SlickArrow = ({ currentSlide, slideCount, children, ...props }) => (
+  <button {...props}>{children}</button>
+);
 
 const CollectionList = () => 
 {  
@@ -32,6 +38,35 @@ const CollectionList = () =>
     history.push("/createCollection");
   }
 
+  const settings = {
+    infinite: true,
+    speed: 500,
+    slidesToShow: 2,
+    slidesToScroll: 1,
+    nextArrow: (
+      <SlickArrow>
+        <Icon name="arrow-next" size="14" />
+      </SlickArrow>
+    ),
+    prevArrow: (
+      <SlickArrow>
+        <Icon name="arrow-prev" size="14" />
+      </SlickArrow>
+    ),
+    responsive: [
+      {
+        breakpoint: 767,
+        settings: {
+          slidesToShow: 1,
+        },
+      },
+      {
+        breakpoint: 100000,
+        settings: "unslick",
+      },
+    ],
+  };     
+
   return (
     <div className="container">
       <div style={{paddingTop: "3rem", paddingRight: "5rem"}}>
@@ -46,7 +81,18 @@ const CollectionList = () =>
       </div>   
         {
             (collections !== undefined && collections !== null) &&
-            <Cards className={styles.cards} items={collections} onSelectCollection={onSelectCollection}/>
+            
+            <div id="sliderWrapper" className={styles.list}>
+            <Slider
+                className={cn("discover-slider", styles.slider)}
+                {...settings}
+            >
+                {
+                  (collections && collections.length >0 ) ? collections.map((x, index) => (
+                    <Cards className={styles.card} collection={x} key={index} onSelectCollection={onSelectCollection}/>
+                  )): <></>}                           
+            </Slider>
+            </div>
         }
         <div style={{marginBottom:"5rem"}}><span>&nbsp;&nbsp;</span></div>
     </div>

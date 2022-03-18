@@ -11,6 +11,8 @@ const Card = ({ className, item }) => {
 
   return (
     <div className={cn(styles.card, className)}>
+      <Link className={styles.link} to={`/item/${item._id}`}>
+
       <div className={styles.preview}>
         {/* <img srcSet={`${item.image2x} 2x`} src={item.image? item.image : ""} alt="Card" /> */}
         <img
@@ -39,11 +41,10 @@ const Card = ({ className, item }) => {
       </div>
       <div className={styles.fit_space}>
       </div>
-      <Link className={styles.link} to={`/item/${item._id}`}>
         <div className={styles.body}>
           <div className={styles.line}>
             <div className={styles.title}>{item.name}</div>
-            <div className={styles.price}>{item.isSale === 0 ? 0: (item.isSale === 1? item.price : item.auctionPrice) } AVAX</div>
+            <div className={styles.price}>{item.isSale === 0 ? "": (item.isSale === 1? item.price : item.auctionPrice) + "AVAX" } </div>
           </div>
           <div className={styles.line}>
             <div className={styles.users}>

@@ -46,39 +46,6 @@ const socials = [
   },
 ];
 
-// const following_template = [
-//   {
-//     name: "Sally Fadel",
-//     counter: "161 followers",
-//     avatar: "/images/content/avatar-5.jpg",
-//     url: "https://ui8.net",
-//     buttonClass: "stroke",
-//     buttonContent: "Unfollow",
-//     gallery: [
-//       "/images/content/follower-pic-1.jpg",
-//       "/images/content/follower-pic-2.jpg",
-//       "/images/content/follower-pic-3.jpg",
-//       "/images/content/follower-pic-4.jpg",
-//     ],
-//   }
-// ];
-
-// const followers_template = [
-//   {
-//     name: "Sally Fadel",
-//     counter: "161 followers",
-//     avatar: "/images/content/avatar-5.jpg",
-//     url: "https://ui8.net",
-//     buttonClass: "blue",
-//     buttonContent: "Follow",
-//     gallery: [
-//       "/images/content/follower-pic-1.jpg",
-//       "/images/content/follower-pic-2.jpg",
-//       "/images/content/follower-pic-3.jpg",
-//       "/images/content/follower-pic-4.jpg",
-//     ],
-//   }
-// ];
 
 const Profile = () => 
 {
@@ -142,10 +109,7 @@ const Profile = () =>
   const onUpdateUserImg = async () =>
   {
     if(selectedFile == null) 
-    {
-      const params = {};
-      params.banner = imgBanner;
-      await saveItem(params);
+    {      
       return;
     }
     const formData = new FormData();
@@ -246,11 +210,21 @@ const Profile = () =>
               <div className={styles.info}>Drag and drop your photo here</div>
               <div className={styles.text}>or click to browse</div>
             </div>
+            { 
+            selectedFile &&
             <button
               className={cn("button-small", styles.button)}
               onClick={() => onUpdateUserImg()}
+              style={{marginRight: "100px"}}
             >
               Save photo
+            </button>
+            }            
+            <button
+              className={cn("button-small", styles.button)}
+              onClick={() => window.location.reload()}
+            >
+              Cancel
             </button>
           </div>
         </div>

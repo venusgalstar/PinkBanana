@@ -1,4 +1,4 @@
-import React, {useEffect, useState}from "react";
+import React, { useEffect, useState } from "react";
 import cn from "classnames";
 import styles from "./ProfileEdit.module.sass";
 import Control from "../../components/Control";
@@ -13,7 +13,7 @@ import { useHistory } from "react-router-dom";
 import { authSet } from "../../store/actions/auth.actions";
 import { useDispatch, useSelector } from 'react-redux';
 import jwt_decode from "jwt-decode";
-import { signString } from "../../InteractWithSmartContract/interact";
+import { getValidWallet, signString } from "../../InteractWithSmartContract/interact";
 import Dropdown from "../../components/Dropdown";
 import { useParams } from "react-router-dom";
 import { getDetailedUserInfo } from "../../store/actions/auth.actions";
@@ -27,6 +27,14 @@ const breadcrumbs = [
   {
     title: "Edit Profile",
   },
+];
+
+
+const socialTypes = [
+  { value: 1, text: "Email" },
+  { value: 2, text: "Discord" },
+  { value: 3, text: "Phone" },
+  { value: 4, text: "Twitter" }
 ];
 
 const ProfileEdit = () => {
@@ -45,49 +53,42 @@ const ProfileEdit = () => {
   let dispatch = useDispatch();
   const [addSocial, setAddSocial] = useState(false);
   const [socialAccount, setSocialAccount] = useState("");
-  const [socialType, setSocialType] = useState("");
+  const [socialType, setSocialType] = useState(socialTypes[0]);
+  // const [socialType, setSocialType] = useState("");
   const [socials, setSocials] = useState("");
-  const {userId} = useParams();  //taget_id in making follow
+  const { userId } = useParams();  //taget_id in making follow
   const detailedUserInfo = useSelector(state => state.auth.detail);
   const [saveMode, setSaveMode] = useState(0); //0: new, 1: update
-  const [socialInputs, setSocialInputs]  = useState([]);
+  const [socialInputs, setSocialInputs] = useState([]);
   const currentWalletAddress = useSelector(state => state.auth.currentWallet);
   const [alertParam, setAlertParam] = useState({});
   const regexForWebsite = /^((ftp|http|https):\/\/)?(www.)?(?!.*(ftp|http|https|www.))[a-zA-Z0-9_-]+(\.[a-zA-Z]+)+((\/)[\w#]+)*(\/\w+\?[a-zA-Z0-9_]+=\w+(&[a-zA-Z0-9_]+=\w+)*)?$/gm;
   const regexForWallet = /^(0x[a-fA-F0-9]{40})$/gm;
 
-  const socialTypes = [{ value: 1, text: "Email" }, { value: 2, text: "Discord" }, { value: 3, text: "Phone" },
-  { value: 4, text: "Yutube" } ];
 
-  console.log("userId = ", userId, "address = ", address);
 
-  useEffect( () =>
-  {
-    if(userId !== "new") 
-    {
+  useEffect(() => {
+    if (userId !== "new") {
       setSaveMode(1);
       dispatch(getDetailedUserInfo(userId));
     }
-    else
-    {
+    else {
       setSaveMode(0);
     }
   }, [userId])
-  
-  useEffect(() =>
-  {
-    if(userId !== "new" && detailedUserInfo)
-    {
+
+  useEffect(() => {
+    if (userId !== "new" && detailedUserInfo) {
       setAddress(detailedUserInfo.address);
-      setLogoImg(config.imgUrl+detailedUserInfo.avatar)
+      setLogoImg(config.imgUrl + detailedUserInfo.avatar)
       setNameText(detailedUserInfo.username);
       setUrlText(detailedUserInfo.customURL);
       setWebsiteText(detailedUserInfo.websiteURL);
       setTwitterText(detailedUserInfo.twitter);
-      setBioText(detailedUserInfo.userBio);      
+      setBioText(detailedUserInfo.userBio);
       setSocials(detailedUserInfo.socials);
       // console.log("[in the useEffect] address = " , detailedUserInfo.address);
-    }else{
+    } else {
       setAddress(currentWalletAddress);
     }
   }, [detailedUserInfo])
@@ -95,10 +96,9 @@ const ProfileEdit = () => {
   // console.log("[out of useEffect] currentUsr = " , currentUsr);
   // console.log("[out of useEffect] address = " , currentUsr.address);
 
-  const changeAvatar = (event) => 
-  {
+  const changeAvatar = (event) => {
     var file = event.target.files[0];
-    if(file == null) return;
+    if (file == null) return;
     console.log(file);
     setSelectedAvatarFile(file);
     let reader = new FileReader()
@@ -110,198 +110,191 @@ const ProfileEdit = () => {
     }
   }
 
-  const doLogin = (address, password) =>
-  {    
+  const doLogin = (address, password) => 
+  {
     const params = {};
     params.address = address;
     params.password = password;
     setCreateState(1);
     Login(params);
   }
-  
-  const Login = (params) =>
+
+  const Login = (params) => 
   {
     axios({
       method: "post",
       url: `${config.baseUrl}users/login`,
       data: params
     })
-    .then(function (response) {
-      console.log(response);     
-      if(response.data.success === true)
-      { 
-        //set the token to sessionStroage   
-        const token = response.data.token;   
-        localStorage.setItem("jwtToken", response.data.token);
-        const decoded = jwt_decode(token);
-        console.log(decoded);
-        dispatch(authSet(decoded._doc));
-        setCreateState(0);      
-        history.push("/");
-      }
-    })
-    .catch(function (error) {
-      console.log(error);
-      setCreateState(2);
-    });
+      .then(function (response) {
+        console.log(response);
+        if (response.data.success === true) {
+          //set the token to sessionStroage   
+          const token = response.data.token;
+          localStorage.setItem("jwtToken", response.data.token);
+          const decoded = jwt_decode(token);
+          console.log(decoded);
+          dispatch(authSet(decoded._doc));
+          setCreateState(0);
+          history.push("/");
+        }
+      })
+      .catch(function (error) {
+        console.log(error);
+        setCreateState(2);
+      });
   }
 
-  const saveUser = async (params) => 
+  useEffect(() =>
   {
-    let signedString = ""; 
-    try{  
-      signedString =  await signString(address);
-    }catch(err)
-    {
-      // alert("Failed to sign")
-      setAlertParam({state:"warning", title:"Warning", content:"Failed in metamask sign"});
+    if(currentWalletAddress) setAddress(currentWalletAddress);
+  }, [currentWalletAddress])
+
+  const saveUser = async (params) => {
+    let signedString = "";
+    try {
+      signedString = await signString(address);
+    } catch (err) {
+      setAlertParam({ state: "warning", title: "Warning", content: "Failed in metamask sign" });
       setVisibleModal(true);
       return;
     }
-    if(signedString !== "" )
+    if (signedString !== "") 
     {
       params.password = signedString;
-      if(saveMode === 0)
-      {
+      if (saveMode === 0) {
         await axios({
           method: "post",
           url: `${config.baseUrl}users/create`,
           data: params
         })
-        .then(function (response) {
-          console.log(response);      
-          setCreateState(0);
-          doLogin(params.address, params.password);
-        })
-        .catch(function (error) {
-          console.log(error);
-          setCreateState(2);
-        });
+          .then(function (response) {
+            console.log(response);
+            setCreateState(0);
+            doLogin(params.address, params.password);
+          })
+          .catch(function (error) {
+            console.log(error);
+            setCreateState(2);
+          });
       }
-      if(saveMode === 1)
-      {      
+      if (saveMode === 1) {
         await axios({
           method: "put",
           url: `${config.baseUrl}users/${detailedUserInfo._id}`,
           data: params
         })
-        .then(function (response) {
-          console.log(response);  
-          if(saveMode === 0) 
-          {
-            setAlertParam({state: "success", title:"Success", content:"Registering succeed."});
-            setVisibleModal(true);
-          }
-          else {
-            setAlertParam({state:"success", title:"Success", content:"Updating succeed."});
-            setVisibleModal(true);
-          }
-          history.push("/");
-        })
-        .catch(function (error) {
-          console.log(error);
-        });
+          .then(function (response) {
+            console.log(response);
+            if (saveMode === 0) {
+              setAlertParam({ state: "success", title: "Success", content: "Registering succeed." });
+              setVisibleModal(true);
+            }
+            else {
+              setAlertParam({ state: "success", title: "Success", content: "Updating succeed." });
+              setVisibleModal(true);
+            }
+          })
+          .catch(function (error) {
+            console.log(error);
+          });
       }
     }
   }
 
-  const onClickUpdate = async () =>
-  {     
-    const params = {};
-    if(address !== "") 
+  const onClickUpdate = async () => {
+    
+    let connection = await getValidWallet();
+    if(connection.address === "")
     {
+      setAlertParam( {state: "info", title:"Information", content:"No connected wallet. You should consider trying MetaMask!"} );      
+      setVisibleModal( true );
+      return;
+    }
+    const params = {};
+    if (address !== "") {
       let m; let correct = false;
-      while ((m = regexForWallet.exec(address)) !== null) 
-      {
+      while ((m = regexForWallet.exec(address)) !== null) {
         if (m.index === regexForWallet.lastIndex) {
           regexForWallet.lastIndex++;
         }
-        console.log("matched :"+m[0]);
-        if(m[0] === address) 
-        {
+        console.log("matched :" + m[0]);
+        if (m[0] === address) {
           correct = true;
           params.address = address;
-        }         
-      }      
-      if(!correct)         
-      {
-        setAlertParam({state:"warning", title:"Warning", content:"Invalid wallet address."});
+        }
+      }
+      if (!correct) {
+        setAlertParam({ state: "warning", title: "Warning", content: "Invalid wallet address." });
         setVisibleModal(true);
-        params.address = "";      
+        params.address = "";
         return;
       }
-    }        
-    else params.address = "";
-    if(nameText === "" ) 
-    {
-      setAlertParam({state:"warning", title:"Warning", content:"Username can not be empty."});
+    }
+    else{
+      setAlertParam({ state: "warning", title: "Warning", content: "Username can not be empty." });
+      setVisibleModal(true);
+      return;
+    }
+    if (nameText === "") {
+      setAlertParam({ state: "warning", title: "Warning", content: "Username can not be empty." });
       setVisibleModal(true);
       return;
     }
     params.username = nameText;
-    if(urlText !== "") 
-    {
+    if (urlText !== "") {
       let m; let correct = false;
-      while ((m = regexForWebsite.exec(urlText)) !== null) 
-      {
+      while ((m = regexForWebsite.exec(urlText)) !== null) {
         if (m.index === regexForWebsite.lastIndex) {
           regexForWebsite.lastIndex++;
         }
-        console.log("matched :"+m[0]);
-        if(m[0] === urlText) 
-        {
+        console.log("matched :" + m[0]);
+        if (m[0] === urlText) {
           correct = true;
           params.customURL = urlText;
-        }         
-      }      
-      if(!correct)         
-      {
-        setAlertParam({state:"warning", title:"Warning", content:"Invalid custom url."});
+        }
+      }
+      if (!correct) {
+        setAlertParam({ state: "warning", title: "Warning", content: "Invalid custom url." });
         setVisibleModal(true);
-        params.customURL = "";      
+        params.customURL = "";
         return;
       }
-    }        
+    }
     else params.customURL = "";
-    params.userBio = bioText;          
-    if(websiteText !== "") 
-    {
+    params.userBio = bioText;
+    if (websiteText !== "") {
       let m; let correct = false;
-      while ((m = regexForWebsite.exec(websiteText)) !== null) 
-      {
+      while ((m = regexForWebsite.exec(websiteText)) !== null) {
         if (m.index === regexForWebsite.lastIndex) {
           regexForWebsite.lastIndex++;
         }
-        console.log("matched :"+m[0]);
-        if(m[0] === websiteText) 
-        {
+        console.log("matched :" + m[0]);
+        if (m[0] === websiteText) {
           correct = true;
           params.websiteURL = websiteText;
-        }      
-      } 
-      if(!correct)
-      {
-        setAlertParam({state:"warning", title:"Warning", content:"Invalid website url."});
+        }
+      }
+      if (!correct) {
+        setAlertParam({ state: "warning", title: "Warning", content: "Invalid portfolio or website." });
         setVisibleModal(true);
-        params.websiteURL = "";       
+        params.websiteURL = "";
         return;
-      }            
-    }         
-    else params.websiteURL = "";                        
+      }
+    }
+    else params.websiteURL = "";
     params.verified = true;
     params.banner = "";
     params.twitter = twitterText;
     params.socials = socials;
 
-    if(selectedAvatarFile == null) 
-    {
-      if(saveMode === 1)
-      {
+    if (selectedAvatarFile == null) {
+      if (saveMode === 1) {
         params.avatar = logoImg.split(config.imgUrl)[1];
         saveUser(params);
         return;
-      }else{
-        setAlertParam({state:"warning", title:"Warning", content:"Invalid logo."});
+      } else {
+        setAlertParam({ state: "warning", title: "Warning", content: "Invalid logo." });
         setVisibleModal(true);
         return;
       }
@@ -310,7 +303,7 @@ const ProfileEdit = () => {
     formData.append("itemFile", selectedAvatarFile);
     formData.append("authorId", "hch");
     console.log(selectedAvatarFile);
-    
+
     setCreateState(1);
     await axios({
       method: "post",
@@ -318,29 +311,27 @@ const ProfileEdit = () => {
       data: formData,
       headers: { "Content-Type": "multipart/form-data" },
     })
-    .then(function (response) 
-    {
-      params.avatar = response.data.path;
-      saveUser(params);
-    })
-    .catch(function (error) {
-      console.log(error);
-      setAlertParam({state: "error", title:"Error", content:"Uploading failed."});      
-      setVisibleModal(true);
-    });
+      .then(function (response) {
+        params.avatar = response.data.path;
+        saveUser(params);
+      })
+      .catch(function (error) {
+        console.log(error);
+        setAlertParam({ state: "error", title: "Error", content: "Uploading failed." });
+        setVisibleModal(true);
+      });
 
   }
 
-  const onAddSocial = () =>
-  {
+  const onAddSocial = () => {
+    if(socialAccount === "" || socialAccount.trim(" ") ==="") return;
     setAddSocial(false);
     let socs = [];
     socs = socialInputs;
-    socs.push({type : socialType.text, value : socialAccount});
+    socs.push({ type: socialType.text, value: socialAccount });
     let i; let socialsString = "";
-    for(i=0; i<socs.length; i++) 
-    {
-      if(i === socs.length - 1) socialsString += socs[i].type + " : " + socs[i].value;
+    for (i = 0; i < socs.length; i++) {
+      if (i === socs.length - 1) socialsString += socs[i].type + " : " + socs[i].value;
       else socialsString += socs[i].type + " : " + socs[i].value + ", ";
     }
     setSocials(socialsString);
@@ -348,30 +339,26 @@ const ProfileEdit = () => {
     console.log("socialInputs = ", socialInputs);
     setSocialAccount("");
   }
-  
-  const onRemoveSocialInput = (index) =>
-  {
+
+  const onRemoveSocialInput = (index) => {
     let socs = [];
     socs = socialInputs;
     socs.splice(index, 1);
     setSocialInputs(socs);
     let i; let socialsString = "";
-    for(i=0; i<socs.length; i++) 
-    {
-      if(i === socs.length - 1) socialsString += socs[i].type + " : " + socs[i].value;
+    for (i = 0; i < socs.length; i++) {
+      if (i === socs.length - 1) socialsString += socs[i].type + " : " + socs[i].value;
       else socialsString += socs[i].type + " : " + socs[i].value + ", ";
     }
     setSocials(socialsString);
     console.log("socs = ", socs);
   }
 
-  const navigate2Next = () =>
-  {
+  const navigate2Next = () => {
     history.push("/")
   }
 
-  const onCliearAll = () =>
-  {
+  const onCliearAll = () => {
     setLogoImg("");
     setSelectedAvatarFile(null);
     setNameText("");
@@ -384,7 +371,7 @@ const ProfileEdit = () => {
     setSocials("");
   }
 
-  const onOk = () => { 
+  const onOk = () => {
     setVisibleModal(false);
   }
 
@@ -398,7 +385,7 @@ const ProfileEdit = () => {
       <div className={cn("section-pt80", styles.section)}>
         <div className={cn("container", styles.container)}>
           <div className={styles.top}>
-            <h1 className={cn("h2", styles.title)}>{ userId !== "new"? "Edit profile" : "Sign Up"}</h1>
+            <h1 className={cn("h2", styles.title)}>{userId !== "new" ? "Edit profile" : "Sign Up"}</h1>
             <div className={styles.info}>
               You can set preferred display name, create{" "}
               <strong>your profile URL</strong> and manage other personal
@@ -408,11 +395,11 @@ const ProfileEdit = () => {
           <div className={styles.row}>
             <div className={styles.col}>
               <div className={styles.user}>
-                <div className={styles.avatar} style={{border:"3px dashed rgb(204, 204, 204)", borderRadius:"50%", width:"160px", height:"160px"}}>
-                  {logoImg !=="" &&<img id="avatarImg" src={logoImg} alt="Avatar" /> }
+                <div className={styles.avatar} style={{ border: "3px dashed rgb(204, 204, 204)", borderRadius: "50%", width: "160px", height: "160px" }}>
+                  {logoImg !== "" && <img id="avatarImg" src={logoImg} alt="Avatar" />}
                 </div>
                 <div className={styles.details}>
-                  <div className={styles.stage}>Profile photo</div>
+                  <div className={styles.stage}>Profile photo *</div>
                   <div className={styles.text}>
                     We recommend an image of at least 400x400. Gifs work too{" "}
                     <span role="img" aria-label="hooray">
@@ -428,7 +415,7 @@ const ProfileEdit = () => {
                     >
                       Upload
                     </button>
-                    <input className={styles.load} type="file" onChange={(e)=>changeAvatar(e)}/>   
+                    <input className={styles.load} type="file" onChange={(e) => changeAvatar(e)} />
                   </div>
                 </div>
               </div>
@@ -440,12 +427,12 @@ const ProfileEdit = () => {
                   <div className={styles.fieldset}>
                     <TextInput
                       className={styles.field}
-                      label="display name"
+                      label="Display name *"
                       name="Name"
                       type="text"
                       placeholder="Enter your display name"
                       value={nameText}
-                      onChange={(e)=>setNameText(e.target.value)}
+                      onChange={(e) => setNameText(e.target.value)}
                       required
                     />
                     <TextInput
@@ -453,19 +440,19 @@ const ProfileEdit = () => {
                       label="Custom url"
                       name="Url"
                       type="text"
-                      placeholder="ui8.net/Your custom URL"
+                      placeholder="Your custom URL"
                       value={urlText}
-                      onChange={(e)=>setUrlText(e.target.value)}
+                      onChange={(e) => setUrlText(e.target.value)}
                       required
                     />
                     <TextInput
                       className={styles.field}
-                      label="address"
+                      label="Address *"
                       name="address"
                       type="text"
                       placeholder="e.g 0xcccCCCCCccccccCCCCCCcccc"
                       value={address}
-                      onChange={(e)=>setAddress(e.target.value)}
+                      onChange={(e) => setAddress(e.target.value)}
                       required
                     />
                     <TextArea
@@ -475,7 +462,7 @@ const ProfileEdit = () => {
                       placeholder="About yourselt in a few words"
                       required="required"
                       value={bioText}
-                      onChange={(e)=>setBioText(e.target.value)}
+                      onChange={(e) => setBioText(e.target.value)}
                     />
                   </div>
                 </div>
@@ -489,10 +476,10 @@ const ProfileEdit = () => {
                       type="text"
                       placeholder="Enter URL"
                       value={websiteText}
-                      onChange={(e)=>setWebsiteText(e.target.value)}
+                      onChange={(e) => setWebsiteText(e.target.value)}
                       required
                     />
-                    <div className={styles.box}>
+                    {/* <div className={styles.box}>
                       <TextInput
                         className={styles.field}
                         label="twitter"
@@ -511,105 +498,108 @@ const ProfileEdit = () => {
                       >
                         Verify account
                       </button>
-                    </div>
-                    <div className={styles.box} style={{marginTop: "2rem"}}>
-                    <div className={styles.fieldset} > 
-                      {
-                        (socialInputs && socialInputs.length > 0) && 
-                        socialInputs.map((socialInfo, index) => (                                        
-                          <div className="row" key={index}>     
-                            <div style={{
-                              width: "92%",
-                              display: "inline-block"
-                            }}>
-                              <TextInput
-                                className={styles.field}
-                                label={socialInfo.type}
-                                key={index}
-                                name={socialInfo.type+index}
-                                type="text"
-                                value={socialInfo.value}
-                                disabled
-                              />                  
-                            </div>
-                            <div 
-                              style={{
-                                width: "10%",
-                                display: "inline",
-                                paddingLeft: "5px"
-                              }}
-                            >                                                                  
-                              <button 
-                                onClick={() => onRemoveSocialInput(index)}
+                    </div> */}
+                    <div className={styles.box} style={{ marginTop: "2rem" }}>
+                      <div className={styles.fieldset} >
+                        {
+                          (socialInputs && socialInputs.length > 0) &&
+                          socialInputs.map((socialInfo, index) => (
+                            <div className="row" key={index}>
+                              <div style={{
+                                width: "92%",
+                                display: "inline-block"
+                              }}>
+                                <TextInput
+                                  className={styles.field}
+                                  label={socialInfo.type}
+                                  key={index}
+                                  name={socialInfo.type + index}
+                                  type="text"
+                                  value={socialInfo.value}
+                                  disabled
+                                />
+                              </div>
+                              <div
+                                style={{
+                                  width: "10%",
+                                  display: "inline",
+                                  paddingLeft: "5px"
+                                }}
                               >
-                                <Icon name="close-circle" size="16" />
-                              </button>           
-                            </div>          
-                          </div>
-                        ))          
-                      }    
+                                <button
+                                  onClick={() => onRemoveSocialInput(index)}
+                                >
+                                  <Icon name="close-circle" size="16" />
+                                </button>
+                              </div>
+                            </div>
+                          ))
+                        }
                       </div>
-                      </div>
+                    </div>
                   </div>
                   <button
                     className={cn("button-stroke button-small", styles.button)}
-                    onClick = {() => setAddSocial(!addSocial)}
+                    onClick={() => setAddSocial(!addSocial)}
                   >
                     <Icon name="plus-circle" size="16" />
-                    <span>Add more social accounts</span>
+                    <span>Add social accounts</span>
                   </button>
                 </div>
               </div>
               <div className={styles.note}>
                 To update your settings you should sign message through your
-                wallet. Click {saveMode ===0 ? "'Register'" : "'Update'"} then sign the message
+                wallet. Click {saveMode === 0 ? "'Register'" : "'Update'"} then sign the message
               </div>
               <div className={styles.btns}>
                 <button className={cn("button", styles.button)}
                   onClick={() => onClickUpdate()}
                 >
-                  {saveMode ===0 ? "Register" : "Update"}
+                  {saveMode === 0 ? "Register" : "Update"}
                 </button>
-                <button className={styles.clear} onClick={()=>onCliearAll()}>
+                <button className={styles.clear} onClick={() => onCliearAll()}>
                   <Icon name="circle-close" size="24" />
-                  Clear all
+                  Clear
                 </button>
               </div>
             </div>
           </div>
         </div>
-      </div>      
+      </div>
       <Modal visible={visibleModal} onClose={() => setVisibleModal(false)}>
-        <Alert className={styles.steps} param={alertParam} okLabel="Yes" onOk={onOk} onCancel={onCancel}/>
+        <Alert className={styles.steps} param={alertParam} okLabel="Yes" onOk={onOk} onCancel={onCancel} />
       </Modal>
-      <Modal visible={addSocial} onClose={() => setAddSocial(false)} >               
+      <Modal visible={addSocial} onClose={() => setAddSocial(false)} >
+        <div className={cn("h4", styles.title)}> Add Social Account</div>
         <div className={styles.field}>
-          <div className={styles.label} style={{marginTop:"2rem"}}>Type</div>
-            <Dropdown
-              className={styles.dropdown}
-              value={socialType}
-              setValue={setSocialType}
-              options={socialTypes}
-            />
+          {/* <div className={styles.label} style={{marginTop:"2rem"}}>Social Type</div> */}
+          <div className={styles.label}>Social Type</div>
+          <Dropdown
+            className={styles.dropdown}
+            label="Social Type"
+            value={socialType}
+            setValue={setSocialType}
+            options={socialTypes}
+          />
         </div>
         <div className={styles.fieldset}>
           <TextInput
             className={styles.field}
-            label="portfolio or website"
-            name="Portfolio"
+            label="Social  Account"
+            name=""
             type="text"
             placeholder="Enter URL"
             value={socialAccount}
-            onChange={(e)=>setSocialAccount(e.target.value)}
+            onChange={(e) => setSocialAccount(e.target.value)}
             required
           />
-        </div>        
-        <button  className={cn("button", styles.button)} 
+        </div>
+        <button className={cn("button", styles.button)}
           style={{
             width: "-webkit-fill-available",
             marginTop: "1rem"
-          }} 
-          onClick={()=>onAddSocial()}>
+          }}
+          onClick={() => onAddSocial()}>
           Add
         </button>
       </Modal>

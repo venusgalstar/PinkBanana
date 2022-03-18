@@ -23,18 +23,18 @@ export function Auth(state = auth, action)
                 ...state, detail: action.payload
             }
         case SET_WALLET_ADDR:
-            console.log("[REDUCER] address  = ", action.payload);
+            // console.log("[REDUCER] address  = ", action.payload);
             return{
                 ...state, currentWallet: action.payload
             }
         case SET_CHAIN_ID:
-            console.log("[REDUCER] chainId  = ", action.payload);
+            // console.log("[REDUCER] chainId  = ", action.payload);
             return{
                 ...state, currentChainId : action.payload
             }
         case SET_OTHER_USER_DETAIL:
             
-            console.log("[REDUCER] SET_OTHER_USER_DETAIL  = ", action.payload);
+            // console.log("[REDUCER] SET_OTHER_USER_DETAIL  = ", action.payload);
             {
                 return {...state, otherUser: action.payload}
             }

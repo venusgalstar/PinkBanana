@@ -27,11 +27,55 @@ import Modal from "./components/Modal";
 import Alert from "./components/Alert";
 import styles from "./styles/helpers.sass";
 import { useEffect, useState } from "react";
+import { loadWeb3, getAvaxPrice } from "./InteractWithSmartContract/interact";
+import config from "./config";
+import { setAvaxPrice } from "./store/actions/user.action";
+
+import { UPDATE_SERVER_TIME } from "./store/actions/action.types";
+
+import { io } from 'socket.io-client';
+
+var socket = io(`${config.socketUrl}`);
+
+socket.on("ServerTime", data => {
+  store.dispatch({ type: UPDATE_SERVER_TIME, payload: data });
+})
+socket.on("UpdateStatus", data => {
+  console.log("notification status is updated", data);
+  // dispatch(getNotifiesByLimit(50, user._id))
+})
+
+socket.emit("hello", { data: "hello emit" });
+socket.emit("event", { event: "hello event" });
+
+loadWeb3();
+
+// get avax price and set
+const avaxPrice = async () => {
+  var result = await getAvaxPrice();
+  var r = Number(result._reserve1) / Number(result._reserve0);
+  r = r * Math.pow(10, 12);
+  store.dispatch(setAvaxPrice(r));
+  setTimeout(avaxPrice, 10000);
+}
+
+avaxPrice();
 
 const App = () =>
 {  
   const [visibleModal, setVisibleModal] = useState(false);
   const [alertParam, setAlertParam] = useState({});  
+
+  useEffect(() =>
+  {    
+    socket.on("disconnect", () =>
+    {  
+      //require alert
+      setAlertParam( {state: "info", title:"Information", content:"We've lost connection to server !"} );      
+      setVisibleModal( true );  
+      console.log("disconnected");
+    })    
+  }, [])
 
   useEffect( () =>
   {

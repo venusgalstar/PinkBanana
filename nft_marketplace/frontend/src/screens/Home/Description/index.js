@@ -11,7 +11,7 @@ const Description = () => {
         <div className={styles.wrap}>
           <div className={styles.stage}>Save your time with Stacks</div>
           <h1 className={cn("h1", styles.title)}>
-            Earn free crypto with Crypter
+            Earn free crypto with Pink Banana
           </h1>
           <div className={styles.text}>
             A creative agency that lead and inspire

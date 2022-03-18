@@ -13,23 +13,17 @@ import Backdrop from '@mui/material/Backdrop';
 import CircularProgress from '@mui/material/CircularProgress';
 import Alert from "../../../components/Alert";
 
-import { getNftDetail } from "../../../store/actions/nft.actions";
+import { emptyNFTTradingResult, getNftDetail } from "../../../store/actions/nft.actions";
 import { useDispatch } from "react-redux";
 import { useParams } from "react-router-dom";
 import config from "../../../config";
-import { singleMintOnSale, placeABid, buyNow, acceptOrEndBid } from "../../../InteractWithSmartContract/interact";
+import { singleMintOnSale, placeBid, buyNow, acceptOrEndBid } from "../../../InteractWithSmartContract/interact";
 import { checkNetworkById } from "../../../InteractWithSmartContract/interact";
+import { getBalanceOf, destroySale } from "../../../InteractWithSmartContract/interact";
+import { useHistory } from "react-router-dom";
 
 import { io } from 'socket.io-client';
 var socket = io(`${config.socketUrl}`);
-socket.on("disconnect", () =>
-{
-  console.log("disconnected");
-  setTimeout(() =>
-  {
-    socket.connect();
-  }, 1000)
-})
 
 const Control = ({ className, id }) => 
 {
@@ -43,11 +37,12 @@ const Control = ({ className, id }) =>
   const [processing, setProcessing] = useState(false);
   const [alertParam, setAlertParam] = useState({});
   const [visibleModal, setVisibleModal] = useState(false);
+  const history = useHistory();
 
   const auth = useSelector(state => state.auth.user);
   const nft = useSelector(state => state.nft.detail);
   const avax = useSelector(state => state.user.avax);
-  const serviceFee = useSelector(state => state.nft.serviceFee);
+  const tradingResult = useSelector(state => state.nft.tradingResult)
 
   const dispatch = useDispatch();
   const params = useParams();
@@ -57,12 +52,21 @@ const Control = ({ className, id }) =>
     socket.on("UpdateStatus", data => 
     {
       console.log("status updated!:", data);
-      getNftDetail(params.id)(dispatch);
+      if(params.id) 
+      {
+        if(data.type === "BURN_NFT" && data.data.itemId === params.id) 
+        {
+          history.push(`/collectionItems/${data.data.colId}`)
+          return;
+        }
+        getNftDetail(params.id)(dispatch);
+      }
+      
     });
-  }, [])
+  }, [dispatch, params, history])
 
   useEffect(() => {
-    getNftDetail(params.id)(dispatch);
+    if(params.id) getNftDetail(params.id)(dispatch);
   }, [params, dispatch]);
 
   const checkWalletAddrAndChainId = async () => 
@@ -88,6 +92,67 @@ const Control = ({ className, id }) =>
     return true;
   }
 
+  useEffect(() =>
+  {
+    if(tradingResult)
+    {
+      setProcessing(false);
+      switch(tradingResult.function)
+      {
+        default : 
+          setVisibleModal(false); 
+          break;
+        case "buyNow":
+          if(tradingResult.success)
+          {
+            setAlertParam({state: "success", title:"Success", content:"You 've bought a NFT."});  
+          }else{
+            setAlertParam({state: "error", title:"Error", content:"You 've failed in buying a NFT."});
+          }    
+          setVisibleModal(true);  
+          break;
+        case "placeBid":
+          if(tradingResult.success)
+          {
+            setAlertParam({state: "success", title:"Success", content:"You 've placed a bid."});      
+          }else{
+            setAlertParam({state: "error", title:"Error", content:"You 've failed in placing a bid."});  
+          }
+          setVisibleModal(true);  
+          break;
+        case "singleMintOnSale":
+          if(tradingResult.success)
+          {
+            setAlertParam({state: "success", title:"Success", content:"You 've put a NFT on sale."});     
+          }else{
+            setAlertParam({state: "error", title:"Error", content:"You 've failed in put a NFT on sale."});   
+          }
+          setVisibleModal(true);  
+          break;
+        case "destroySale":
+          if(tradingResult.success)
+          {
+            setAlertParam({state: "success", title:"Success", content:"You 've removed a NFT from sale."});      
+          }else{
+            setAlertParam({state: "error", title:"Error", content:"Failed in removing a NFT from sale."});   
+          }
+          setVisibleModal(true);  
+          break;
+        case "acceptOrEndBid":
+          if(tradingResult.success)
+          {
+            setAlertParam({state: "success", title:"Success", content:"You 've accept a final bid and sold your NFT."});   
+          }else{
+            setAlertParam({state: "error", title:"Error", content:"You 've failed accepting a bid."}); 
+          }
+          setVisibleModal(true);  
+          break;
+      }
+      dispatch(emptyNFTTradingResult());    
+      getNftDetail(params.id)(dispatch);
+    }
+  }, [tradingResult, params, dispatch])
+
   const cofirmBuy = async () => 
   {
     setVisibleModalPurchase(false);
@@ -98,29 +163,7 @@ const Control = ({ className, id }) =>
       setProcessing(false);
       return;
     }
-    try{
-      let ret = await buyNow(auth.address, params.id, nft.price);
-      if (ret.success === true) 
-      {
-        setProcessing(false);
-        setTimeout(() => {
-          getNftDetail(params.id)(dispatch);
-        }, 1000);
-        setAlertParam({state: "success", title:"Success", content:"You 've bought a NFT."});      
-        setVisibleModal(true);
-      }
-      else {
-        console.log("failed on buyNow : ", ret.status);
-        setProcessing(false);
-        setAlertParam({state: "error", title:"Error", content:"You 've failed in buying a NFT."});      
-        setVisibleModal(true);
-      }
-      setProcessing(false);
-    }catch(err)
-    {      
-      setProcessing(false);
-      console.log("failed on buyNow : ", err.message);
-    }
+    await buyNow(auth.address, params.id, nft.price);
   }
 
   const changeBidPrice = (value) => {
@@ -136,29 +179,7 @@ const Control = ({ className, id }) =>
       setProcessing(false);
       return;
     }
-    try{
-      let ret = await placeABid(auth.address, params.id, bidPrice);
-      if (ret.success === true) 
-      {
-        setProcessing(false);
-        setTimeout(() => {
-          getNftDetail(params.id)(dispatch);
-        }, 1000);
-        setAlertParam({state: "success", title:"Success", content:"You 've placed a bid."});      
-        setVisibleModal(true);
-      }
-      else {
-        console.log("failed on place a bid : ", ret.status);
-        setProcessing(false);
-        setAlertParam({state: "error", title:"Error", content:"You 've failed in placing a bid."});      
-        setVisibleModal(true);
-      }
-      setProcessing(false);
-    }catch(err)
-    {      
-      setProcessing(false);
-      console.log("failed on place a bid : ", err.message);
-    }
+    await placeBid(auth.address, params.id, bidPrice);      
   }
 
   const onPutSale = async (price, instant, period) => 
@@ -166,7 +187,7 @@ const Control = ({ className, id }) =>
     console.log("put sale:", price, "instant:", instant, "period:", period);
     setVisibleModalSale(false);
 
-    if(Number(price) <= 0 || Number(price) === NaN)
+    if(Number(price) <= 0 || isNaN(price))
     {      
       setAlertParam({state: "error", title:"Error", content:"Invalid price."});      
       setVisibleModal(true);
@@ -181,29 +202,51 @@ const Control = ({ className, id }) =>
     }
 
     var aucperiod = instant === true ? 0 : period;
+    
+    await singleMintOnSale(auth.address, params.id, aucperiod * 24 * 3600, price, 0);
+      
+  }
+
+  const removeSale = async () => 
+  {
+    console.log("nft = ", nft);
+    
+    if(nft.owner._id !== auth._id)
+    {
+      setAlertParam({state: "warning", title:"Warning", content:"You are not the owner of this nft."});      
+      setVisibleModal(true);
+      return;
+    }    
+
+    if(nft.bids.length >0 && nft.isSale === 2 )
+    {
+      setAlertParam({state: "warning", title:"Warning", content:"You cannot remove it from sale because you had one or more bid(s) already."});      
+      setVisibleModal(true);
+      return;
+    }
+
+    setProcessing(true);
     try{
-      let ret = await singleMintOnSale(auth.address, params.id, aucperiod * 24 * 3600, price, 0);
-      if (ret.success === true) 
+      let iHaveit = await getBalanceOf(auth.address, params.id);
+      if(iHaveit === 1)
       {
         setProcessing(false);
-        setTimeout(() => {
-          getNftDetail(params.id)(dispatch);
-        }, 1000);
-        setAlertParam({state: "success", title:"Success", content:"You 've put a NFT on sale."});      
+        setAlertParam({state: "warning", title:"Warning", content:"Your NFT is not on sale."});      
         setVisibleModal(true);
+        return;      
       }
-      else {
-        console.log("failed on put on sale : ", ret.status);
-        setProcessing(false);
-        setAlertParam({state: "error", title:"Error", content:"You 've failed in put a NFT on sale."});      
-        setVisibleModal(true);
-      }
-      setProcessing(false);
     }catch(err)
-    {      
-      setProcessing(false);
-      console.log("failed on put on sale : ", err.message);
+    {
+      console.log("getBalanceOf error : ", err.message)
     }
+    let checkResut = await checkWalletAddrAndChainId();
+    if (!checkResut) {
+      setProcessing(false);
+      return;
+    }
+      
+    await destroySale(auth.address, params.id );
+     
   }
 
   const onAccept = async () => {
@@ -215,60 +258,10 @@ const Control = ({ className, id }) =>
       setProcessing(false);
       return;
     }
-    try{
-      let ret;
-      if (params.id) ret = await acceptOrEndBid(auth.address, params.id);
-      else {
-        setAlertParam({state: "warning", title:"Warning", content:"Invalid NFT."});      
-        setVisibleModal(true);
-        return;
-      }
 
-      if (ret.success === true) 
-      {
-        setProcessing(false);
-        setTimeout(() => {
-          getNftDetail(params.id)(dispatch);
-        }, 1000);
-        setAlertParam({state: "success", title:"Success", content:"You 've accept a final bid and sold your NFT."});      
-        setVisibleModal(true);
-      }
-      else {
-        console.log("failed on  accept : ", ret.status);
-        setProcessing(false);
-        setAlertParam({state: "error", title:"Error", content:"You 've failed accepting a bid."});      
-        setVisibleModal(true);
-      }
-      setProcessing(false);
-    }catch(err)
-    {      
-      setProcessing(false);
-      console.log("failed on aaccept : ", err.message);
-    }
+    await acceptOrEndBid(auth.address, params.id);
+    
   }
-
-  // const purchaseNow = () => {
-  //   const items = [
-  //     {
-  //       title: "0.007",
-  //       value: "AVAX",
-  //     },
-  //     {
-  //       title: "Your balance",
-  //       value: "8.498 AVAX",
-  //     },
-  //     {
-  //       title: "Service fee",
-  //       value: "0 AVAX",
-  //     },
-  //     {
-  //       title: "You will pay",
-  //       value: "0.007 AVAX",
-  //     },
-  //   ];
-  //   setVisibleModalPurchase(true);
-  //   // setBuyCheckList(items);
-  // }
 
   const onOk = () => { 
     setVisibleModal(false);
@@ -325,16 +318,25 @@ const Control = ({ className, id }) =>
           </button> */}
           {
             nft && auth && nft.isSale === 2 && nft.owner && nft.owner._id === auth._id ?
+             nft.bids.length > 0 ?
               <button
                 className={cn("button", styles.button)}
                 onClick={() => setVisibleModalAccept(true)}
               >
                 Accept
-              </button> : <></>
+              </button>
+              :
+              <button
+              className={cn("button", styles.button)}
+              onClick={() => removeSale()}
+              >
+                Remove
+              </button>
+            :<></>
           }
         </div>
        
-        <div className={styles.text}>
+        {/* <div className={styles.text}>
           Service fee <span className={styles.percent}>{serviceFee}%</span>{" "} 
           {
             nft ? 
@@ -348,8 +350,8 @@ const Control = ({ className, id }) =>
               <span>$ 0</span>
             </>
           }       
-        </div>
-        {nft && nft.isSale === 0 && nft.owner && nft.owner._id === auth._id ?
+        </div> */}
+        {nft && nft.owner && nft.owner._id === auth._id  && nft.isSale === 0 &&
           <div className={styles.foot}>
             <button
               className={cn("button", styles.button)}
@@ -357,10 +359,20 @@ const Control = ({ className, id }) =>
             >
               Put on sale
             </button>
-          </div> : <></>
+          </div> 
+        }
+        {nft && nft.owner && nft.owner._id === auth._id  && nft.isSale === 1 &&
+          <div className={styles.foot}>
+            <button
+              className={cn("button", styles.button)}
+              onClick={() => removeSale()}
+            >
+              Remove
+            </button>
+          </div> 
         }
         <div className={styles.note}>
-          You can sell this token on Cryptor Marketplace
+          {/* You can sell this token on Pink Banana */}
         </div>
       </div>
       <Modal

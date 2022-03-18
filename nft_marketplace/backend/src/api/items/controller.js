@@ -1,6 +1,5 @@
 const { Item } = require("../../db");
 const db = require("../../db");
-const { io } = require("../../socket");
 const Items = db.Item;
 const Sales = db.Sale;
 const Collection = db.Collection;
@@ -8,7 +7,6 @@ const Notify = db.Notify;
 var ObjectId = require('mongodb').ObjectID;
 
 exports.create = (req, res) => {
-    console.log("[api/item/create] req.body = ", req.body);
     var reqItem = req.body;
     const item = new Items({
         name: reqItem.itemName,
@@ -79,7 +77,6 @@ exports.create = (req, res) => {
                                         
                                     }
                                 });
-                                if(io)  io.sockets.emit("UpdateStatus", { type: "CREATE_NOTIFY" });
                                 return res.status(200).send(data);
                             } catch (err) {
                                 console.log("fail 1 : " + err.message);
@@ -147,7 +144,6 @@ exports.multipleCreate = async (req, res) => {
                         
                     }
                 });
-                if(io)  io.sockets.emit("UpdateStatus", { type: "CREATE_NOTIFY" });
             })
             .catch((err) => {
                 return res.status(500).send({
@@ -191,7 +187,7 @@ exports.multipleCreate = async (req, res) => {
                             { upsert: true }
                         );
                         console.log("Multiple loading succeed. 11");
-                        if(io)  io.sockets.emit("UpdateStatus", { type: "CREATE_NOTIFY" });
+                        // if(io)  io.sockets.emit("UpdateStatus", { type: "CREATE_NOTIFY" });
                         return res.status(200).send(itemIdArr);
                     }catch(err){
                         console.log("failed in multiple item upload : ", err.message);

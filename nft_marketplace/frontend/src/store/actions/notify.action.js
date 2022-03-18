@@ -2,7 +2,7 @@ import { UPDATE_NOTIFY_LIST , GET_NOTIFIES_BY_FILTERS, MARK_ALL_NOTIFIES_AS_READ
 import config from '../../config';
 import axios from 'axios';
 
-export const getNotifiesByLimit = (limit, userId, filter) => dispatch => 
+export const getNotifiesByLimit = (limit, userId, filter=[]) => dispatch => 
 {    
     axios.post(`${config.baseUrl}notify/getlist`, {limit, userId, filter}, {
         headers:

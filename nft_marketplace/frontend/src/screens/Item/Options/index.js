@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React from "react";
 import cn from "classnames";
 import styles from "./Options.module.sass";
 import Icon from "../../../components/Icon";
@@ -6,11 +6,11 @@ import Actions from "../../../components/Actions";
 import { useDispatch, useSelector } from "react-redux";
 import { setFavItem } from "../../../store/actions/user.action";
 
-const Options = ({ className, items }) => {
+const Options = ({ className, setProcessing}) => {
   const nft = useSelector(state => state.nft.detail);
   const auth = useSelector(state => state.auth.user);
-  const state = useSelector(state => state);
   const dispatch = useDispatch();
+
   const toggleFav = () => {
     setFavItem(nft._id, auth._id)(dispatch);
   }
@@ -19,7 +19,7 @@ const Options = ({ className, items }) => {
     if (nft && auth) {
       if (!nft.likes) {
         return false;
-      } 
+      }
 
       var index = nft.likes.findIndex((element) => {
         if (element == auth._id) {
@@ -30,12 +30,12 @@ const Options = ({ className, items }) => {
       });
 
 
-      if (index == -1) {
+      if (index === -1) {
         return false;
       } else {
         return true;
       }
-    } 
+    }
   }
 
   // useEffect(()=>{
@@ -46,21 +46,23 @@ const Options = ({ className, items }) => {
 
   return (
     <div className={cn(styles.options, className)}>
-      <button className={cn("button-circle-stroke", styles.button)}>
+      {/* <button className={cn("button-circle-stroke", styles.button)}>
         <Icon name="share" size="24" />
-      </button>
+      </button> */}
       {/* styles.favorite */}
-
-
       <button
-        className={cn("button-circle-stroke", styles.button, isLiked()? styles.favorite : "")}
+        className={cn("button-circle-stroke", styles.button, isLiked() ? styles.favorite : "")}
         onClick={toggleFav}
       >
         <Icon name="heart-fill" size="24" />
       </button>
+      {
+        nft && auth && auth._id &&
+        nft.owner._id.toLowerCase() == auth._id.toLowerCase() &&
+        (nft.bids.length === 0) &&
+        <Actions className={styles.actions} setProcessing={setProcessing} />
+      }
 
-
-      <Actions className={styles.actions} />
     </div>
   );
 };
