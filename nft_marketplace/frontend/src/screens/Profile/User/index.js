@@ -24,6 +24,7 @@ const User = ({ className, item }) => {
   const detailedUserInfo = useSelector(state => state.auth.otherUser);
   const isFollowPairExists = useSelector(state => state.follow.isExists);
   const [compressedAddress, setCompressedAddress] = useState("");
+  const [copied, setCopied] = useState(false);
 
   const onClickFollow = () =>
   {
@@ -52,6 +53,16 @@ const User = ({ className, item }) => {
     }
   }, [detailedUserInfo])
   
+  const onCopyAddress = () =>
+  {
+    document.getElementById("hiddenAddressInput").select();
+    document.execCommand("copy");
+    setCopied(true);
+    setTimeout(() => {
+      setCopied(false)
+    }, 2000);
+  }
+
   return (
     <>
       <div className={cn(styles.user, className)}>
@@ -71,10 +82,19 @@ const User = ({ className, item }) => {
               compressedAddress           
             }
           </div>
-          <button className={styles.copy}>
-            <Icon name="copy" size="16" />
-          </button>
-        </div>
+          <div style={{ position:"relative" }}>
+            <button className={styles.copy}  onClick={() => onCopyAddress()} >
+              <Icon name="copy" size="16"  />
+            </button> 
+            {
+              copied && 
+              <div className={styles.copiedDiv} >copied</div>
+            }
+          </div>         
+        </div>        
+        <input type="text" id="hiddenAddressInput" 
+          style={{ height:"0px", opacity:"0"}} 
+          value={detailedUserInfo && detailedUserInfo.address && detailedUserInfo.address} />
         <div className={styles.info}>
           {detailedUserInfo && detailedUserInfo.userBio}
         </div>

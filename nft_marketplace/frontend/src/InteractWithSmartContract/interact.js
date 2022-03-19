@@ -53,7 +53,7 @@ export const loadWeb3 = async () =>
   } 
   else {
     // window.alert(
-    //   "Non-Ethereum browser detected. Please connect a wallet."
+    //   "Non-Ethereum browser detected. Please connect and unlock your wallet."
     // );
     return;
   }
@@ -311,16 +311,15 @@ const updateUserBalanceAfterTrading = async (currentAddr) =>
 const parseErrorMsg = (errMsg) =>
 {  
   var returStr  = "";
-  let startPos = JSON.stringify(errMsg).indexOf("{");
+  let startPos = JSON.stringify(errMsg).search("message");
   if(startPos >= 0)
   {
-    let subStr = errMsg.substring(startPos+12, errMsg.length)
+    let subStr = errMsg.substring(startPos+4, errMsg.length)
     let endPos = subStr.indexOf("\",");
     if(endPos >= 0)
     {
       subStr = subStr.substring(0, endPos);
-      startPos = subStr.indexOf(":");
-      returStr = subStr.substring(startPos+3, subStr.length);
+      returStr = subStr;
     }
   }else returStr = errMsg;
   return returStr;

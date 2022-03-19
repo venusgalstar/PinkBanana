@@ -97,6 +97,10 @@ const Hero = () => {
     if(tradingResult)
     {
       setProcessing(false);
+      if(tradingResult.message.search("Ethereum address") > 0)
+      {
+        tradingResult.message = "Plese connect and unlock your wallet."
+      }
       switch(tradingResult.function)
       {
         default : 

@@ -94,7 +94,7 @@ const App = () => {
 
       let connection = await getValidWallet();
       if (connection.address === "") {
-        setAlertParam({ state: "info", title: "Information", content: "No connected wallet. Please connect a wallet." });
+        setAlertParam({ state: "info", title: "Information", content: "No connected wallet. Please connect your wallet." });
         setVisibleModal(true);
       }
 

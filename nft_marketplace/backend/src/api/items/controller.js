@@ -427,7 +427,7 @@ exports.getItemsOfUserByCondition = (req, res) => {
     if (userId === null || userId === undefined || userId === "") {
         return res.status(404).send({ success: false, message: "No such collection." });
     }
-    if (activeindex === 0 || activeindex === 2) {
+    if (activeindex === 0 || activeindex === 2 || activeindex === 3) {
         Items.find(query)
             // .skip(start).limit(last - start)
             .then((docs) => {

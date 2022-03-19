@@ -90,6 +90,10 @@ const Control = ({ className, id }) => {
   useEffect(() => {
     if (tradingResult) {
       setProcessing(false);
+      if(tradingResult.message.search("Ethereum address") > 0)
+      {
+        tradingResult.message = "Plese connect and unlock your wallet."
+      }
       switch (tradingResult.function) {
         default:
           setVisibleModal(false);
@@ -268,7 +272,7 @@ const Control = ({ className, id }) => {
 
   return (
     <>
-      { nft && auth && nft.owner &&
+      { nft && auth && nft.owner && ((nft.owner._id === auth._id) || (nft.owner._id !== auth._id && nft.isSale !== 0)) && 
         <div className={cn(styles.control, className)}>
           {
             nft && nft.bids.length > 0 ?

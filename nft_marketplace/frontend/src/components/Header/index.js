@@ -140,7 +140,7 @@ const Headers = () => {
         setVisibleModal(true);
       }
     }else{      
-      setAlertParam({state: "warning", title:"Warning", content: "Please connect a wallet." });      
+      setAlertParam({state: "warning", title:"Warning", content: "Please connect and unlock your wallet." });      
       setVisibleModal(true);
     }
   }
@@ -176,7 +176,7 @@ const Headers = () => {
       // history.push("/profile-edit/new");
       history.push({ pathname: "/profile-edit/new" });
     }else{     
-        setAlertParam({state: "info", title:"Info", content: "Please connect a wallet." });      
+        setAlertParam({state: "info", title:"Info", content: "Please connect and unlock your wallet." });      
         setVisibleModal(true);
     }
   }

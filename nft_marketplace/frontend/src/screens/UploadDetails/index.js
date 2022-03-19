@@ -259,7 +259,7 @@ const Upload = ({ asset_id = null }) => {
       let connection = await getValidWallet();
       if(connection.success === false )
       {
-        setAlertParam( {state: "warning", title:"Warning", content: "Please connect a wallet." } );      
+        setAlertParam( {state: "warning", title:"Warning", content: "Please connect and unlock your wallet." } );      
         setVisibleModal( true );
         return;
       }

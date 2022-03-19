@@ -208,7 +208,7 @@ const ProfileEdit = () => {
     let connection = await getValidWallet();
     if(connection.success === false)
     {
-      setAlertParam( {state: "info", title:"Information", content: "Please connect a wallet." } );      
+      setAlertParam( {state: "info", title:"Information", content: "Please connect and unlock your wallet." } );      
       setVisibleModal( true );
       return;
     }

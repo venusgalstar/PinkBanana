@@ -1,16 +1,12 @@
 import React, { useState } from "react";
 import cn from "classnames";
 import styles from "./Transfer.module.sass";
-import Modal from "../../components/Modal";
-import Alert from "../../components/Alert";
 
 const Transfer = ({ className, onOk = null, onCancel = null}) => 
 {
   const regexForWallet = /^(0x[a-fA-F0-9]{40})$/gm;
   const [toAddr, setToAddr] = useState("");
-  const [processing, setProcessing] = useState(false);
-  const [alertParam, setAlertParam] = useState({});
-  const [visibleModal, setVisibleModal] = useState(false);
+  const [addressIsInvalid, setAddressIsInvalid] = useState(false);
 
   const onContinue =  () =>
   {    
@@ -30,22 +26,14 @@ const Transfer = ({ className, onOk = null, onCancel = null}) =>
       }      
       if(!correct)         
       {
-        setAlertParam({state:"warning", title:"Warning", content:"Invalid wallet address."});
-        setVisibleModal(true);
+        setAddressIsInvalid(true);
         setToAddr("");
         return;
       }
     }        
-    else { setToAddr(""); return; }
+    else { setAddressIsInvalid(true); return; }
+    setAddressIsInvalid(false);
     onOk(toAddr);
-  }
-
-  const onYes = () => { 
-    setVisibleModal(false);
-  }
-
-  const onCanc = () => {
-    setVisibleModal(false);
   }
 
   return (
@@ -65,14 +53,16 @@ const Transfer = ({ className, onOk = null, onCancel = null}) =>
           placeholder="Paste address"
         />
       </div>
+        {
+          addressIsInvalid === true ? 
+          <span style={{ color: "red" }}>Wallet address is invalid.</span>
+          :
+          <></>
+        }
       <div className={styles.btns}>
         <button className={cn("button", styles.button)} onClick={() => onContinue() }>Continue</button>
         <button className={cn("button-stroke", styles.button)} onClick={() => onCancel()}>Cancel</button>
       </div>
-      
-      <Modal visible={visibleModal} onClose={() => setVisibleModal(false)}>
-        <Alert className={styles.steps} param={alertParam} okLabel="Yes" onOk={onYes} onCancel={onCanc}/>
-      </Modal>
     </div>
   );
 };

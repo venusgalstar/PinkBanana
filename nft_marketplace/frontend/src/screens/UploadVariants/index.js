@@ -1,8 +1,11 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Link } from "react-router-dom";
 import cn from "classnames";
 import styles from "./UploadVariants.module.sass";
 import Control from "../../components/Control";
+import { useSelector } from "react-redux";
+import { useHistory } from "react-router-dom";
+import isEmpty from "../../utilities/isEmpty";
 
 const breadcrumbs = [
   {
@@ -32,6 +35,16 @@ const items = [
 ];
 
 const Upload = () => {
+
+  const currentUsr = useSelector(state => state.auth.user);
+  const detailedUserIndo = useSelector(state => state.auth.detail)
+  const history = useHistory();
+
+  useEffect(() =>{
+    //check the current user, if ther user is not exists or not verified, go back to the home
+    if(isEmpty(currentUsr) || (!isEmpty(detailedUserIndo) && !isEmpty(detailedUserIndo.verified) &&  detailedUserIndo.verified === false) ) history.push("/")
+  }, [])
+
   return (
     <div className={styles.page}>
       <Control className={styles.control} item={breadcrumbs} />

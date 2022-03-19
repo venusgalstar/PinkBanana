@@ -24,6 +24,7 @@ const User = ({ className }) => {
   const [compressedAddress, setCompressedAddress] = useState("");
   const currentBalanceOfUser = useSelector(state => state.auth.balance)
   const [items, setItems] = useState([]);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     
@@ -93,6 +94,16 @@ const User = ({ className }) => {
     history.push("/");
   }
 
+  const onCopyAddress = () => 
+  {
+    document.getElementById("hiddenAddressInput").select();
+    document.execCommand("copy");
+    setCopied(true);
+    setTimeout(() => {
+      setCopied(false)
+    }, 2000);    
+  }
+
   return (
     <OutsideClickHandler onOutsideClick={() => setVisible(false)}>
       <div className={cn(styles.user, className)}>
@@ -114,10 +125,19 @@ const User = ({ className }) => {
             <div className={styles.name}>{currentUsr.username}</div>
             <div className={styles.code}>
               <div className={styles.number}>{compressedAddress && compressedAddress}</div>
-              <button className={styles.copy}>
-                <Icon name="copy" size="16" />
-              </button>
+              <div style={{ position:"relative" }}>
+                <button className={styles.copy}  onClick={() => onCopyAddress()} >
+                  <Icon name="copy" size="16" />
+                </button>
+                {
+                  copied && 
+                  <div className={styles.copiedDiv} >copied</div>
+                }
+              </div>
             </div>
+            <input type="text" id="hiddenAddressInput" 
+              style={{ height:"0px", opacity:"0"}} 
+              value={currentUsr && currentUsr.address && currentUsr.address} />
             <div className={styles.wrap}>
               <div className={styles.line}>
                 <div className={styles.preview}>

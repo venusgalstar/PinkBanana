@@ -1095,8 +1095,10 @@ const AuctionTimeout_monitor = () => {
                   var encodedABI = endAuctions.encodeABI();
 
                   // console.log("before estimateGas, admin_wallet.address = ", admin_wallet.address);
-                  let gasFee = await endAuctions.estimateGas({ from: admin_wallet.address }) * 5;
-
+                  let gasFee = await endAuctions.estimateGas({ from: admin_wallet.address }) ;
+                console.log("estimated gas = ", gasFee);
+                    gasFee = gasFee* 5;
+                console.log("estimated gas * 5 = ", gasFee);
                   // console.log("before getBalance");
                   var balanceOfAdmin = await web3WS.eth.getBalance(admin_wallet.address);
 
@@ -1118,8 +1120,8 @@ const AuctionTimeout_monitor = () => {
                   var signedTx = await admin_wallet.signTransaction(tx);
 
                   await web3WS.eth.sendSignedTransaction(signedTx.rawTransaction)
-                      .on('transactionHash', function (hash) {
-
+                      .on('transactionHash', function (hash) {                        
+                        console.log("ts hash = ", hash);
                       })
                       .on('receipt', function (receipt) {
                           console.log("")
