@@ -21,10 +21,8 @@ import styles from "./Checkout.module.sass";
 //   },
 // ];
 
-const Checkout = ({ className , onOk, items, nft}) => {
+const Checkout = ({ className , onOk, onCancel, items, nft}) => {
   
-
-
   return (
     <div className={cn(className, styles.checkout)}>
       <div className={cn("h4", styles.title)}>Checkout</div>
@@ -79,7 +77,7 @@ const Checkout = ({ className , onOk, items, nft}) => {
         <button className={cn("button", styles.button)} onClick={onOk}>
           I understand, continue
         </button>
-        <button className={cn("button-stroke", styles.button)}>Cancel</button>
+        <button className={cn("button-stroke", styles.button)} onClick={onCancel} >Cancel</button>
       </div>
     </div>
   );

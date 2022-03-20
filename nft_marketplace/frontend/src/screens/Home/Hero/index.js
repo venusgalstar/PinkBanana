@@ -13,8 +13,8 @@ import { emptyNFTTradingResult, getNftBannerList } from '../../../store/actions/
 import config from "../../../config";
 import Backdrop from '@mui/material/Backdrop';
 import CircularProgress from '@mui/material/CircularProgress';
-import {getNftDetail} from "../../../store/actions/nft.actions";
-import {checkNetworkById, placeBid} from "../../../InteractWithSmartContract/interact";
+import { getNftDetail } from "../../../store/actions/nft.actions";
+import { checkNetworkById, placeBid } from "../../../InteractWithSmartContract/interact";
 import Alert from "../../../components/Alert";
 
 import { io } from 'socket.io-client';
@@ -43,77 +43,68 @@ const Hero = () => {
     ),
   };
 
-
   const dispatch = useDispatch();
   const [visibleModalBid, setVisibleModalBid] = useState(false);
-  const [load, setLoad] = useState();
-  const nft = useSelector(state => state.nft);
   const [itemList, setItemList] = useState([]);
-  const [bidPrice, setBidPrice] = useState();
-  const [activeIndex, setActiveIndex] = useState(0);
-  const auth = useSelector(state => state.auth.user);
-  const curTime = useSelector(state => state.bid.system_time);
-  const avax = useSelector(state => state.user.avax);
   const [processing, setProcessing] = useState(false);
-  const currentWalletAddress = useSelector(state => state.auth.currentWallet);
-  const currentChainId = useSelector(state => state.auth.currentChainId);
   const [biddingNftId, setBiddingNftId] = useState(0);
   const [biddingNft, setBiddingNft] = useState(0);
   const [alertParam, setAlertParam] = useState({});
   const [visibleModal, setVisibleModal] = useState(false);
+
+  const nft = useSelector(state => state.nft);
+  const auth = useSelector(state => state.auth.user);
+  const curTime = useSelector(state => state.bid.system_time);
+  const avax = useSelector(state => state.user.avax);
+  const currentWalletAddress = useSelector(state => state.auth.currentWallet);
+  const currentChainId = useSelector(state => state.auth.currentChainId);
   const tradingResult = useSelector(state => state.nft.tradingResult);
+  const walletStatus = useSelector(state => state.auth.walletStatus);
 
-  const onChangeBidPrice = (value) => {
-    setBidPrice(value);
-  }
-
-  const checkWalletAddrAndChainId = async () => 
-  {
-    if(Object.keys(auth).length === 0)
-    {
-      setAlertParam({state: "warning", title:"Warning", content:"You have to sign in before doing a trading."});      
+  const checkWalletAddrAndChainId = async () => {
+    if (Object.keys(auth).length === 0) {
+      setAlertParam({ state: "warning", title: "Warning", content: "You have to sign in before doing a trading." });
       setVisibleModal(true);
       console.log("Invalid account.");
       return false;
     }
+    if(walletStatus === false)
+    {
+      setAlertParam({ state: "warning", title: "Warning", content: "Please connect and unlock your wallet." });
+      setVisibleModal(true);
+      return false;      
+    }
     if (currentWalletAddress && auth && auth.address && currentWalletAddress.toLowerCase() !== auth.address.toLowerCase()) {
       //alert("Wallet addresses are not equal. Please check current wallet to your registered wallet.");
-      setAlertParam({state: "warning", title:"Warning", content:"Wallet addresses are not equal. Please check current wallet to your registered wallet."});      
+      setAlertParam({ state: "warning", title: "Warning", content: "Wallet addresses are not equal. Please check current wallet to your registered wallet." });
       setVisibleModal(true);
       return false;
     }
     var result = await checkNetworkById(currentChainId);
     if (!result) {
       //alert("Please connect to Avalanche network and try again.");
-      setAlertParam({state: "warning", title:"Warning", content:"Please connect to Avalanche network and try again."});      
+      setAlertParam({ state: "warning", title: "Warning", content: "Please connect to Avalanche network and try again." });
       setVisibleModal(true);
       return false;
     }
     return true;
   }
 
-  useEffect(() =>
-  {
-    if(tradingResult)
-    {
+  useEffect(() => {
+    if (tradingResult) {
       setProcessing(false);
-      if(tradingResult.message.search("Ethereum address") > 0)
-      {
-        tradingResult.message = "Plese connect and unlock your wallet."
-      }
       switch(tradingResult.function)
       {
         default : 
           setVisibleModal(false); 
           break;
         case "placeBid":
-          if(tradingResult.success)
-          {
-            setAlertParam({state: "success", title:"Success", content:"You 've placed a bid."});      
-          }else{
-            setAlertParam({state: "error", title:"Error", content: tradingResult.message });  
+          if (tradingResult.success) {
+            setAlertParam({ state: "success", title: "Success", content: "You 've placed a bid." });
+          } else {
+            setAlertParam({ state: "error", title: "Error", content: tradingResult.message });
           }
-          setVisibleModal(true);      
+          setVisibleModal(true);
           break;
       }
       dispatch(emptyNFTTradingResult());
@@ -129,9 +120,9 @@ const Hero = () => {
   }
 
   const onBid = async (bidPrice) => {
-   
+
     setVisibleModalBid(false);
-    
+
     setProcessing(true);
     let checkResut = await checkWalletAddrAndChainId();
     if (!checkResut) {
@@ -139,25 +130,23 @@ const Hero = () => {
       return;
     }
 
-    if(getDelta2EndTime(nft.auctionStarted, nft.auctionPeriod, curTime) <= 12)
-    {
+    if (getDelta2EndTime(nft.auctionStarted, nft.auctionPeriod, curTime) <= 12) {
       setTimeout(() => {
         setProcessing(false);
       }, 15000)
     }
-    await placeBid(auth.address, biddingNftId, Number(bidPrice));     
+    await placeBid(auth.address, biddingNftId, Number(bidPrice));
   }
 
-  useEffect(()=>{
-    socket.on("UpdateStatus", data=>{
-      console.log("update status", data);
+  useEffect(() => {
+    socket.on("UpdateStatus", data => {
       getNftBannerList(100)(dispatch);
     })
   }, []);
 
   useEffect(() => {
     getNftBannerList(100)(dispatch);
-  }, [load, dispatch])
+  }, [dispatch])
 
   useEffect(() => {
     if (nft !== undefined && nft.banner !== undefined) {
@@ -196,7 +185,7 @@ const Hero = () => {
     return { hours, minutes, seconds }
   }
 
-  const onOk = () => { 
+  const onOk = () => {
     setVisibleModal(false);
   }
 
@@ -221,7 +210,6 @@ const Hero = () => {
           </div>
           <div className={styles.wrapper}>
             <Slider className="creative-slider" {...settings}>
-              {/* {items.map((x, index) => ( */}
               {
                 (itemList && itemList.length > 0) &&
                 itemList.map((x, index) => (
@@ -246,7 +234,7 @@ const Hero = () => {
                             </div>
                             <div className={styles.description}>
                               <div className={styles.category}>Auction Price</div>
-                              <div className={styles.text}>{x.auctionPrice ? x.auctionPrice : ""}AVAX</div>
+                              <div className={styles.text}>{x.price ? x.price : ""}AVAX</div>
                             </div>
                           </div>
                         </div>
@@ -278,10 +266,10 @@ const Hero = () => {
                         </div>
                         <div className={styles.btns}>
                           {
-                              auth && x.owner._id && auth._id && x.owner._id.toLowerCase() === auth._id.toLowerCase()? <></> :
+                            auth && x.owner._id && auth._id && x.owner._id.toLowerCase() === auth._id.toLowerCase() ? <></> :
                               <button
                                 className={cn("button", styles.button)}
-                                onClick={() => { setVisibleModalBid(true); setActiveIndex(index); setBiddingNft(x); setBiddingNftId(x._id) }}
+                                onClick={() => { setVisibleModalBid(true); setBiddingNft(x); setBiddingNftId(x._id) }}
                               >
                                 Place a bid
                               </button>
@@ -307,7 +295,7 @@ const Hero = () => {
       >
         {/* <Connect /> */}
         <Bid onOk={onBid} onCancel={() => setVisibleModalBid(false)} nft={biddingNft} />
-      </Modal>      
+      </Modal>
       <Modal visible={visibleModal} onClose={() => setVisibleModal(false)}>
         <Alert className={styles.steps} param={alertParam} okLabel="OK" onOk={onOk} onCancel={onCancel} />
       </Modal>

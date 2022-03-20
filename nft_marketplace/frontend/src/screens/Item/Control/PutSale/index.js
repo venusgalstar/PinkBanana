@@ -11,16 +11,45 @@ const items = [
   // },
 ];
 
-
 const PutSale = ({ className, onOk, onCancel }) => {
   const [instant, setInstant] = useState(false); 
   const [period, setPeriod] = useState(7);
+  const [price, setPrice] = useState(0);
+  const regularInputTestRegExp = /^([0-9]+([.][0-9]*)?|[.][0-9]+)$/gm;
+
+  const onChangePrice = (e) =>
+  {
+    var inputedPrice = e.target.value;    
+    if(inputedPrice !== "") 
+    {
+      let m; let correct = false;
+      while ((m = regularInputTestRegExp.exec(inputedPrice)) !== null) 
+      {
+        if (m.index === regularInputTestRegExp.lastIndex) {
+          regularInputTestRegExp.lastIndex++;
+        }
+        console.log("matched :"+m[0]);
+        if(m[0] === inputedPrice) 
+        {
+          correct = true;
+        }         
+      }      
+      if(!correct)         
+      {
+        return;
+      }
+    }        
+    if(isNaN(inputedPrice))
+    {
+      return;
+    }
+    setPrice(inputedPrice);
+  }
 
   const onContinue = () => {
-    var price  = document.getElementById("priceInput").value;
     if(isNaN(price) || Number(price) < 0.00001)
     {
-      document.getElementById("priceInput").value = 0.00001;
+      setPrice(0.00001);
       return;
     }
     onOk(price, instant, period);
@@ -43,7 +72,8 @@ const PutSale = ({ className, onOk, onCancel }) => {
       </div>
       <div className={styles.table}>
         <div className={styles.row}>
-          <input className={styles.input} type="text"  id="priceInput" placeholder="Enter your price" />
+          <input className={styles.input} type="text"
+          value= {price || ""} onChange={(e) => onChangePrice(e)} id="priceInput" placeholder="Price must be bigger than 0.00001" />
           <div className={styles.col} style={{ display: "flex", alignItems: "center" }}>AVAX</div>
         </div>
         { //for test we chaged the value 30 to 0.005 , 0.005 days equals with 432 second, with 7.2 min

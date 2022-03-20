@@ -33,7 +33,7 @@ const FolowSteps = ({ className, state, sale, navigate2Next, onClose}) => {
                 <LoaderCircle className={styles.loader} />
               </div>
               <div className={styles.details}>
-                <div className={styles.info}>Creating a item</div>
+                <div className={styles.info}>Uploading a item</div>
               </div>
             </div>            
             {
@@ -50,7 +50,7 @@ const FolowSteps = ({ className, state, sale, navigate2Next, onClose}) => {
                 </div>
               </div>
             }
-            <button className={cn("button disabled", styles.button)}>
+            <button className={cn("button done", styles.button, styles.processing)}>
               Processing ...
             </button>
           </div>
@@ -70,7 +70,7 @@ const FolowSteps = ({ className, state, sale, navigate2Next, onClose}) => {
                 <DangerousOutlinedIcon  className={styles.loader} style={{fontSize : "56px"}} />
               </div>
               <div className={styles.details}>
-                <div className={styles.info}>Creating failed</div>
+                <div className={styles.info}>Uploading failed</div>
               </div>
             </div>
             {
@@ -105,7 +105,7 @@ const FolowSteps = ({ className, state, sale, navigate2Next, onClose}) => {
                 <DoneOutlinedIcon  className={styles.loader} style={{fontSize : "56px"}} />
               </div>
               <div className={styles.details}>
-                <div className={styles.info}>Creating succeed</div>
+                <div className={styles.info}>Uploading succeed</div>
               </div>
             </div>
             {
@@ -116,19 +116,16 @@ const FolowSteps = ({ className, state, sale, navigate2Next, onClose}) => {
                 </div>
                 <div className={styles.details}>
                   <div className={styles.info}>Putting on sale</div>
-                  {/* <div className={styles.text}>
-                    Create and sell your item
-                  </div> */}
                 </div>
               </div>
             }
             {
               sale > 0?
-              <button className={cn("button disabled", styles.button)} >
+              <button className={cn("button done ", styles.button)} >
                 Processing ...
               </button>
               :
-              <button className={cn("button done", styles.button)} onClick={navigate2Next}>
+              <button className={cn("button ", styles.button)} onClick={navigate2Next}>
                 Done
               </button>
             }
@@ -147,7 +144,7 @@ const FolowSteps = ({ className, state, sale, navigate2Next, onClose}) => {
                 <DoneOutlinedIcon  className={styles.loader} style={{fontSize : "56px"}} />
               </div>
               <div className={styles.details}>
-                <div className={styles.info}>Creating succeed</div>
+                <div className={styles.info}>Uploading succeed</div>
               </div>
             </div>
             <div className={styles.head}>
@@ -158,7 +155,7 @@ const FolowSteps = ({ className, state, sale, navigate2Next, onClose}) => {
                 <div className={styles.info}>Putting on sale succeed</div>
               </div>
             </div> 
-            <button className={cn("button done", styles.button)} onClick={navigate2Next}>
+            <button className={cn("button ", styles.button)} onClick={navigate2Next}>
               Done
             </button>            
           </div>             
@@ -177,7 +174,7 @@ const FolowSteps = ({ className, state, sale, navigate2Next, onClose}) => {
                   <DoneOutlinedIcon  className={styles.loader} style={{fontSize : "56px"}} />
                 </div>
                 <div className={styles.details}>
-                  <div className={styles.info}>Creating succeed</div>
+                  <div className={styles.info}>Uploading succeed</div>
                 </div>
               </div>
               <div className={styles.head}>

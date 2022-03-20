@@ -47,19 +47,25 @@ var AuctionTimeoutTemp = {};
 
 io.on('connection', (client) => {
 
-  client.on('event', data => {
-    console.log("user event", data);
-    client.emit("hello", data);
-  });
+    client.on('event', data => {
+        console.log("user event", data);
+        client.emit("hello", data);
+    });
 
-  client.on('hello', data => {
-    io.sockets.emit("hello", { echo: 1 });
-    console.log("user hello event", data);
-  });
+    client.on('hello', data => {
+        io.sockets.emit("hello", { echo: 1 });
+        console.log("user hello event", data);
+    });
 
-  client.on('disconnect', () => {
-    console.log("user disconnected ");
-  });
+    client.on('UpdateStatus', data => {
+        if (data.type == "UPDATE_USER_AUTH") {
+            io.sockets.emit("UpdateStatus", data);
+        }
+    });
+
+    client.on('disconnect', () => {
+        console.log("user disconnected ");
+    });
 });
 
 setInterval(() => {
@@ -68,53 +74,52 @@ setInterval(() => {
 
 
 const compareObjects = (A, B) => {
-  if (Object.keys(A).length === 0) return false;
-  if (Object.keys(A).length !== Object.keys(B).length) return false;
-  else {
-      if (JSON.stringify(A) !== JSON.stringify(B)) return false;
-  }
-  console.log("----------------- same event happend ----------------");
-  return true;
+    if (Object.keys(A).length === 0) return false;
+    if (Object.keys(A).length !== Object.keys(B).length) return false;
+    else {
+        if (JSON.stringify(A) !== JSON.stringify(B)) return false;
+    }
+    console.log("----------------- same event happend ----------------");
+    return true;
 }
 
 const getBlockNumber = () => {
-  web3WS.eth.getBlockNumber()
-      .then((number) => {
-          if (maxBlockNumber < number) {
-              maxBlockNumber = number;
-              if (scanBlockNumber == 0) {
-                  scanBlockNumber = number;
-              }
-            //   console.log("max block number", number);
-          }
-      }).catch((error) => {
-          console.log("get blocknumber error");
-      });
-  setTimeout(getBlockNumber, 300);
+    web3WS.eth.getBlockNumber()
+        .then((number) => {
+            if (maxBlockNumber < number) {
+                maxBlockNumber = number;
+                if (scanBlockNumber == 0) {
+                    scanBlockNumber = number;
+                }
+                //   console.log("max block number", number);
+            }
+        }).catch((error) => {
+            console.log("get blocknumber error");
+        });
+    setTimeout(getBlockNumber, 300);
 }
 
 const getData = async () => {
 
     let curMaxBlock = maxBlockNumber;
-    if (scanBlockNumber != 0 && scanBlockNumber < curMaxBlock) 
-    {
+    if (scanBlockNumber != 0 && scanBlockNumber < curMaxBlock) {
         console.log('scanFrom : ', scanBlockNumber, " scanTo : ", curMaxBlock);
-        try {
-            await SingleMintOnSale_monitor(scanBlockNumber, curMaxBlock);
-            await DestroySale_monitor(scanBlockNumber, curMaxBlock);
-            await PlaceBid_monitor(scanBlockNumber, curMaxBlock);
-            await AcceptBid_monitor(scanBlockNumber, curMaxBlock);
-            await BuyNow_monitor(scanBlockNumber, curMaxBlock);
-            await EndBid_monitor(scanBlockNumber, curMaxBlock);
-            await TransferNFT_monitor(scanBlockNumber, curMaxBlock);
-            await BurnNFT_monitor(scanBlockNumber, curMaxBlock);
-            await ChangePrice_monitor(scanBlockNumber, curMaxBlock);
-            await BatchMintOnSale_monitor(scanBlockNumber, curMaxBlock);
-            await BatchEndAuction_monitor(scanBlockNumber, curMaxBlock);
-            scanBlockNumber  =  curMaxBlock+1 ;
-        } catch (e) {
+            try {
+                await SingleMintOnSale_monitor(scanBlockNumber, curMaxBlock);
+                await DestroySale_monitor(scanBlockNumber, curMaxBlock);
+                await PlaceBid_monitor(scanBlockNumber, curMaxBlock);
+                await AcceptBid_monitor(scanBlockNumber, curMaxBlock);
+                await BuyNow_monitor(scanBlockNumber, curMaxBlock);
+                await EndBid_monitor(scanBlockNumber, curMaxBlock);
+                await TransferNFT_monitor(scanBlockNumber, curMaxBlock);
+                await BurnNFT_monitor(scanBlockNumber, curMaxBlock);
+                await ChangePrice_monitor(scanBlockNumber, curMaxBlock);
+                await BatchMintOnSale_monitor(scanBlockNumber, curMaxBlock);
+                await BatchEndAuction_monitor(scanBlockNumber, curMaxBlock);
+                scanBlockNumber  =  curMaxBlock+1 ;
+            } catch (e) {
 
-        }
+            }
     }
     setTimeout(getData, 50);
 }
@@ -141,26 +146,24 @@ const SingleMintOnSale_monitor = async (blockNumber, toBlockNumber) => {
                   var param = { price: 0 };
                   let item_price = web3WS.utils.fromWei(price !== null ? price.toString() : '0', 'ether');
 
+                  param.price = item_price;
                   if (interval == 0) {
                       param.isSale = 1;
-                      param.price = item_price;
-                      param.auctionPrice = 0;
                       param.auctionPeriod = 0;
                       param.auctionStarted = 0;
                   } else {
                       param.isSale = 2;
-                      param.auctionPrice = item_price;
                       param.auctionPeriod = interval;
                       param.auctionStarted = Date.now();
                   }
 
                   Item.findByIdAndUpdate(tokenHash, param).then((data) => {
-                      if (!data) 
+                      if(!data)
                       {
                           return;
                       }
                       let descriptionStr = data.auctionPeriod === 0 ?
-                          "An instnat sale is opened on " + data.name + " with price " + data.auctionPrice
+                          "An instnat sale is opened on " + data.name + " with price " + data.price
                           : "An auction is opened on " + data.name + " with price " + data.price;
 
                       const new_notify = new Notify(
@@ -215,15 +218,13 @@ const DestroySale_monitor = async (blockNumber, toBlockNumber) => {
                   var tokenHash = data.returnValues.tokenHash;
                   var param = {};
 
-                  param.price = 0;
                   param.isSale = 0;
-                  param.auctionPrice = 0;
                   param.auctionPeriod = 0;
                   param.auctionStarted = 0;
 
 
                   Item.findByIdAndUpdate(tokenHash, param).then((data) => {
-                      if (!data) 
+                      if(!data)
                       {
                           return;
                       }
@@ -292,7 +293,7 @@ const PlaceBid_monitor = async (blockNumber, toBlockNumber) => {
                       if (bids.length == 0 || bids[bids.length - 1].price < item_price) {
                           bids.push({ user_id: ObjectId(bidder_id), price: item_price, Time: Date.now() });
                           Item.findByIdAndUpdate(tokenHash, { bids: bids }).then(async (data) => {
-                              if (!data) 
+                              if(!data)
                               {
                                   return;
                               }
@@ -364,7 +365,7 @@ const AcceptBid_monitor = async (blockNumber, toBlockNumber) => {
                   seller_id = seller_id[0]._id;
 
                   Item.findById(tokenHash).then((data) => {
-                      if (!data) 
+                      if(!data)
                       {
                           return;
                       }
@@ -377,7 +378,7 @@ const AcceptBid_monitor = async (blockNumber, toBlockNumber) => {
                       var find_update = Item.findByIdAndUpdate(tokenHash, {
                           owner: buyer_id,
                           price: item_price,
-                          auctionPrice: 0,
+                          lastPrice: item_price,
                           auctionPeriod: 0,
                           auctionStarted: 0,
                           bids: [],
@@ -392,7 +393,7 @@ const AcceptBid_monitor = async (blockNumber, toBlockNumber) => {
                       });
                       promise.push(sale.save());
                       Promise.all(promise).then((result) => {
-                          if (!result) 
+                          if(!result)
                           {
                               return;
                           }
@@ -463,7 +464,7 @@ const BuyNow_monitor = async (blockNumber, toBlockNumber) => {
                   var find_update = Item.findByIdAndUpdate(tokenHash, {
                       owner: buyer_id,
                       price: item_price,
-                      auctionPrice: 0,
+                      lastPrice: item_price,
                       auctionPeriod: 0,
                       auctionStarted: 0,
                       bids: [],
@@ -478,7 +479,7 @@ const BuyNow_monitor = async (blockNumber, toBlockNumber) => {
                   });
                   promise.push(sale.save());
                   await Promise.all(promise).then((result) => {
-                      if (!result) 
+                      if(!result)
                       {
                           return;
                       }
@@ -551,7 +552,7 @@ const EndBid_monitor = async (blockNumber, toBlockNumber) => {
                   var find_update = Item.findByIdAndUpdate(tokenHash, {
                       owner: buyer_id,
                       price: item_price,
-                      auctionPrice: 0,
+                      lastPrice: item_price,
                       auctionPeriod: 0,
                       auctionStarted: 0,
                       bids: [],
@@ -566,7 +567,7 @@ const EndBid_monitor = async (blockNumber, toBlockNumber) => {
                   });
                   promise.push(sale.save());
                   await Promise.all(promise).then((result) => {
-                      if (!result) 
+                      if(!result)
                       {
                           return;
                       }
@@ -607,7 +608,8 @@ const TransferNFT_monitor = async (blockNumber, toBlockNumber) => {
       var event = await myContract.getPastEvents("TransferNFT", { fromBlock: blockNumber, toBlock: toBlockNumber });
       if (event.length > 0) {
           let i;
-          for (i = 0; i < event.length; i++) {
+          for (i = 0; i < event.length; i++) 
+          {
               let data = event[i];
               let objTemp = data.returnValues;
               objTemp.transactionHash = data.transactionHash;
@@ -634,13 +636,12 @@ const TransferNFT_monitor = async (blockNumber, toBlockNumber) => {
 
                   await Item.findByIdAndUpdate(tokenHash, {
                       owner: receiver_id,
-                      auctionPrice: 0,
                       auctionPeriod: 0,
                       auctionStarted: 0,
                       bids: [],
                       isSale: 0
                   }).then((result) => {
-                      if (!result) 
+                      if(!result)
                       {
                           return;
                       }
@@ -677,17 +678,16 @@ const TransferNFT_monitor = async (blockNumber, toBlockNumber) => {
 }
 
 const BurnNFT_monitor = async (blockNumber, toBlockNumber) => {
-  try {
-      var event = await myContract.getPastEvents("BurnNFT", { fromBlock: blockNumber, toBlock: toBlockNumber });
-      if (event.length > 0) {
-          let i;
-          for (i = 0; i < event.length; i++) {
-              let data = event[i];
-              let objTemp = data.returnValues;
-              objTemp.transactionHash = data.transactionHash;
-              if (compareObjects(BurnTemp, objTemp) === false) 
-              {
-                  BurnTemp = objTemp;
+    try {
+        var event = await myContract.getPastEvents("BurnNFT", { fromBlock: blockNumber, toBlock: toBlockNumber });
+        if (event.length > 0) {
+            let i;
+            for (i = 0; i < event.length; i++) {
+                let data = event[i];
+                let objTemp = data.returnValues;
+                objTemp.transactionHash = data.transactionHash;
+                if (compareObjects(BurnTemp, objTemp) === false) {
+                    BurnTemp = objTemp;
 
                   console.log("---------------------- BurnNFT event --------------------")
                   console.log(data.returnValues);
@@ -695,7 +695,7 @@ const BurnNFT_monitor = async (blockNumber, toBlockNumber) => {
                   var tokenHash = data.returnValues.tokenHash;
 
                   Item.findOneAndDelete({ _id: new ObjectId(tokenHash) }).then((data) => {
-                      if (!data) 
+                      if(!data)
                       {
                           return;
                       }
@@ -734,9 +734,11 @@ const BurnNFT_monitor = async (blockNumber, toBlockNumber) => {
 const ChangePrice_monitor = async (blockNumber, toBlockNumber) => {
   try {
       var event = await myContract.getPastEvents("ChangePrice", { fromBlock: blockNumber, toBlock: toBlockNumber});
-      if (event.length > 0) {
+      if (event.length > 0) 
+      {
           let i;
-          for (i = 0; i < event.length; i++) {
+          for (i = 0; i < event.length; i++) 
+          {
               let data = event[i];
               let objTemp = data.returnValues;
               objTemp.transactionHash = data.transactionHash;
@@ -748,20 +750,15 @@ const ChangePrice_monitor = async (blockNumber, toBlockNumber) => {
 
                   var tokenHash = data.returnValues.tokenHash;
                   var newPrice = data.returnValues.newPrice;
-                  var interval = Number(data.returnValues.interval) / (24 * 3600);
 
                   var param = { price: 0 };
                   let item_price = web3WS.utils.fromWei(newPrice !== null ? newPrice.toString() : '0', 'ether');
 
-                  if (interval == 0) {
-                      param.price = item_price;
-                  } else {
-                      param.auctionPrice = item_price;
-                  }
+                    param.price = item_price;
 
                   await Item.findByIdAndUpdate(tokenHash, param)
                       .then((result) => {
-                          if (!result) 
+                          if(!result)
                           {
                               return;
                           }
@@ -819,15 +816,14 @@ const BatchMintOnSale_monitor = async (blockNumber, toBlockNumber) => {
                   var param = { price: 0 };
                   let item_price = web3WS.utils.fromWei(price !== null ? price.toString() : '0', 'ether');
 
+                  param.price = item_price;
+
                   if (interval == 0) {
                       param.isSale = 1;
-                      param.price = item_price;
-                      param.auctionPrice = 0;
                       param.auctionPeriod = 0;
                       param.auctionStarted = 0;
                   } else {
                       param.isSale = 2;
-                      param.auctionPrice = item_price;
                       param.auctionPeriod = interval;
                       param.auctionStarted = Date.now();
                   }
@@ -851,26 +847,25 @@ const BatchMintOnSale_monitor = async (blockNumber, toBlockNumber) => {
                           $or: queryItemArry
                       }
 
-                      Item.updateMany(
-                          query,
-                          {
-                              $set: {
-                                  ...param
-                              },
-                              // $currentDate: {
-                              //     ends: true,
-                              // }
-                          },
-                          // { upsert: true }
-                      ).then((data) => {
+                        Item.updateMany(
+                            query,
+                            {
+                                $set: {
+                                    ...param
+                                },
+                                // $currentDate: {
+                                //     ends: true,
+                                // }
+                            },
+                            // { upsert: true }
+                        ).then((data) => {
 
-                          if (!itemInfo || !data) 
-                          {
-                              return;
-                          }
-                          let descriptionStr = param.auctionPeriod === 0 ?
-                              "Batch instant sale is opened on new " + itemName + " (" + data.matchedCount + ") items with price " + param.price
-                              : "Batch auction is opened on new " + itemName + " (" + data.matchedCount + ") items with price " + param.auctionPrice;
+                            if (!itemInfo || !data) {
+                                return;
+                            }
+                            let descriptionStr = param.auctionPeriod === 0 ?
+                                "Batch instant sale is opened on new " + itemName + " (" + data.matchedCount + ") items with price " + param.price
+                                : "Batch auction is opened on new " + itemName + " (" + data.matchedCount + ") items with price " + param.price;
 
                           const new_notify = new Notify(
                               {
@@ -927,17 +922,17 @@ const BatchEndAuction_monitor = async (blockNumber, toBlockNumber) => {
                       var buyer = bidInfos[j].maxBidder;
                       var price = bidInfos[j].maxBidPrice;
                       if (tokenHash.toString() !== "") {
-                          if (price == 0) {
-                              var param = { price: 0 };
+                          if (Number(price) === 0) 
+                          {
+                              var param = { };
 
                               param.isSale = 0;
-                              param.auctionPrice = 0;
                               param.auctionPeriod = 0;
                               param.auctionStarted = 0;
 
                               Item.findByIdAndUpdate(tokenHash, param).then((data) => {
-                                  if (!data) 
-                                  {
+                                  if(!data)
+                                  {                                  
                                       return;
                                   }
                                   const new_notify = new Notify(
@@ -979,7 +974,7 @@ const BatchEndAuction_monitor = async (blockNumber, toBlockNumber) => {
                               var find_update = Item.findByIdAndUpdate(tokenHash, {
                                   owner: buyer_id,
                                   price: item_price,
-                                  auctionPrice: 0,
+                                  lastPrice: item_price,
                                   auctionPeriod: 0,
                                   auctionStarted: 0,
                                   bids: [],
@@ -1102,7 +1097,7 @@ const AuctionTimeout_monitor = () => {
                   // console.log("before getBalance");
                   var balanceOfAdmin = await web3WS.eth.getBalance(admin_wallet.address);
 
-                  if (balanceOfAdmin <= gasFee * gasPrice) 
+                  if(balanceOfAdmin <= gasFee*gasPrice)
                   {
                     console.error("Insufficient balance. balanceOfAdmin = ", balanceOfAdmin, "gasFee*gasPrice = ", gasFee * gasPrice)
                     return;

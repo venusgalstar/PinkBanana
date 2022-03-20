@@ -1,18 +1,20 @@
-import { AUTH_LOGOUT, AUTH_SUCCESS, GET_USER_DETAIL, SET_WALLET_ADDR, UPDATE_USER_BALANCE, SET_OTHER_USER_DETAIL, SET_CHAIN_ID, CURRENT_USER } from "../actions/action.types";
+import { AUTH_LOGOUT, AUTH_SUCCESS, GET_USER_DETAIL, SET_WALLET_ADDR, UPDATE_WALLET_STATUS, UPDATE_USER_BALANCE, SET_OTHER_USER_DETAIL, SET_CHAIN_ID, CURRENT_USER } from "../actions/action.types";
 
 const auth = {
     user: {},
     currentWallet: "",
     currentChainId: "",
     otherUser: {},
-    balance: 0
+    balance: 0,
+    walletStatus: false
 }
 
-export function Auth(state = auth, action) {
+export function Auth(state = auth, action) 
+{
     switch (action.type) {
         case AUTH_SUCCESS:
 
-            console.log("[AUTH_SUCCESS reducer] payload = ", action.payload);
+            // console.log("[AUTH_SUCCESS reducer] payload = ", action.payload);
 
             return { ...state, user: action.payload };
         case AUTH_LOGOUT:
@@ -39,6 +41,8 @@ export function Auth(state = auth, action) {
             }
         case UPDATE_USER_BALANCE:            
             return { ...state, balance: action.payload };
+        case UPDATE_WALLET_STATUS:
+            return {...state, walletStatus: action.payload };
         default:
             return { ...state };
     }

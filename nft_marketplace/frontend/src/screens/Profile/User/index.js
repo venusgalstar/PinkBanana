@@ -2,22 +2,19 @@ import React, { useEffect, useState } from "react";
 import cn from "classnames";
 import styles from "./User.module.sass";
 import Icon from "../../../components/Icon";
-// import Report from "../../../components/Report";
-// import Modal from "../../../components/Modal";
-// import { FacebookShareButton, TwitterShareButton } from "react-share";
 import { useDispatch, useSelector } from "react-redux";
 import config from "../../../config";
 import { useParams } from "react-router-dom";
 import {toggleFollow, getIsExists} from "../../../store/actions/follow.actions";
 import { getDetailedUserInfo } from "../../../store/actions/auth.actions";
 import moment from "moment";
+import isEmpty from "../../../utilities/isEmpty"
+import Alert from "../../../components/Alert";
+import Modal from "../../../components/Modal";
 
-// import { isStepDivisible } from "react-range/lib/utils";
 
 const User = ({ className, item }) => {
   const [visible, setVisible] = useState(false);
-  // const [visibleShare, setVisibleShare] = useState(false);
-  // const [visibleModalReport, setVisibleModalReport] = useState(false);
   const currentUsr  =  useSelector(state=>state.auth.user);  //user_id in making follow
   const {userId} = useParams();  //taget_id in making follow
   const dispatch = useDispatch();
@@ -25,15 +22,35 @@ const User = ({ className, item }) => {
   const isFollowPairExists = useSelector(state => state.follow.isExists);
   const [compressedAddress, setCompressedAddress] = useState("");
   const [copied, setCopied] = useState(false);
+  const [alertParam, setAlertParam] = useState({});
+  const [visibleModal, setVisibleModal] = useState(false);
 
   const onClickFollow = () =>
   {
+    if(isEmpty(currentUsr))
+    {
+      setAlertParam({ state: "warning", title: "Warning", content: "You have to sign in to do it." });
+      setVisibleModal(true);
+      return;
+    }
     dispatch(toggleFollow(currentUsr._id, userId ));
+    setTimeout(() => {      
+      dispatch(getIsExists(currentUsr._id, userId));
+    }, 1000)
   }
 
   const onClickUnfollow = () =>
   {
+    if(isEmpty(currentUsr))
+    {
+      setAlertParam({ state: "warning", title: "Warning", content: "You have to sign in to do it." });
+      setVisibleModal(true);
+      return;
+    }
     dispatch(toggleFollow(currentUsr._id, userId ));
+    setTimeout(() => {      
+      dispatch(getIsExists(currentUsr._id, userId));
+    }, 1000)
   }
 
   useEffect(() => 
@@ -112,57 +129,33 @@ const User = ({ className, item }) => {
           <div className={styles.btns}>
             {
               currentUsr._id !== userId &&
-              isFollowPairExists === false && 
+              isFollowPairExists === true &&  
               <button
                 className={cn(
                   "button button-small",
-                  { [styles.active]: visible },
                   styles.button
                 )}
                 onClick={() => setVisible(!visible)}
               >                           
-                  <span onClick={() => onClickFollow() }>Follow</span>
                   <span onClick={() => onClickUnfollow() }>Unfollow</span>              
               </button>
-            }
-            {/* <button
-              className={cn(
-                "button-circle-stroke button-small",
-                { [styles.active]: visibleShare },
-                styles.button
-              )}
-              onClick={() => setVisibleShare(!visibleShare)}
-            >
-              <Icon name="share" size="20" />
-            </button>
-            <button
-              className={cn("button-circle-stroke button-small", styles.button)}
-              onClick={() => setVisibleModalReport(true)}
-            >
-              <Icon name="report" size="20" />
-            </button> */}
+            }            
+          </div>         
+          <div className={styles.btns}>
+            {
+              currentUsr._id !== userId &&
+              isFollowPairExists === false &&              
+              <button
+                className={cn(
+                  "button button-small",
+                  styles.button
+                )}
+                onClick={() => setVisible(!visible)}
+              >                           
+                  <span onClick={() => onClickFollow() }>Follow</span>              
+              </button>
+            }            
           </div>
-          {/* <div className={cn(styles.box, { [styles.active]: visibleShare })}>
-            <div className={styles.stage}>Share link to this page</div>
-            <div className={styles.share}>
-              <TwitterShareButton
-                className={styles.direction}
-                url={shareUrlTwitter}
-              >
-                <span>
-                  <Icon name="twitter" size="20" />
-                </span>
-              </TwitterShareButton>
-              <FacebookShareButton
-                className={styles.direction}
-                url={shareUrlFacebook}
-              >
-                <span>
-                  <Icon name="facebook" size="20" />
-                </span>
-              </FacebookShareButton>
-            </div>
-          </div> */}
         </div>
         <div className={styles.socials}>
           {item.map((x, index) => (
@@ -179,6 +172,9 @@ const User = ({ className, item }) => {
         </div>
         <div className={styles.note}>Member since {detailedUserInfo && moment(detailedUserInfo.createdAt).format("YYYY-MM-DD")}</div>
       </div>
+      <Modal visible={visibleModal} onClose={() => setVisibleModal(false)}>
+        <Alert className={styles.steps} param={alertParam} okLabel="Yes" onOk={() => {setVisibleModal(false)}} onCancel={() => {setVisibleModal(false)}} />
+      </Modal>
       {/* <Modal
         visible={visibleModalReport}
         onClose={() => setVisibleModalReport(false)}

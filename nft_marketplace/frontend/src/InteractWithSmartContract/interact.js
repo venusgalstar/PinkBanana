@@ -2,7 +2,7 @@ import Web3 from 'web3/dist/web3.min.js';
 import config from "../config";
 import store from "../store";
 import { setNFTTradingResult } from '../store/actions/nft.actions';
-import { updateBalanceOfUser } from '../store/actions/auth.actions';
+import { setConnectedChainId, setConnectedWalletAddress, setWalletStatus, updateBalanceOfUser } from '../store/actions/auth.actions';
 const pinkBananaFactoryABI = config.pinkContractAbi;
 const pinkBananaFactoryAddress = config.pinkContractAddress;
 
@@ -43,13 +43,11 @@ export const loadWeb3 = async () =>
   {
     window.web3 = new Web3(window.ethereum);
     window.web3.eth.handleRevert = true;
-    PinkFactoryContract = await new window.web3.eth.Contract(pinkBananaFactoryABI, pinkBananaFactoryAddress);
   } 
   else if (window.web3) 
   {
     window.web3 = new Web3(Web3.givenProvider);
     window.web3.eth.handleRevert = true;
-    PinkFactoryContract = await new window.web3.eth.Contract(pinkBananaFactoryABI, pinkBananaFactoryAddress);
   } 
   else {
     // window.alert(
@@ -67,21 +65,18 @@ export const loadWeb3 = async () =>
 
     })
     window.ethereum.on('disconnect', function(error  /*:ProviderRpcError*/) {
-      //alert("disconnected, " + error);
-      store.dispatch({
-        type: "SET_WALLET_ADDR",
-        payload: 0
-      });
+      //alert("disconnected, " + error);      
+      store.dispatch(setConnectedWalletAddress(0))
+      store.dispatch(setWalletStatus(false));
     });
     window.ethereum.on('accountsChanged', function(accounts /*: Array<string>*/) {
-       //alert("wallet "+accounts[0]+" is connected");
+      //  alert("wallet "+accounts[0]+" is connected");
        if(accounts[0]   !== undefined)
        {
-        store.dispatch({
-          type: "SET_WALLET_ADDR",
-          payload: accounts[0]
-        });
+        store.dispatch(setConnectedWalletAddress(accounts[0]))
+        store.dispatch(setWalletStatus(true));
        }
+       if(accounts.length === 0) store.dispatch(setWalletStatus(false));
     });
   }
 };
@@ -99,10 +94,7 @@ export const checkNetworkById = async (chainId) => {
     await changeNetwork();      
   }
   const cid = await window.web3.eth.getChainId();
-  store.dispatch({        
-    type: "SET_CHAIN_ID",
-    payload: cid
-  })
+  store.dispatch(setConnectedChainId(cid));
   return (window.web3.utils.toHex(cid) === window.web3.utils.toHex(config.chainId) )
 }
 
@@ -187,8 +179,10 @@ export const connectWallet = async () =>
         address: addressArray[0],
       };
       checkNetwork();
+      store.dispatch(setWalletStatus(true));
       return obj;
     } catch (err) {
+      store.dispatch(setWalletStatus(false));
       return {
         success: false,
         address: "",
@@ -197,6 +191,7 @@ export const connectWallet = async () =>
     }
   }
   else {
+    store.dispatch(setWalletStatus(false));
     return {
       success: false,
       address: "",
@@ -223,12 +218,14 @@ export const getValidWallet = async () => {
         method: "eth_accounts",
       });
       if (addressArray.length > 0) {
+        store.dispatch(setWalletStatus(true));
         return {
           success: true,
           address: addressArray[0],
           status: "Fill in the text-field above.",
         };
       } else {
+        store.dispatch(setWalletStatus(false));
         return {
           success: false,
           address: "",
@@ -236,6 +233,7 @@ export const getValidWallet = async () => {
         };
       }
     } catch (err) {
+      store.dispatch(setWalletStatus(false));
       return {
         success: false,
         address: "",
@@ -243,6 +241,7 @@ export const getValidWallet = async () => {
       };
     }
   } else {
+    store.dispatch(setWalletStatus(false));
     return {
       success: false,
       address: "",
@@ -336,6 +335,7 @@ export const singleMintOnSale = async (currentAddr, itemId, auctionInterval, auc
 
   try 
   {
+    PinkFactoryContract = await new window.web3.eth.Contract(pinkBananaFactoryABI, pinkBananaFactoryAddress);
     let item_price = window.web3.utils.toWei(auctionPrice !== null ? auctionPrice.toString() : '0', 'ether');
     var interval = Math.floor(Number(auctionInterval)).toString();
     //let mintingFee = web3.utils.toWei(author.minting_fee !== null ? author.minting_fee.toString() : '0', 'ether');
@@ -380,27 +380,61 @@ export const placeBid = async (currentAddr, tokenId, bidPrice) =>
   /*
   Place Bid : function placeBid(string memory _tokenHash)
   */
-
+  // alert("placeBid interact.js 00 ")
   try 
   {
+    PinkFactoryContract = await new window.web3.eth.Contract(pinkBananaFactoryABI, pinkBananaFactoryAddress);
     let item_price = window.web3.utils.toWei(bidPrice !== null ? bidPrice.toString() : '0', 'ether');
     var placeBid = PinkFactoryContract.methods.placeBid(tokenId);
-    let gasFee = await placeBid.estimateGas({ from: currentAddr, value: item_price});
+
+    console.log("placeBid 00")
+
+    var doContinue = true;
+    let gasFee = await placeBid.estimateGas({ from: currentAddr, value: item_price}).then(() => {
+    }).catch((error) =>{
+
+    console.log("placeBid 11")
+
+      doContinue = false;
+      store.dispatch(setNFTTradingResult("placeBid", false, parseErrorMsg(error.message) ));
+      return;
+    });
+    if(!doContinue) return;
+
+    console.log("placeBid 22")
+
     // console.log("before getBalance");
     var balanceOfUser = await window.web3.eth.getBalance(currentAddr);
     var gasPrice = 30 * (10 ** 9);
 
+    console.log("placeBid 33")
+
     if (balanceOfUser <= gasFee * gasPrice) {
+
+    console.log("placeBid 44")
+
       store.dispatch(setNFTTradingResult("placeBid", false, "Insufficient balance." ));
       return;
     }
+
+    console.log("placeBid 55")
+
     await placeBid.send({ from: currentAddr, value: item_price});
+
+    console.log("placeBid 66")
 
     store.dispatch(setNFTTradingResult("placeBid", true, "Succeed in placing a bid."));
 
+    console.log("placeBid 77")
+
     updateUserBalanceAfterTrading(currentAddr);
 
+    console.log("placeBid 88")
+
   } catch (error) {
+    
+    console.log("placeBid 99")
+
     // alert(error.message)
     store.dispatch(setNFTTradingResult("placeBid", false, parseErrorMsg(error.message) ));
   }
@@ -414,6 +448,7 @@ export const destroySale = async (currentAddr, tokenId) =>
 
   try 
   {
+    PinkFactoryContract = await new window.web3.eth.Contract(pinkBananaFactoryABI, pinkBananaFactoryAddress);
     var destroySale = PinkFactoryContract.methods.destroySale(tokenId);
     let gasFee = await destroySale.estimateGas({ from: currentAddr });
     // console.log("before getBalance");
@@ -443,6 +478,7 @@ export const buyNow = async (currentAddr, tokenId, price) =>
 
   try 
   {
+    PinkFactoryContract = await new window.web3.eth.Contract(pinkBananaFactoryABI, pinkBananaFactoryAddress);
     let item_price = window.web3.utils.toWei(price !== null ? price.toString() : '0', 'ether');
     //alert("tokenHash = " +  tokenId + ", price=" + item_price);
     var buyNow = PinkFactoryContract.methods.buyNow(tokenId);
@@ -451,7 +487,8 @@ export const buyNow = async (currentAddr, tokenId, price) =>
     var balanceOfUser = await window.web3.eth.getBalance(currentAddr);
     var gasPrice = 30 * (10 ** 9);
 
-    if (balanceOfUser <= gasFee * gasPrice) {
+    if (balanceOfUser <= gasFee * gasPrice) 
+    {
       store.dispatch(setNFTTradingResult("buyNow", false, "Insufficient balance." ));
       return;
     }
@@ -473,6 +510,7 @@ export const acceptOrEndBid = async (currentAddr, tokenId) =>
   */  
   try 
   {
+    PinkFactoryContract = await new window.web3.eth.Contract(pinkBananaFactoryABI, pinkBananaFactoryAddress);
     var acceptOrEndBid = PinkFactoryContract.methods.acceptOrEndBid(tokenId);
     let gasFee = await acceptOrEndBid.estimateGas({ from: currentAddr });
     // console.log("before getBalance");
@@ -512,6 +550,7 @@ export const batchMintOnSale = async (currentAddr, itemIds = [], auctionInterval
 
   try 
   {
+    PinkFactoryContract = await new window.web3.eth.Contract(pinkBananaFactoryABI, pinkBananaFactoryAddress);
     let item_price = window.web3.utils.toWei(auctionPrice !== null ? auctionPrice.toString() : '0', 'ether');
     var interval = Math.floor(Number(auctionInterval)).toString();
     //let mintingFee = web3.utils.toWei(author.minting_fee !== null ? author.minting_fee.toString() : '0', 'ether');   
@@ -558,6 +597,7 @@ export const transferNFT = async (currentAddr, toAddr, tokenId) =>
 
   try 
   {
+    PinkFactoryContract = await new window.web3.eth.Contract(pinkBananaFactoryABI, pinkBananaFactoryAddress);
     var transferNFT = PinkFactoryContract.methods.transferNFT(toAddr, tokenId);
     let gasFee = await transferNFT.estimateGas({ from: currentAddr });
     // console.log("before getBalance");
@@ -590,6 +630,7 @@ export const getBalanceOf = async (currentAddr, tokenId) =>
   try 
   {
    
+    PinkFactoryContract = await new window.web3.eth.Contract(pinkBananaFactoryABI, pinkBananaFactoryAddress);
     let queryRet = await PinkFactoryContract.methods.getBalanceOf(currentAddr, tokenId, "0x0000000000000000000000000000000000000000").call();
 
     // alert("queryRet = "+ queryRet);
@@ -615,6 +656,7 @@ export const burnNFT = async (currentAddr, tokenId) =>
   
   try 
   {
+    PinkFactoryContract = await new window.web3.eth.Contract(pinkBananaFactoryABI, pinkBananaFactoryAddress);
     var burnNFT = PinkFactoryContract.methods.burnNFT(tokenId);
     let gasFee = await burnNFT.estimateGas({ from: currentAddr });
     // console.log("before getBalance");
@@ -644,6 +686,7 @@ export const changePrice = async (currentAddr, tokenId, newPrice) =>
   
   try 
   {
+    PinkFactoryContract = await new window.web3.eth.Contract(pinkBananaFactoryABI, pinkBananaFactoryAddress);
     let item_price = window.web3.utils.toWei(newPrice !== null ? newPrice.toString() : '0', 'ether');
 
     var changePrice = PinkFactoryContract.methods.changePrice(tokenId, item_price);

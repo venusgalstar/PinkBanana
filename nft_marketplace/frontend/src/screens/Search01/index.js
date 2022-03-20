@@ -27,15 +27,30 @@ import { useMediaQuery } from "@mui/material";
 import CollectionSelect from "../../components/CollectionSelect/CollectionSelect";
 import { useSelector } from "react-redux";
 
-const navLinks = [{ value: 0, text: "All items" }, { value: 1, text: "Art" }, { value: 2, text: "Game" }, { value: 3, text: "Photography" }, { value: 4, text: "Music" }, { value: 5, text: "Video" }];
+const navLinks = [
+  { value: 0, text: "All items" },
+  { value: 1, text: "Art" },
+  { value: 2, text: "Game" },
+  { value: 3, text: "Photography" },
+  { value: 4, text: "Music" },
+  { value: 5, text: "Video" }
+];
 
-const dateOptions = [{ value: 0, text: "Newest" }, { value: 1, text: "Oldest" }];
+const dateOptions = [
+  { value: 0, text: "Newest" },
+  { value: 1, text: "Oldest" },
+  { value: 2, text: "Price: Low to High" },
+  { value: 3, text: "Price: High to Low" },
+  { value: 4, text: "Most Like" },
+  { value: 5, text: "Least Like" }
+];
 
-const colorOptions = [{ value: 0, text: "All colors" },
-{ value: 1, text: "Black" },
-{ value: 2, text: "Green" },
-{ value: 3, text: "Pink" },
-{ value: 4, text: "Purple" }];
+const colorOptions = [
+  { value: 0, text: "All colors" },
+  { value: 1, text: "Black" },
+  { value: 2, text: "Green" },
+  { value: 3, text: "Pink" },
+  { value: 4, text: "Purple" }];
 const priceOptions = [{ value: 0, text: "Highest price" }, { value: 1, text: "The lowest price" }];
 const likesOptions = [{ value: 0, text: "Most liked" }, { value: 1, text: "Least liked" }];
 const creatorOptions = [{ value: 0, text: "All" }, { value: 1, text: "Verified only" }];
@@ -57,15 +72,15 @@ const Search = () => {
   const [metadatas, setMetaDatas] = useState([]);
   const [checked, setChecked] = React.useState([]);
   const [collections, setCollections] = useState([]);
-  const [start, setStart] = useState(0);
-  const [last, setLast] = useState(8);
+ 
   const [mode, setMode] = React.useState('light');
   const colorMode = React.useContext(ColorModeContext);
   const globalThemeMode = useSelector(state => state.user.themeMode);
   const [colSetKey, setColSetKey] = useState();
   const [status, setStatus] = useState(statusOptions[0]);
 
-
+  const [priceMin, setPriceMin] = useState(0);
+  const [priceMax, setPriceMax] = useState(100);
 
   useEffect(() => {
     setMode(globalThemeMode);
@@ -77,16 +92,14 @@ const Search = () => {
     else setMode('light');
   }, [])
 
-  useEffect(()=>{
+  useEffect(() => {
     onResetFilter();
     setTimeout(onLoadMore, 150);
-    console.log("first start searching page");
-    // onLoadMore();
   }, [])
 
   useEffect(() => {
     getCollectionList(true);
-  }, [date, activeIndex, price, likes, creator, range, reSearch, selectedCollection, checked, status])
+  }, [date, activeIndex, price, likes, creator, range, reSearch, selectedCollection, checked, status, priceMin, priceMax])
 
   const onSearch = () => {
     setResearch(!reSearch);
@@ -132,8 +145,11 @@ const Search = () => {
     param.price = price.value;
     param.likes = likes.value;
     param.creator = creator.value;
-    param.range = range;
+    // param.range = range;
+
+    param.range = [Number(priceMin), Number(priceMax)];
     param.search = search;
+    param.sortmode = date.value;
     // }
     if (selectedCollection) {
       param.collection_id = selectedCollection._id;
@@ -188,11 +204,25 @@ const Search = () => {
     setMetaDatas([]);
     setChecked([]);
     setColSetKey(Math.random());
+    setPriceMax(100);
+    setPriceMin(0);
   }
 
   const onChangeSearch = (event) => {
     setSearch(event.target.value);
     onSearch();
+  }
+
+  const handlePrice = (type, event) => {
+    var pattern = /[^0-9.]/g;
+    var result = event.target.value.match(pattern);
+    if (!result) {
+      if (type == "min") {
+        setPriceMin(event.target.value);
+      } else if (type == "max") {
+        setPriceMax(event.target.value);
+      }
+    }
   }
 
 
@@ -250,14 +280,23 @@ const Search = () => {
           <div className={styles.filters}>
             <div className={styles.range}>
               <div className={styles.label}>Price range</div>
-              <RangeSlider min={0} max={10} step={0.01} setRange={(value) => setRange(value)}></RangeSlider>
+              {/* <RangeSlider min={0} max={10} step={0.01} setRange={(value) => setRange(value)}></RangeSlider> */}
+
+              <div style={{ display: "flex" }}>
+                <input className={styles.input} value={priceMin} onChange={(e) => { handlePrice("min", e) }} />
+                <div style={{ width: "40px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  ~
+                </div>
+                <input className={styles.input} value={priceMax} onChange={(e) => { handlePrice("max", e) }} />
+              </div>
+
               <div className={styles.scale}>
-                <div className={styles.number}>0 AVAX</div>
-                <div className={styles.number}>10 AVAX</div>
+                <div className={styles.number}>Min</div>
+                <div className={styles.number}>Max</div>
               </div>
             </div>
             <div className={styles.group}>
-              <div className={styles.item}>
+              {/* <div className={styles.item}>
                 <div className={styles.label}>Price</div>
                 <Dropdown
                   className={styles.dropdown}
@@ -265,7 +304,7 @@ const Search = () => {
                   setValue={setPrice}
                   options={priceOptions}
                 />
-              </div>
+              </div> */}
               {/* <div className={styles.item}>
                 <div className={styles.label}>Color</div>
                 <Dropdown

@@ -1,22 +1,27 @@
 import React from "react";
 import cn from "classnames";
 import styles from "./Followers.module.sass";
-import Loader from "../../../components/Loader";
 import config from "../../../config";
-import { useDispatch } from "react-redux";
-import { toggleFollow } from "../../../store/actions/follow.actions";
 import { useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
+import isEmpty from "../../../utilities/isEmpty";
 
-const Followers = ({ className, items, buttonContent = ""}) => {
+const Followers = ({ className, items, buttonContent = "", onUnfollow, onUpdate }) => {
   
   const currentUsr  =  useSelector(state=>state.auth.user);  //user_id in making follow
   const {userId} = useParams();  //taget_id in making follow
-  const dispatch = useDispatch();
 
   const onFollow = (targetId) =>
   {
-    dispatch(toggleFollow(currentUsr._id, targetId));
+    onUnfollow(targetId)
+    setTimeout(() =>
+    {
+      onUpdate();
+      setTimeout(() =>
+      {
+        onUpdate();
+      }, 1000)
+    }, 1000)
   }
 
   return (
@@ -25,6 +30,7 @@ const Followers = ({ className, items, buttonContent = ""}) => {
         {
           (items && items.length > 0) &&
         items.map((x, index) => (
+          isEmpty(x) === false && 
           <div className={styles.item} key={index}>
             <div className={styles.follower}>
               <div className={styles.avatar}>

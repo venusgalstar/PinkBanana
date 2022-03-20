@@ -12,9 +12,9 @@ var ObjectId = require('mongodb').ObjectID;
 
 exports.create = async (req, res) => {
 
-    console.log("creting collection 00");
+    // console.log("creting collection 00");
 
-    console.log("req.body = ", req.body);
+    // console.log("req.body = ", req.body);
 
     var reqItem = req.body;
     const collection = new Collection({
@@ -37,12 +37,12 @@ exports.create = async (req, res) => {
         } else {
             await fsPromises.mkdir(process.cwd() + upload_path + reqItem.collectionName, { recursive: true })
                 .then(async function () {
-                    console.log('Directory created successfully');
+                    // console.log('Directory created successfully');
 
                     await collection
                         .save()
                         .then(async (data) => {
-                            console.log("Creating new collection succeed.");
+                            // console.log("Creating new collection succeed.");
 
                             const new_notify = new Notify(
                                 {
@@ -72,15 +72,15 @@ exports.create = async (req, res) => {
                         });
                 }
                 ).catch(async function (err) {
-                    console.log('failed to create directory. ', err);
+                    // console.log('failed to create directory. ', err);
                     let errno = err.errno;
                     if (errno === -4075) {
-                        console.log("Collection dir already exists");
+                        // console.log("Collection dir already exists");
 
                         await collection
                             .save()
                             .then(async (data) => {
-                                console.log("Creating new collection succeed.");
+                                // console.log("Creating new collection succeed.");
                                 const new_notify = new Notify(
                                     {
                                         url: "/collectionItems/" + data.collection_id,
@@ -146,7 +146,7 @@ exports.update = async (req, res) => {
         console.log("Updating collection : " + err.message);
         return res.status(500).send({ success: false, message: "Internal server Error" });
     }
-    console.log("Updating collection : succeed.");
+    // console.log("Updating collection : succeed.");
     return res.status(200).json({ success: true, message: "Successfully Update a Collection" })
 
 }
@@ -242,6 +242,8 @@ exports.getCollectionList = async (req, res) => {
     var collection_id = req.body.collection_id ? req.body.collection_id : 0;
     var metadatas = req.body.metadata ? req.body.metadata : [];
     var status = req.body.status ? req.body.status : 0;
+    var sortmode = req.body.sortmode ? req.body.sortmode : 0;
+
 
 
 
@@ -284,23 +286,7 @@ exports.getCollectionList = async (req, res) => {
             $match: { category: category }
         }
     }
-    if (date == 0) {
-        dateSort = { $sort: { "item_info.createdAt": -1 } };
-    } else if (date == 1) {
-        dateSort = { $sort: { "item_info.createdAt": 1 } };
-    }
 
-    if (likes == 0) {
-        likeSort = { $sort: { "likes": -1 } };
-    } else if (likes == 1) {
-        likeSort = { $sort: { "likes": 1 } };
-    }
-
-    if (price == 0) {
-        priceSort = { $sort: { "item_info.price": -1 } };
-    } else if (price == 1) {
-        priceSort = { $sort: { "item_info.price": 1 } };
-    }
     if (range) {
         rangeFilter = [{ $match: { "item_info.price": { $gte: range[0] } } },
         { $match: { "item_info.price": { $lte: range[1] } } }];
@@ -330,6 +316,40 @@ exports.getCollectionList = async (req, res) => {
                 "$or": list
             }
         }
+    }
+
+
+    if (date == 0) {
+        dateSort = { $sort: { "item_info.createdAt": -1 } };
+    } else if (date == 1) {
+        dateSort = { $sort: { "item_info.createdAt": 1 } };
+    }
+
+    if (likes == 0) {
+        likeSort = { $sort: { "likes": -1 } };
+    } else if (likes == 1) {
+        likeSort = { $sort: { "likes": 1 } };
+    }
+
+    if (price == 0) {
+        priceSort = { $sort: { "item_info.price": -1 } };
+    } else if (price == 1) {
+        priceSort = { $sort: { "item_info.price": 1 } };
+    }
+
+    var sort = {};
+    if (sortmode == 0) {
+        sort = { $sort: { "item_info.createdAt": -1 } };
+    } else if (sortmode == 1) {
+        sort = { $sort: { "item_info.createdAt": 1 } };
+    } else if (sortmode == 2) {
+        sort = { $sort: { "item_info.price": 1 } };
+    } else if (sortmode == 3) {
+        sort = { $sort: { "item_info.price": -1 } };
+    } else if (sortmode == 4) {
+        sort = { $sort: { "likes": -1 } };
+    } else if (sortmode == 5) {
+        sort = { $sort: { "likes": 1 } };
     }
 
     Collection.aggregate([
@@ -385,9 +405,10 @@ exports.getCollectionList = async (req, res) => {
         rangeFilter[1],
         creatorFilter,
         statusFilter,
-        likeSort,
-        priceSort,
-        dateSort,
+        // likeSort,
+        // dateSort,
+        // priceSort,
+        sort,
         {
             $skip: Number(start)
         },

@@ -56,13 +56,15 @@ const ProfileEdit = () => {
   // const [socialType, setSocialType] = useState("");
   const [socials, setSocials] = useState("");
   const { userId } = useParams();  //taget_id in making follow
-  const detailedUserInfo = useSelector(state => state.auth.detail);
   const [saveMode, setSaveMode] = useState(0); //0: new, 1: update
   const [socialInputs, setSocialInputs] = useState([]);
-  const currentWalletAddress = useSelector(state => state.auth.currentWallet);
   const [alertParam, setAlertParam] = useState({});
   const regexForWebsite = /^((ftp|http|https):\/\/)?(www.)?(?!.*(ftp|http|https|www.))[a-zA-Z0-9_-]+(\.[a-zA-Z]+)+((\/)[\w#]+)*(\/\w+\?[a-zA-Z0-9_]+=\w+(&[a-zA-Z0-9_]+=\w+)*)?$/gm;
   const regexForWallet = /^(0x[a-fA-F0-9]{40})$/gm;
+
+  const currentWalletAddress = useSelector(state => state.auth.currentWallet);
+  const walletStatus = useSelector(state => state.auth.walletStatus);
+  const detailedUserInfo = useSelector(state => state.auth.detail);
 
 
 
@@ -205,8 +207,7 @@ const ProfileEdit = () => {
 
   const onClickUpdate = async () => {
     
-    let connection = await getValidWallet();
-    if(connection.success === false)
+    if(walletStatus === false)
     {
       setAlertParam( {state: "info", title:"Information", content: "Please connect and unlock your wallet." } );      
       setVisibleModal( true );

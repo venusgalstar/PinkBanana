@@ -20,7 +20,16 @@ const navLinks = [{ value: 0, text: "All items" },
 { value: 4, text: "Music" },
 { value: 5, text: "Video" }];
 
-const dateOptions = [{ value: 0, text: "Recently added" }, { value: 1, text: "Long added" }];
+const dateOptions = [
+  { value: 0, text: "Newest" },
+  { value: 1, text: "Oldest" },
+  { value: 2, text: "Price: Low to High" },
+  { value: 3, text: "Price: High to Low" },
+  { value: 4, text: "Most Like" },
+  { value: 5, text: "Least Like" }
+];
+
+
 const priceOptions = [{ value: 0, text: "Highest price" }, { value: 1, text: "The lowest price" }];
 const creatorOptions = [{ value: 0, text: "All" }, { value: 1, text: "Verified only" }];
 const likesOptions = [{ value: 0, text: "Most liked" }, { value: 1, text: "Least liked" }];
@@ -44,6 +53,10 @@ const Discover = () => {
   const user = useSelector(state => state.auth);
   const [collections, setCollections] = useState([]);
   const [status, setStatus] = useState(statusOptions[0]);
+
+  const [priceMin, setPriceMin] = useState(0);
+  const [priceMax, setPriceMax] = useState(100);
+
 
 
   const settings = {
@@ -77,20 +90,22 @@ const Discover = () => {
 
   useEffect(() => {
     getCollectionList(true);
-  }, [date, activeIndex, price, likes, creator, range, status])
+  }, [date, activeIndex, price, likes, creator, range, status, priceMin, priceMax])
 
   const getCollectionList = (reStart) => {
     var param = {
       start: reStart ? 0 : collections.length,
       last: reStart ? 8 : collections.length + 8,
-      date: date.value,
+      // date: date.value,
+      sortmode: date.value,
       category: navLinks[activeIndex].value
     };
     if (visible) {
       param.price = price.value;
       param.likes = likes.value;
       param.creator = creator.value;
-      param.range = range;
+      // param.range = range;
+      param.range = [Number(priceMin), Number(priceMax)];
       param.status = status.value
     }
     axios.post(`${config.baseUrl}collection/get_collection_list`, param)
@@ -113,10 +128,23 @@ const Discover = () => {
   }
 
   const onLoadMore = () => {
-     getCollectionList();
+    getCollectionList();
   }
 
- 
+
+  const handlePrice = (type, event) => {
+    var pattern = /[^0-9.]/g;
+    var result = event.target.value.match(pattern);
+    if (!result) {
+      if (type == "min") {
+        setPriceMin(event.target.value);
+      } else if (type == "max") {
+        setPriceMax(event.target.value);
+      }
+    }
+  }
+
+
 
   return (
     <div className={cn("section", styles.section)}>
@@ -167,7 +195,7 @@ const Discover = () => {
         </div>
         <div className={cn(styles.filters, { [styles.active]: visible })}>
           <div className={styles.sorting}>
-            <div className={styles.cell}>
+            {/* <div className={styles.cell}>
               <div className={styles.label}>Price</div>
               <Dropdown
                 className={styles.dropdown}
@@ -184,7 +212,7 @@ const Discover = () => {
                 setValue={setLikes}
                 options={likesOptions}
               />
-            </div>
+            </div> */}
             <div className={styles.cell}>
               <div className={styles.label}>creator</div>
               <Dropdown
@@ -195,11 +223,20 @@ const Discover = () => {
               />
             </div>
             <div className={styles.cell}>
-              <div className={styles.label}>Price range</div>
-              <RangeSlider min={0} max={10} step={0.01} setRange={(value) => setRange(value)}></RangeSlider>
-              <div className={styles.scale}>
-                <div className={styles.number}>0 AVAX</div>
-                <div className={styles.number}>10 AVAX</div>
+              <div className={styles.range}>
+                <div className={styles.label}>Price range</div>
+                <div style={{ display: "flex" }}>
+                  <input className={styles.input} value={priceMin} onChange={(e) => { handlePrice("min", e) }} />
+                  <div style={{ width: "40px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    ~
+                  </div>
+                  <input className={styles.input} value={priceMax} onChange={(e) => { handlePrice("max", e) }} />
+                </div>
+
+                <div className={styles.scale}>
+                  <div className={styles.number}>Min</div>
+                  <div className={styles.number}>Max</div>
+                </div>
               </div>
             </div>
           </div>

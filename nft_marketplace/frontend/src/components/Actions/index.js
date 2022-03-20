@@ -37,6 +37,7 @@ const Actions = ({ className, setProcessing }) =>
   const dispatch = useDispatch();
   const history = useHistory();
   const tradingResult = useSelector(state => state.nft.tradingResult);
+  const walletStatus = useSelector(state => state.auth.walletStatus);
 
   const checkWalletAddrAndChainId = async () => {
     if (Object.keys(auth).length === 0) {
@@ -44,6 +45,11 @@ const Actions = ({ className, setProcessing }) =>
       setVisibleModal(true);
       console.log("Invalid account.");
       return false;
+    }
+    if(walletStatus === false){
+      setAlertParam({ state: "warning", title: "Warning", content: "Please connect and unlock your wallet." });
+      setVisibleModal(true);
+      return false;      
     }
     if (currentWalletAddress && auth && auth.address && currentWalletAddress.toLowerCase() !== auth.address.toLowerCase()) {
       setAlertParam({ state: "warning", title: "Warning", content: "Wallet addresses are not equal. Please check current wallet to your registered wallet." });

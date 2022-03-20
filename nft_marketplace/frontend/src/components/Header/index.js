@@ -55,6 +55,7 @@ const Headers = () => {
   const user = useSelector(state => state.auth.user);
   const [alertParam, setAlertParam] = useState({});
   const [visibleModal, setVisibleModal] = useState(false);
+  const walletStatus = useSelector(state => state.auth.walletStatus);
 
   useEffect(() => {
     function init() {
@@ -63,8 +64,7 @@ const Headers = () => {
         //do logout      
         dispatch(authLogout({}));
       }
-      else if (currentAddr !== "") 
-      {
+      else if (currentAddr !== "") {
         if (localStorage.jwtToken !== undefined &&
           localStorage.jwtToken !== "" &&
           localStorage.jwtToken !== null) {
@@ -75,7 +75,7 @@ const Headers = () => {
             if (decoded.app < currTime) {
               dispatch(authLogout());
               localStorage.removeItem("jwtToken");
-              setAlertParam({state: "info", title:"Info", content:"Session timeouted. Plese sign in again."});      
+              setAlertParam({ state: "info", title: "Info", content: "Session timeouted. Plese sign in again." });
               setVisibleModal(true);
             }
             else {
@@ -99,7 +99,7 @@ const Headers = () => {
     if (currentUsr && currentUsr._id) dispatch(getDetailedUserInfo(currentUsr._id));
   }, [currentUsr])
 
-  const onOk = () => { 
+  const onOk = () => {
     setVisibleModal(false);
   }
 
@@ -109,9 +109,11 @@ const Headers = () => {
 
   useEffect(() => {
     socket.on("UpdateStatus", data => {
-      console.log('update status', data);
-      if(user._id) dispatch(getNotifiesByLimit(50, user._id))
-    })
+      if (user._id) dispatch(getNotifiesByLimit(50, user._id))
+      if (data.type === "UPDATE_USER_AUTH") {
+        if (currentUsr && currentUsr._id) dispatch(getDetailedUserInfo(currentUsr._id));
+      }
+    });
   }, [])
 
   const handleSubmit = (e) => {
@@ -122,21 +124,19 @@ const Headers = () => {
 
   const onClickSignIn = async () => {
     // dispatch(setConnectedWalletAddress(connection.address));
-
-    let connection = await connectWallet();
-    if (connection.success === true) {
+    if (walletStatus === true) {
       let signedString = "";
+      let connection = await connectWallet();
       // console.log("connection address", connection.address);
       signedString = await signString(connection.address);
-      if (signedString.success === true) 
-      {
+      if (signedString.success === true) {
         const params = {};
         params.address = connection.address;
         params.password = signedString.message;
         Login(params);
       }
-      else{
-        setAlertParam({state: "warning", title:"Warning", content: signedString.message});      
+      else {
+        setAlertParam({ state: "warning", title: "Warning", content: signedString.message });
         setVisibleModal(true);
       }
     }else{      
@@ -164,14 +164,14 @@ const Headers = () => {
       })
       .catch(function (error) {
         // console.log(error);
-        setAlertParam({state: "info", title:"Info", content:"Please sign up."});      
+        setAlertParam({ state: "info", title: "Info", content: "Please sign up. You don't have an account with this wallet address : "+params.address});
         setVisibleModal(true);
       });
   }
-
+  
   const onClickSignUp = async () => {
-    let connection = await connectWallet();
-    if (connection.success === true) {
+    if (walletStatus === true) {
+      let connection = await connectWallet();
       dispatch(setConnectedWalletAddress(connection.address));
       // history.push("/profile-edit/new");
       history.push({ pathname: "/profile-edit/new" });

@@ -22,8 +22,8 @@ module.exports = (mongoose) => {
         property: String,
         royalty: Number,
         price: { type: Number, default: 0 },
+        lastPrice: { type: Number, default: 0 },
         type: Number,
-        auctionPrice: { type: Number, default: 0 },
         auctionPeriod: Number,
         auctionStarted: Number,
         isSale: { type: Number, default: 0 },     //0: not, 1: Buy now, 2: On Auction 

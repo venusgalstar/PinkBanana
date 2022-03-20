@@ -17,6 +17,7 @@ import Checkbox from '@mui/material/Checkbox';
 import Alert from "../../components/Alert";
 import FolowSteps from "./FolowSteps";
 import { emptyNFTTradingResult } from "../../store/actions/nft.actions";
+import isEmpty from "../../utilities/isEmpty";
 
 
 // const royaltiesOptions = [{ value: 10, text: "10%" }, { value: 20, text: "20%" }, { value: 30, text: "30%" }];
@@ -24,9 +25,6 @@ import { emptyNFTTradingResult } from "../../store/actions/nft.actions";
 const Upload = ({ asset_id = null }) => {
   const [textName, setTextName] = useState("");
   const [textDescription, setTextDescription] = useState("");
-  // const [textSize, setTextSize] = useState("");
-  // const [textProperty, setTextProperty] = useState("");
-  // const [royalties, setRoyalties] = useState(royaltiesOptions[0]);
   const [sale, setSale] = useState(true);
   const [price, setPrice] = useState(0.00001);
   const [selectedFile, setSelectedFile] = useState(null);
@@ -37,10 +35,7 @@ const Upload = ({ asset_id = null }) => {
   const [selectedColl, setSelectedColl] = useState({});
   let history = useHistory(); let dispatch = useDispatch();
   const [collectionId, setCollectionId] = useState("");
-  const currentUsr = useSelector(state => state.auth.user);
-  const collections = useSelector(state => state.collection.list);
   const [colls, setColls] = useState([]);
-  const getConsideringCollectionId = useSelector(state => state.collection.consideringId);
   const [instant, setInstant] = useState(false);
   const [period, setPeriod] = useState(7);
   const [collectionName, setCollectionName] = useState("");
@@ -51,7 +46,19 @@ const Upload = ({ asset_id = null }) => {
   const [alertParam, setAlertParam] = useState({});
   const [creatingStep, setCreatingStep] = useState(0);
   const [visibleStepModal, setVisibleStepModal] = useState(false);
+  const regularInputTestRegExp = /^([0-9]+([.][0-9]*)?|[.][0-9]+)$/gm;
+  
+  const currentUsr = useSelector(state => state.auth.user);
+  const collections = useSelector(state => state.collection.list);
+  const getConsideringCollectionId = useSelector(state => state.collection.consideringId);
   const tradingResult = useSelector(state => state.nft.tradingResult);
+  const walletStatus = useSelector(state => state.auth.walletStatus);
+  const detailedUserInfo = useSelector(state => state.auth.detail);
+
+  useEffect(() =>{
+    //check the current user, if ther user is not exists or not verified, go back to the home
+    if(isEmpty(currentUsr) || (!isEmpty(detailedUserInfo) && !isEmpty(detailedUserInfo.verified) &&  detailedUserInfo.verified === false) ) history.push("/")
+  }, [])
 
   useEffect(() => {
     if (collections && collections.length > 0) {
@@ -204,7 +211,7 @@ const Upload = ({ asset_id = null }) => {
           if (sale > 0) 
           {
             var aucperiod = (instant === true ? 0 : response.data.auctionPeriod);
-            var price = (instant === true ? response.data.price : response.data.auctionPrice)
+            var price = response.data.price;
             setCreatingStep(7);
             try {
               let ret = await singleMintOnSale(
@@ -256,8 +263,7 @@ const Upload = ({ asset_id = null }) => {
     }
     if(instant === true)
     {    
-      let connection = await getValidWallet();
-      if(connection.success === false )
+      if(walletStatus === false )
       {
         setAlertParam( {state: "warning", title:"Warning", content: "Please connect and unlock your wallet." } );      
         setVisibleModal( true );
@@ -315,13 +321,7 @@ const Upload = ({ asset_id = null }) => {
         params.creator = currentUsr._id;
         params.owner = currentUsr._id;
         params.isSale = 0;
-        if (instant) {
-          params.price = !sale ? 0 : Number(price);
-          params.auctionPrice = 0;
-        } else {
-          params.auctionPrice = !sale ? 0 : Number(price);
-          params.price = 0;
-        }
+        params.price = !sale ? 0 : Number(price);
         params.auctionPeriod = !sale ? 0 : period;
         params.metaData = metaStr;
 
@@ -392,6 +392,35 @@ const Upload = ({ asset_id = null }) => {
   const onCancel = () => {
     setVisibleModal(false);
     setVisibleStepModal(false);
+  }
+
+  const onChangePrice = (e) =>
+  {
+    var inputedPrice = e.target.value;    
+    if(inputedPrice !== "") 
+    {
+      let m; let correct = false;
+      while ((m = regularInputTestRegExp.exec(inputedPrice)) !== null) 
+      {
+        if (m.index === regularInputTestRegExp.lastIndex) {
+          regularInputTestRegExp.lastIndex++;
+        }
+        console.log("matched :"+m[0]);
+        if(m[0] === inputedPrice) 
+        {
+          correct = true;
+        }         
+      }      
+      if(!correct)         
+      {
+        return;
+      }
+    }        
+    if(isNaN(inputedPrice))
+    {
+      return;
+    }
+    setPrice(inputedPrice);
   }
 
   return (
@@ -576,7 +605,7 @@ const Upload = ({ asset_id = null }) => {
                     <div className={styles.table}>
                       <div className={styles.rowForSale}>
                         <input className={styles.inputForSale}
-                          type="text" value={price || ""} onChange={(e) => setPrice(e.target.value)} placeholder="Enter your price" />
+                          type="text" value={price || ""} onChange={(e) => onChangePrice(e)} placeholder="Enter your price" />
                         <div className={styles.colForSale} style={{ display: "flex", alignItems: "center" }}>AVAX</div>
                       </div>
                       {

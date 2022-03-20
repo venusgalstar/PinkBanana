@@ -37,12 +37,12 @@ const items = [
 const Upload = () => {
 
   const currentUsr = useSelector(state => state.auth.user);
-  const detailedUserIndo = useSelector(state => state.auth.detail)
+  const detailedUserInfo = useSelector(state => state.auth.detail);
   const history = useHistory();
 
   useEffect(() =>{
     //check the current user, if ther user is not exists or not verified, go back to the home
-    if(isEmpty(currentUsr) || (!isEmpty(detailedUserIndo) && !isEmpty(detailedUserIndo.verified) &&  detailedUserIndo.verified === false) ) history.push("/")
+    if(isEmpty(currentUsr) || (!isEmpty(detailedUserInfo) && !isEmpty(detailedUserInfo.verified) &&  detailedUserInfo.verified === false) ) history.push("/")
   }, [])
 
   return (

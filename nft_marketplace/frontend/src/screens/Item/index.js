@@ -55,23 +55,22 @@ const Item = () => {
   const avax = useSelector(state => state.user.avax);
   const curTime = useSelector(state => state.bid.system_time);
 
-
   useEffect(() => {
     var list = [];
     if (activeIndex === 0) {
       list = [
         {
           name: itemDetail && itemDetail.owner ? itemDetail.owner.username : "",
-          id: itemDetail && itemDetail.owner? itemDetail.owner._id : "",
+          id: itemDetail && itemDetail.owner ? itemDetail.owner._id : "",
           position: "Owner",
-          avatar: itemDetail && itemDetail.owner? config.imgUrl + itemDetail.owner.avatar : "",
+          avatar: itemDetail && itemDetail.owner ? config.imgUrl + itemDetail.owner.avatar : "",
           reward: "",
         },
         {
-          name: itemDetail && itemDetail.creator? itemDetail.creator.username : "",
-          id: itemDetail  && itemDetail.creator? itemDetail.creator._id : "",
+          name: itemDetail && itemDetail.creator ? itemDetail.creator.username : "",
+          id: itemDetail && itemDetail.creator ? itemDetail.creator._id : "",
           position: "Creator",
-          avatar: itemDetail  && itemDetail.creator ? config.imgUrl + itemDetail.creator.avatar : "",
+          avatar: itemDetail && itemDetail.creator ? config.imgUrl + itemDetail.creator.avatar : "",
         }
       ];
     } else if (activeIndex === 1) {
@@ -178,37 +177,27 @@ const Item = () => {
                     </div> : <></>
                 }
               </div>
-              {/* <img
-                srcSet="/images/content/item-pic@2x.jpg 2x"
-                src="/images/content/item-pic.jpg"
-                alt="Item"
-              /> */}
-
-
               <img
-                // srcSet="/images/content/item-pic@2x.jpg 2x"
                 src={itemDetail ? config.imgUrl + itemDetail.logoURL : ""}
                 alt="Item"
               />
             </div>
-            <Options className={styles.options} setProcessing={setProcessing}/>
+            <Options className={styles.options} setProcessing={setProcessing} />
           </div>
           <div className={styles.details}>
-            <h1 className={cn("h3", styles.title)}>{itemDetail ? itemDetail.name : ""}              
-             </h1>             
-             {itemDetail && 
-               <a href={`/collectionItems/${itemDetail.collection_id._id}`}><h3>{itemDetail.collection_id.name}</h3></a>
-             }
+            <h1 className={cn("h3", styles.title)}>{itemDetail ? itemDetail.name : ""}
+            </h1>
+            {itemDetail &&
+              <a href={`/collectionItems/${itemDetail.collection_id._id}`}><h3>{itemDetail.collection_id.name}</h3></a>
+            }
             <div className={styles.cost}>
               <div className={cn("status-stroke-green", styles.price)}>
-                {itemDetail && (itemDetail.isSale === 1 ? itemDetail.price : itemDetail.auctionPrice)} AVAX
+                {itemDetail && itemDetail.price} AVAX
               </div>
               <div className={cn("status-stroke-black", styles.price)}>
                 $
                 {itemDetail && avax &&
-                  (itemDetail.isSale === 1 ?
-                    Number(itemDetail.price * avax).toFixed(2) :
-                    Number(itemDetail.auctionPrice * avax).toFixed(2))
+                  Number(itemDetail.price * avax).toFixed(2)
                 }
               </div>
               {/* <div className={styles.counter}>10 in stock</div> */}
@@ -262,13 +251,13 @@ const Item = () => {
             <Control className={styles.control} id={id} />
           </div>
         </div>
-        
-      {<Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={processing}
-      >
-        <CircularProgress color="inherit" />
-      </Backdrop>}
+
+        {<Backdrop
+          sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+          open={processing}
+        >
+          <CircularProgress color="inherit" />
+        </Backdrop>}
       </div>
     </>
   );

@@ -46,8 +46,7 @@ socket.on("ServerTime", data => {
   store.dispatch({ type: UPDATE_SERVER_TIME, payload: data });
 })
 socket.on("UpdateStatus", data => {
-  console.log("notification status is updated", data);
-  // dispatch(getNotifiesByLimit(50, user._id))
+  console.log("websocket data", data);
 })
 
 socket.emit("hello", { data: "hello emit" });

@@ -55,7 +55,7 @@ exports.uploadFile = (req, res) => {
         console.log("file uploading failed ");
         return res.status(401).send({ success: false, message: "Empty file sent!" });
       }
-      console.log("file uploading succeed : ", filename);
+      // console.log("file uploading succeed : ", filename);
       return res.status(200).send({ success: true, path: fileSavingPath, message: "Successfully Update a Author" });
     });
   });
@@ -70,8 +70,8 @@ exports.uploadMultipleFile = async (req, res) => {
     let i; let fileNameResultArr = [];
     for (i = 0; i < fields.fileArryLength; i++) {
       let oldpath = eval("files.fileItem" + i).filepath;
-      console.log(`${i}th oldpath:`, oldpath);
-      console.log("saving ", i, "th file...");
+      // console.log(`${i}th oldpath:`, oldpath);
+      // console.log("saving ", i, "th file...");
       var ext = re.exec(eval("files.fileItem" + i).originalFilename)[1];
       let filename = i.toString() + MD5(Date.now().toString()) + "." + ext;
       var fileSavingPath = "";
@@ -88,7 +88,7 @@ exports.uploadMultipleFile = async (req, res) => {
     }
 
     if (i >= fields.fileArryLength) {
-      console.log("Multiple uploading succeed : ", fileNameResultArr);
+      // console.log("Multiple uploading succeed : ", fileNameResultArr);
       return res.status(200).send({ success: true, paths: fileNameResultArr, message: "Successfully Update a Author" });
     }
 

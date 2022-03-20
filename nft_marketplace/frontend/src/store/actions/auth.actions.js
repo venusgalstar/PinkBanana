@@ -1,4 +1,4 @@
-import { AUTH_LOGOUT, AUTH_SUCCESS, GET_USER_DETAIL, SET_CHAIN_ID, UPDATE_USER_BALANCE, SET_OTHER_USER_DETAIL, SET_WALLET_ADDR, CURRENT_USER } from "./action.types"
+import { AUTH_LOGOUT, AUTH_SUCCESS, GET_USER_DETAIL, SET_CHAIN_ID, UPDATE_USER_BALANCE, UPDATE_WALLET_STATUS,  SET_OTHER_USER_DETAIL, SET_WALLET_ADDR, CURRENT_USER } from "./action.types"
 import axios from "axios";
 import config from "../../config";
 
@@ -88,3 +88,10 @@ export const updateBalanceOfUser =  (balance) => dispatch =>
     })
 }
 
+export const setWalletStatus = (status) => dispatch => 
+{
+    dispatch({
+        type: UPDATE_WALLET_STATUS,
+        payload: status
+    })
+}

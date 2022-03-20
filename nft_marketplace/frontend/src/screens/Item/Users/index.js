@@ -22,7 +22,7 @@ const Users = ({ className, items }) => {
               <div className={styles.details}>
                 <div className={styles.position}>{x.position}</div>
                 <Link to={`/profile/${x.id}`}>
-                  <div className={styles.name}>{x.name}</div>
+                  <span className={styles.name}>{x.name}</span>
                 </Link>
               </div>
             </div>

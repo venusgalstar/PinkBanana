@@ -30,19 +30,19 @@ const Control = ({ className, id }) => {
   const [visibleModalBid, setVisibleModalBid] = useState(false);
   const [visibleModalAccept, setVisibleModalAccept] = useState(false);
   const [visibleModalSale, setVisibleModalSale] = useState(false);
-  const currentWalletAddress = useSelector(state => state.auth.currentWallet);
-  const currentChainId = useSelector(state => state.auth.currentChainId);
-  const [bidPrice, setBidPrice] = useState(0);
   const [processing, setProcessing] = useState(false);
   const [alertParam, setAlertParam] = useState({});
   const [visibleModal, setVisibleModal] = useState(false);
   const history = useHistory();
 
+  const currentWalletAddress = useSelector(state => state.auth.currentWallet);
+  const currentChainId = useSelector(state => state.auth.currentChainId);
   const auth = useSelector(state => state.auth.user);
   const nft = useSelector(state => state.nft.detail);
   const avax = useSelector(state => state.user.avax);
   const tradingResult = useSelector(state => state.nft.tradingResult);
   const curTime = useSelector(state => state.bid.system_time);
+  const walletStatus = useSelector(state => state.auth.walletStatus);
 
   const dispatch = useDispatch();
   const params = useParams();
@@ -73,6 +73,12 @@ const Control = ({ className, id }) => {
       console.log("Invalid account.");
       return false;
     }
+    if(walletStatus === false)
+    {
+      setAlertParam({ state: "warning", title: "Warning", content: "Please connect and unlock your wallet." });
+      setVisibleModal(true);
+      return false;      
+    }
     if (currentWalletAddress && auth && auth.address && currentWalletAddress.toLowerCase() !== auth.address.toLowerCase()) {
       setAlertParam({ state: "warning", title: "Warning", content: "Wallet addresses are not equal. Please check current wallet to your registered wallet." });
       setVisibleModal(true);
@@ -90,10 +96,6 @@ const Control = ({ className, id }) => {
   useEffect(() => {
     if (tradingResult) {
       setProcessing(false);
-      if(tradingResult.message.search("Ethereum address") > 0)
-      {
-        tradingResult.message = "Plese connect and unlock your wallet."
-      }
       switch (tradingResult.function) {
         default:
           setVisibleModal(false);
@@ -154,10 +156,6 @@ const Control = ({ className, id }) => {
       return;
     }
     await buyNow(auth.address, params.id, nft.price);
-  }
-
-  const changeBidPrice = (value) => {
-    setBidPrice(value);
   }
 
   const getLeftDuration = (created, period, curTime) => {
@@ -360,13 +358,11 @@ const Control = ({ className, id }) => {
 
       }
 
-
-
       <Modal
         visible={visibleModalPurchase}
         onClose={() => setVisibleModalPurchase(false)}
       >
-        <Checkout onOk={cofirmBuy} nft={nft} />
+        <Checkout onOk={cofirmBuy} nft={nft} onCancel={() => setVisibleModalPurchase(false)} />
         {/* <SuccessfullyPurchased /> */}
       </Modal>
       <Modal

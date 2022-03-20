@@ -13,13 +13,15 @@ import Modal from "../../components/Modal";
 import Alert from "../../components/Alert";
 import { useParams } from "react-router-dom";
 import { getItemsOfUserByConditions } from "../../store/actions/nft.actions";
-import { getFollowList, getFollowingList } from "../../store/actions/follow.actions";
+import { getFollowList, getFollowingList, toggleFollow } from "../../store/actions/follow.actions";
 import { getDetailedUserInfo } from "../../store/actions/auth.actions";
 import { useHistory } from "react-router-dom";
+import isEmpty from "../../utilities/isEmpty";
 
 // data
 // import { bids } from "../../mocks/bids";
 import { useDispatch, useSelector } from "react-redux";
+import { UPDATE_FOLLOWING_LIST } from "../../store/actions/action.types";
 // import { isStepDivisible } from "react-range/lib/utils";
 
 const navLinks = [
@@ -68,7 +70,13 @@ const Profile = () =>
 
   useEffect(() =>
   {
-    dispatch(getDetailedUserInfo(userId, false));
+    if(!isEmpty(userId))
+    {
+      dispatch(getDetailedUserInfo(userId, false));
+      
+      dispatch(getFollowList(userId, 10));
+      dispatch(getFollowingList(userId, 10));
+    }
   }, [userId])
 
   const changeFile = (e) =>
@@ -146,20 +154,23 @@ const Profile = () =>
     if(activeIndex>=0 && activeIndex<=3) dispatch(getItemsOfUserByConditions(params, userId));
     if(activeIndex === 4) 
     {
-      dispatch(getFollowList(userId, 10))      
+      dispatch(getFollowList(userId, 10))
+      setTimeout(() => 
+      {
+        dispatch(getFollowList(userId, 10))        
+      }, 1000)      
     }
     if(activeIndex === 5) 
     {
       dispatch(getFollowingList(userId, 10))
+      setTimeout(() => 
+      {
+        dispatch(getFollowList(userId, 10))        
+      }, 1000)      
     }
     console.log("following = ", following);
     console.log("followers = ", followers);
   }, [activeIndex])
-
-  const navigate2Next = () =>
-  {
-    
-  }
 
   const onGotoProfile = () =>
   {
@@ -172,6 +183,23 @@ const Profile = () =>
 
   const onCancel = () => {
     setVisibleModal(false);
+  }
+
+  const updateFollowings = () =>
+  {
+    dispatch(getFollowList(userId, 10))  
+    dispatch(getFollowingList(userId, 10))  
+  }
+  
+  const toggleFollowing = (targetId) =>
+  {    
+    dispatch(toggleFollow(currentUsr._id, targetId));
+  }
+
+  const updateFollows = () =>
+  {
+    dispatch(getFollowList(userId, 10))  
+    dispatch(getFollowingList(userId, 10))  
   }
 
   return (
@@ -269,11 +297,11 @@ const Profile = () =>
                 )}
                 {activeIndex === 4 && (
                   //following
-                  <Followers className={styles.followers} items={following} buttonContent="Unfollow" />
+                  <Followers className={styles.followers} items={following} buttonContent="Unfollow" onUpdate={updateFollowings} onUnfollow={toggleFollowing}/>
                 )}
                 {activeIndex === 5 && (
                   //Followers
-                  <Followers className={styles.followers} items={followers} buttonContent="" />
+                  <Followers className={styles.followers} items={followers} buttonContent="" onUpdate={updateFollows} />
                 )}
               </div>
             </div>

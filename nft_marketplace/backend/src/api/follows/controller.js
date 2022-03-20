@@ -112,7 +112,6 @@ exports.getFollows = (req, res) => {
         .then(async (docs) => {
             // console.log("[getFollows]  docs ", docs);
 
-            // console.log("docs.follows = ", docs.follows);
             let j;
             for (j = 0; j < docs.follows.length; j++) {
                 var resultObject = {};
@@ -129,7 +128,7 @@ exports.getFollows = (req, res) => {
                         await User.find({ follows: new ObjectId(docs._id) })
                             .then((data) => {
                                 if (data !== null) targetsFollowers = data.length;
-                                else targetsFollowers = 0;
+                                else targetsFollowers = 0;                                
                             })
                             .catch((err) => { targetsFollowers = 0; })
                         resultObject.counter = targetsFollowers;
@@ -150,14 +149,12 @@ exports.getFollows = (req, res) => {
                     .catch((err) => {
                         resultObject = {};
                     })
-                resultObjectArry.push(resultObject);
-                return res.status(200).send({ success: true, data: resultObjectArry, message: "success" });
+                resultObjectArry.push(resultObject);                
             }
-
-
+            return res.status(200).send({ success: true, data: resultObjectArry, message: "success" });
         })
         .catch((err) => {
-            console.log("Follow doesn't exisit" + err.message);
+            // console.log("Follow doesn't exisit" + err.message);
             return res.status(500).send({ success: false, message: "Internal server Error" });
         })
 
@@ -174,7 +171,8 @@ exports.getFollowings = (req, res) => {
 
             if (docs.length > 0) {
                 // console.log("docs.length = ", docs.length);
-                for (j = 0; j < docs.length; j++) {
+                for (j = 0; j < docs.length; j++) 
+                {
                     var resultObject = {};
                     await User.findOne({ _id: new ObjectId(docs[j]._id) })
                         .then(async (docs) => {
@@ -214,34 +212,23 @@ exports.getFollowings = (req, res) => {
                 }
                 return res.status(200).send({ success: true, data: resultObjectArry, message: "success" });
             }
-            else return res.status(200).send({ success: true, data: resultObjectArry, message: "success" });
+            else return res.status(200).send({ success: true, data: [], message: "success" });
         })
         .catch((err) => {
-            console.log("Follow doesn't exisit" + err.message);
+            // console.log("Follow doesn't exisit" + err.message);
             return res.status(500).send({ success: false, message: "Internal server Error" });
         })
+    return;
 }
-
-
-
-
 
 exports.isExists = (req, res) => {
     var user_id = req.body.user_id;
     var target_id = req.body.target_id;
-    // console.log(user_id, target_id);
-    Follow.find(
-        {
-            $or:
-                [
-                    { user_id: new ObjectId(user_id), target_id: new ObjectId(target_id) },
-                    { target_id: new ObjectId(user_id), user_id: new ObjectId(target_id) }
-                ]
-        }
-    )
-        .then((docs) => {
+    
+    User.find({ _id: new ObjectId(target_id), follows: new ObjectId(user_id)})
+        .then(async (docs) => {       
             // console.log("docs = ", docs);
-            if (docs.length > 0)
+            if ( docs.length > 0 )
                 return res.status(200).send({
                     success: true, data: true, message: "Pair exists"
                 })
@@ -252,8 +239,11 @@ exports.isExists = (req, res) => {
             }
         })
         .catch((err) => {
+            // console.log("[isExists] error : ", err)
             return res.status(200).send({
                 success: false, message: "Internal server error"
             })
         })
+    
+    return;
 }

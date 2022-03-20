@@ -10,6 +10,7 @@ import Slider from "react-slick";
 import config from "../../config";
 import axios from "axios";
 import { useParams } from "react-router-dom";
+import isEmpty from "../../utilities/isEmpty";
 
 const SlickArrow = ({ currentSlide, slideCount, children, ...props }) => (
     <button {...props}>{children}</button>
@@ -24,6 +25,7 @@ const ItemsOfCollection = () =>
     const [last, setLast] = useState(8);
     // const collectionId = useSelector(state => state.collection.consideringId);
   const {collectionId} = useParams();
+  const [viewNoMore, setViewNoMore] = useState(false);
  
   console.log("collectionId = ", collectionId);
 
@@ -87,6 +89,13 @@ const ItemsOfCollection = () =>
 
       axios.post(`${config.baseUrl}item/get_items_of_collection`, params).then((result) => {
         console.log( "result.data.data = ", result.data.data );
+        if(isEmpty(result.data.data))
+        {
+          setViewNoMore(true);
+          setTimeout(() => {
+            setViewNoMore(false)
+          }, 2500);              
+        }
         if (start === 0) {
           setItems(result.data.data);
         } else {
@@ -164,7 +173,7 @@ const ItemsOfCollection = () =>
             </div>
             {
                 (items !== undefined && items !== null && items.length>0) ?
-                <div>
+                <div align="center">
                     <div id="sliderWrapper" className={styles.list}>
                         <Slider
                             className={cn("discover-slider", styles.slider)}
@@ -177,8 +186,9 @@ const ItemsOfCollection = () =>
                             )) : <></>}                           
                         </Slider>
                     </div>
+                    <span style={{ marginTop : "2rem"}} >&nbsp;{viewNoMore === true && "No more items"}&nbsp;</span>
                     <div className={styles.btns} align="center" style={{
-                      marginTop : "2rem",
+                      marginTop : "1rem",
                       marginBottom : "5rem"
                     }}>
                       <button className={cn("button-stroke button-small", styles.btns)} onClick={() => { onLoadMore() }}>

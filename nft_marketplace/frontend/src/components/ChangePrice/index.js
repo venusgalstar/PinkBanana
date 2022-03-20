@@ -1,14 +1,44 @@
-import React, { useState } from "react";
+import React, {useState} from "react";
 import cn from "classnames";
 import styles from "./Transfer.module.sass";
 
 const ChangePrice = ({ className, onOk , onCancel}) => {
-  
+  const [price, setPrice] = useState(0);
+  const regularInputTestRegExp = /^([0-9]+([.][0-9]*)?|[.][0-9]+)$/gm;
+
+  const onChangePrice = (e) =>
+  {
+    var inputedPrice = e.target.value;    
+    if(inputedPrice !== "") 
+    {
+      let m; let correct = false;
+      while ((m = regularInputTestRegExp.exec(inputedPrice)) !== null) 
+      {
+        if (m.index === regularInputTestRegExp.lastIndex) {
+          regularInputTestRegExp.lastIndex++;
+        }
+        console.log("matched :"+m[0]);
+        if(m[0] === inputedPrice) 
+        {
+          correct = true;
+        }         
+      }      
+      if(!correct)         
+      {
+        return;
+      }
+    }        
+    if(isNaN(inputedPrice))
+    {
+      return;
+    }
+    setPrice(inputedPrice);
+  }
+
   const onContinue = () => {
-    var price  = document.getElementById("priceInput").value;
     if(isNaN(price) || Number(price) < 0.00001)
     {
-      document.getElementById("priceInput").value = 0.00001;
+      setPrice(0.00001);
       return;
     }
     onOk(price);
@@ -27,7 +57,9 @@ const ChangePrice = ({ className, onOk , onCancel}) => {
           type="text"
           name="price"
           id="priceInput"
-          placeholder="Please input new price"
+          value= {price || ""}
+          onChange = { (e) => onChangePrice(e) }
+          placeholder="Price must be bigger than 0.00001"
         />
       </div>
       <div className={styles.btns}>

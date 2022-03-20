@@ -140,12 +140,6 @@ const CreateCollection = () => {
 
   const createCollection = async () => {
 
-    // let connection = await getValidWallet();
-    // if (connection.success === false) {
-    //   setAlertParam({ state: "warning", title: "Warning", content: "Please connect and unlock your wallet." });
-    //   setVisibleModal(true);
-    //   return;
-    // }
     if (currentUsr === null || currentUsr === undefined || selectedAvatarFile === null) {
       console.log("Invalid user :  currentUsr = ", currentUsr);
       setAlertParam({ state: "warning", title: "Warning", content: "Please sign in and try again." });

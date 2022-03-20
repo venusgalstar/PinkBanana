@@ -16,6 +16,10 @@ import Button from '@mui/material/Button';
 import { useSelector } from "react-redux";
 import Web3 from 'web3/dist/web3.min.js';
 
+
+import { io } from 'socket.io-client';
+var socket = io(`${config.socketUrl}`);
+
 const pinkAbi = config.pinkContractAbi;
 const pinkAddress = config.pinkContractAddress;
 
@@ -77,11 +81,6 @@ const Admin = () => {
 
     const currentAddr = useSelector(state => state.auth.user.address);
 
-    useEffect(() => {
-        console.log("current address", currentAddr);
-    }, [currentAddr])
-
-
     const handleChange = (event, value) => {
         setPage(value);
     };
@@ -101,8 +100,7 @@ const Admin = () => {
         } else {
             status = 2;
         }
-        console.log("address: ", item.address, "currAddr: ", account, "status: ", status);
-
+        socket.emit("UpdateStatus", {type: "UPDATE_USER_AUTH"});
         contract.methods.setAuthentication(item.address, status).send({ from: account }).then(() => {
             axios.post(`${config.baseUrl}admin/update_user_info`, { _id: item._id, verified: !item.verified }).then(() => {
                 getUserList();
