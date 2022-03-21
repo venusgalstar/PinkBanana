@@ -314,7 +314,7 @@ const parseErrorMsg = (errMsg) =>
   if(startPos >= 0)
   {
     let subStr = errMsg.substring(startPos+4, errMsg.length)
-    let endPos = subStr.indexOf("\",");
+    let endPos = subStr.indexOf("\"");
     if(endPos >= 0)
     {
       subStr = subStr.substring(0, endPos);
@@ -409,7 +409,7 @@ export const placeBid = async (currentAddr, tokenId, bidPrice) =>
 
     console.log("placeBid 33")
 
-    if (balanceOfUser <= gasFee * gasPrice) {
+    if (balanceOfUser <= gasFee * gasPrice ) {
 
     console.log("placeBid 44")
 

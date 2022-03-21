@@ -140,9 +140,19 @@ const CreateCollection = () => {
 
   const createCollection = async () => {
 
-    if (currentUsr === null || currentUsr === undefined || selectedAvatarFile === null) {
+    if (currentUsr === null || currentUsr === undefined) {
       console.log("Invalid user :  currentUsr = ", currentUsr);
       setAlertParam({ state: "warning", title: "Warning", content: "Please sign in and try again." });
+      setVisibleModal(true);
+      return;
+    }
+    if (selectedAvatarFile === null || selectedBannerFile === null) {
+      setAlertParam({ state: "warning", title: "Warning", content: "You have to select banner and avatar." });
+      setVisibleModal(true);
+      return;
+    }
+    if (textName === "" ) {
+      setAlertParam({ state: "warning", title: "Warning", content: "Collection name can not be empty." });
       setVisibleModal(true);
       return;
     }
@@ -264,14 +274,14 @@ const CreateCollection = () => {
   const onOk = () => {
     setVisibleModal(false);
 
-    let isCreatingNewItem = localStorage.getItem("isNewItemCreating");
-    if (isCreatingNewItem === "true") {
-      let previoueLink = localStorage.getItem("previousPageURL");
-      history.push(previoueLink);
-    }
-    else {
-      history.push("/");
-    }
+    // let isCreatingNewItem = localStorage.getItem("isNewItemCreating");
+    // if (isCreatingNewItem === "true") {
+    //   let previoueLink = localStorage.getItem("previousPageURL");
+    //   history.push(previoueLink);
+    // }
+    // else {
+    //   history.push("/");
+    // }
   }
 
   const onCancel = () => {

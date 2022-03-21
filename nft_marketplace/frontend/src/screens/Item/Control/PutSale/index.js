@@ -28,7 +28,6 @@ const PutSale = ({ className, onOk, onCancel }) => {
         if (m.index === regularInputTestRegExp.lastIndex) {
           regularInputTestRegExp.lastIndex++;
         }
-        console.log("matched :"+m[0]);
         if(m[0] === inputedPrice) 
         {
           correct = true;

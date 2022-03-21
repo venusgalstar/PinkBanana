@@ -21,6 +21,7 @@ import AccordionDetails from '@mui/material/AccordionDetails';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { useMediaQuery } from "@mui/material";
+import isEmpty from "../../utilities/isEmpty";
 
 // data
 // import { bids } from "../../mocks/bids";
@@ -79,8 +80,10 @@ const Search = () => {
   const [colSetKey, setColSetKey] = useState();
   const [status, setStatus] = useState(statusOptions[0]);
 
-  const [priceMin, setPriceMin] = useState(0);
-  const [priceMax, setPriceMax] = useState(100);
+
+  const [priceMin, setPriceMin] = useState("");
+  const [priceMax, setPriceMax] = useState("");
+  const [viewNoMore, setViewNoMore] = useState(false);
 
   useEffect(() => {
     setMode(globalThemeMode);
@@ -147,7 +150,7 @@ const Search = () => {
     param.creator = creator.value;
     // param.range = range;
 
-    param.range = [Number(priceMin), Number(priceMax)];
+    param.range = [priceMin, priceMax];
     param.search = search;
     param.sortmode = date.value;
     // }
@@ -163,6 +166,13 @@ const Search = () => {
           var item = result.data.list[i].item_info;
           item.users = [{ avatar: result.data.list[i].creator_info.avatar }];
           list.push(item);
+        }
+        if(isEmpty(list))
+        {
+          setViewNoMore(true);
+          setTimeout(() => {
+            setViewNoMore(false)
+          }, 2500);              
         }
         if (reStart) {
           setCollections(list);
@@ -204,8 +214,9 @@ const Search = () => {
     setMetaDatas([]);
     setChecked([]);
     setColSetKey(Math.random());
-    setPriceMax(100);
-    setPriceMin(0);
+    setPriceMax("");
+    setPriceMin("");
+    setStatus(statusOptions[0]);
   }
 
   const onChangeSearch = (event) => {
@@ -216,7 +227,7 @@ const Search = () => {
   const handlePrice = (type, event) => {
     var pattern = /[^0-9.]/g;
     var result = event.target.value.match(pattern);
-    if (!result) {
+    if (!result && !isNaN(event.target.value)) {
       if (type == "min") {
         setPriceMin(event.target.value);
       } else if (type == "max") {
@@ -409,6 +420,9 @@ const Search = () => {
               {collections && collections.map((x, index) => (
                 <Card className={styles.card} item={x} key={index} />
               ))}
+            </div>
+            <div align="center" style={{ marginTop : "30px"}} >
+              <span >&nbsp;{viewNoMore === true && "No more items"}&nbsp;</span>
             </div>
             <div className={styles.btns}>
               <button className={cn("button-stroke", styles.button)} onClick={onLoadMore}>

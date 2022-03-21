@@ -124,9 +124,9 @@ const Headers = () => {
 
   const onClickSignIn = async () => {
     // dispatch(setConnectedWalletAddress(connection.address));
-    if (walletStatus === true) {
-      let signedString = "";
       let connection = await connectWallet();
+      if (connection.success === true) {
+      let signedString = "";
       // console.log("connection address", connection.address);
       signedString = await signString(connection.address);
       if (signedString.success === true) {
@@ -170,8 +170,8 @@ const Headers = () => {
   }
   
   const onClickSignUp = async () => {
-    if (walletStatus === true) {
-      let connection = await connectWallet();
+    let connection = await connectWallet();
+    if (connection.success === true) {
       dispatch(setConnectedWalletAddress(connection.address));
       // history.push("/profile-edit/new");
       history.push({ pathname: "/profile-edit/new" });

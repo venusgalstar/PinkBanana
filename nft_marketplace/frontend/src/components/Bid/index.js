@@ -22,7 +22,6 @@ const Bid = ({ className , onChange, onOk, onCancel, nft, balance }) => {
         if (m.index === regularInputTestRegExp.lastIndex) {
           regularInputTestRegExp.lastIndex++;
         }
-        console.log("matched :"+m[0]);
         if(m[0] === inputedPrice) 
         {
           correct = true;
@@ -86,7 +85,14 @@ const Bid = ({ className , onChange, onOk, onCancel, nft, balance }) => {
         You are about to purchase <strong>{nft && nft.name}</strong>
       </div>
       <div className={styles.stage}>Your bid </div>
-      <div className={styles.stageBid}>{nft && nft.bids.length > 0 && "( Current Max bid : "+Number(nft.bids[nft.bids.length - 1].price)+" AVAX )"}</div>
+      {
+        nft && nft.bids.length > 0 &&
+        <div className={styles.stageBid}>{"( Current Max bid : "+Number(nft.bids[nft.bids.length - 1].price)+" AVAX )"}</div>      
+      }
+      {
+        nft && nft.bids.length === 0 &&
+        <div className={styles.stageBid}>{"( Started price : "+Number(nft.price)+" AVAX )"}</div>      
+      }
       <div className={styles.table}>
         <div className={styles.field}>
           <input

@@ -220,7 +220,6 @@ const ProfileEdit = () => {
         if (m.index === regexForWallet.lastIndex) {
           regexForWallet.lastIndex++;
         }
-        console.log("matched :" + m[0]);
         if (m[0] === address) {
           correct = true;
           params.address = address;
@@ -250,7 +249,6 @@ const ProfileEdit = () => {
         if (m.index === regexForWebsite.lastIndex) {
           regexForWebsite.lastIndex++;
         }
-        console.log("matched :" + m[0]);
         if (m[0] === urlText) {
           correct = true;
           params.customURL = urlText;
@@ -271,7 +269,6 @@ const ProfileEdit = () => {
         if (m.index === regexForWebsite.lastIndex) {
           regexForWebsite.lastIndex++;
         }
-        console.log("matched :" + m[0]);
         if (m[0] === websiteText) {
           correct = true;
           params.websiteURL = websiteText;
@@ -351,7 +348,6 @@ const ProfileEdit = () => {
       else socialsString += socs[i].type + " : " + socs[i].value + ", ";
     }
     setSocials(socialsString);
-    console.log("socs = ", socs);
   }
 
   const onCliearAll = () => {

@@ -38,7 +38,6 @@ const Followers = ({ className, items, buttonContent = "", onUnfollow, onUpdate 
               </div>
               <div className={styles.details}>
                 <div className={styles.title}>{x.name}</div>
-                <div className={styles.counter}>{x.counter}</div>
                 {
                   buttonContent !== "" && currentUsr._id === userId &&
                 <button 

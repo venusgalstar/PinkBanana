@@ -29,36 +29,35 @@ exports.create = (req, res) => {
 
     //avoid re - resistering     
     Users.find({ address: req.body.address })
-    .then((docs) =>        
-    {
-        console.log("[Create user] docs = ", docs);
-        if (docs.length > 0) {
-            return res.send({ code: 1 });
-        } else {
-            bcrypt.genSalt(10, (err, salt) => {
-                if (err) {
-                    return res.status(501).send({ success: false, message: "Cannot save the new author." });
-                }
-                bcrypt.hash(user.password, salt, (err, hash) => {
+        .then((docs) => {
+            console.log("[Create user] docs = ", docs);
+            if (docs.length > 0) {
+                return res.send({ code: 1 });
+            } else {
+                bcrypt.genSalt(10, (err, salt) => {
                     if (err) {
                         return res.status(501).send({ success: false, message: "Cannot save the new author." });
                     }
-                    else {
-                        user.password = hash;
-                        user.save(function (err) {
-                            if (!err)
-                                return res.status(200).send({ success: true, message: "Successfully create a new Author" });
-                            else
-                                return res.status(501).send({ success: false, message: "Cannot save the new author." });
-                        });
-                    }
+                    bcrypt.hash(user.password, salt, (err, hash) => {
+                        if (err) {
+                            return res.status(501).send({ success: false, message: "Cannot save the new author." });
+                        }
+                        else {
+                            user.password = hash;
+                            user.save(function (err) {
+                                if (!err)
+                                    return res.status(200).send({ success: true, message: "Successfully create a new Author" });
+                                else
+                                    return res.status(501).send({ success: false, message: "Cannot save the new author." });
+                            });
+                        }
+                    })
                 })
-            })
-        }
-    })
-    .catch((error) =>{       
-        return res.status(501).send({ success: false, message: "Internal Server Error." });        
-    })
+            }
+        })
+        .catch((error) => {
+            return res.status(501).send({ success: false, message: "Internal Server Error." });
+        })
     // user
     //     .save()
     //     .then((data) => {
@@ -249,6 +248,9 @@ exports.getPopularUserList = async (req, res) => {
                         $sum: "$price"
                     }
                 }
+            }, 
+            {
+                $sort: { "totalPrice": -1 }
             },
             {
                 $lookup: {
@@ -311,6 +313,9 @@ exports.getPopularUserList = async (req, res) => {
                         $sum: "$price"
                     }
                 }
+            },
+            {
+                $sort: { "totalPrice": -1 }
             },
             {
                 $lookup: {

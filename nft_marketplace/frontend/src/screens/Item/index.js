@@ -188,7 +188,7 @@ const Item = () => {
             <h1 className={cn("h3", styles.title)}>{itemDetail ? itemDetail.name : ""}
             </h1>
             {itemDetail &&
-              <a href={`/collectionItems/${itemDetail.collection_id._id}`}><h3>{itemDetail.collection_id.name}</h3></a>
+              <a href={`/collectionItems/${itemDetail.collection_id._id}`} style={{width:"fit-content"}} ><h3>{itemDetail.collection_id.name}</h3></a>
             }
             <div className={styles.cost}>
               <div className={cn("status-stroke-green", styles.price)}>

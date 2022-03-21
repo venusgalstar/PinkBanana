@@ -288,12 +288,20 @@ exports.getCollectionList = async (req, res) => {
     }
 
     if (range) {
-        rangeFilter = [{ $match: { "item_info.price": { $gte: range[0] } } },
-        { $match: { "item_info.price": { $lte: range[1] } } }];
-        // rangeFilter = {
-        //     $match: { "item_info.price": { $and: [{ $gte: range[0] }, { $lte: range[1] }] } }
-        // };
+        if (range[0] != '' && range[1] != '') {
+            rangeFilter = [{ $match: { "item_info.price": { $gte: Number(range[0]) } } },
+            { $match: { "item_info.price": { $lte: Number(range[1]) } } }];
+        } else if (range[0] != '' && range[1] == '') {
+            rangeFilter = [{ $match: { "item_info.price": { $gte: Number(range[0]) } } },
+            { $match: {} }];
+        } else if (range[0] == '' && range[1] != '') {
+            rangeFilter = [{ $match: {} },
+            { $match: { "item_info.price": { $lte: Number(range[1]) } } }];
+        } else if (range[0] == '' && range[1] == '') {
+            rangeFilter = [{ $match: {} }, { $match: {} }];
+        }
     }
+
     if (collection_id != 0) {
         collectionFilter = { $match: { "_id": ObjectId(collection_id) } };
     }
@@ -420,17 +428,6 @@ exports.getCollectionList = async (req, res) => {
     }).catch((error) => {
         return res.send({ code: 1 });
     });
-
-    // Collection
-    //     .find(matchParams)
-    //     // .find({collection_id: {category : 1}})
-    //     .sort({ createdAt: req.body.date == 0 ? -1 : 0 })
-    //     .skip(start).limit(last - start)
-    //     .then((data) => {
-    //         return res.send({ code: 0, data: data });
-    //     }).catch((error) => {
-    //         return res.send({ code: 1 });
-    //     })
 }
 
 exports.getUserCollectionList = (req, res) => {

@@ -26,7 +26,7 @@ const Upload = ({ asset_id = null }) => {
   const [textName, setTextName] = useState("");
   const [textDescription, setTextDescription] = useState("");
   const [sale, setSale] = useState(true);
-  const [price, setPrice] = useState(0.00001);
+  const [price, setPrice] = useState("");
   const [selectedFile, setSelectedFile] = useState(null);
 
   const [visibleModal, setVisibleModal] = useState(false);
@@ -253,7 +253,6 @@ const Upload = ({ asset_id = null }) => {
     if(sale)
     {      
       if (Number(price) < 0.00001 || isNaN(price)) {
-        setPrice(0.00001);
         setAlertParam({ state: "error", title: "Error", content: "Invalid price. Price must be equal or higher than 0.00001" });
         setVisibleModal(true);
         return;
@@ -405,7 +404,6 @@ const Upload = ({ asset_id = null }) => {
         if (m.index === regularInputTestRegExp.lastIndex) {
           regularInputTestRegExp.lastIndex++;
         }
-        console.log("matched :"+m[0]);
         if(m[0] === inputedPrice) 
         {
           correct = true;

@@ -5,6 +5,7 @@ import Slider from "react-slick";
 import Icon from "../../../components/Icon";
 import Card from "../../../components/Card";
 import Dropdown from "../../../components/Dropdown";
+import isEmpty from "../../../utilities/isEmpty";
 
 // data
 import { bids } from "../../../mocks/bids";
@@ -53,9 +54,10 @@ const Discover = () => {
   const user = useSelector(state => state.auth);
   const [collections, setCollections] = useState([]);
   const [status, setStatus] = useState(statusOptions[0]);
+  const [viewNoMore, setViewNoMore] = useState(false);
 
-  const [priceMin, setPriceMin] = useState(0);
-  const [priceMax, setPriceMax] = useState(100);
+  const [priceMin, setPriceMin] = useState("");
+  const [priceMax, setPriceMax] = useState("");
 
 
 
@@ -105,7 +107,7 @@ const Discover = () => {
       param.likes = likes.value;
       param.creator = creator.value;
       // param.range = range;
-      param.range = [Number(priceMin), Number(priceMax)];
+      param.range = [priceMin, priceMax];
       param.status = status.value
     }
     axios.post(`${config.baseUrl}collection/get_collection_list`, param)
@@ -115,6 +117,13 @@ const Discover = () => {
           var item = result.data.list[i].item_info;
           item.users = [{ avatar: result.data.list[i].creator_info.avatar }];
           list.push(item);
+        } 
+        if(isEmpty(list))
+        {
+          setViewNoMore(true);
+          setTimeout(() => {
+            setViewNoMore(false)
+          }, 2500);              
         }
         if (reStart) {
           setCollections(list);
@@ -135,7 +144,7 @@ const Discover = () => {
   const handlePrice = (type, event) => {
     var pattern = /[^0-9.]/g;
     var result = event.target.value.match(pattern);
-    if (!result) {
+    if (!result && !isNaN(event.target.value)) {
       if (type == "min") {
         setPriceMin(event.target.value);
       } else if (type == "max") {
@@ -250,6 +259,9 @@ const Discover = () => {
               <Card className={styles.card} item={x} key={index} />
             )) : <></>}
           </Slider>
+        </div>
+        <div align="center"  style={{ marginTop : "2rem"}}>
+          <span >&nbsp;{viewNoMore === true && "No more items"}&nbsp;</span>
         </div>
         <div className={styles.btns}>
           <button className={cn("button-stroke button-small", styles.button)} onClick={() => { onLoadMore() }}>

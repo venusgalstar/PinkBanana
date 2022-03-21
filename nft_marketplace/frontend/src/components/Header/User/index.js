@@ -122,7 +122,7 @@ const User = ({ className }) => {
         </div>
         {visible && (
           <div className={styles.body}>
-            <div className={styles.name}>{currentUsr.username}</div>
+            <div className={styles.name}>{currentUsr && currentUsr.username && currentUsr.username}</div>
             <div className={styles.code}>
               <div className={styles.number}>{compressedAddress && compressedAddress}</div>
               <div style={{ position:"relative" }}>

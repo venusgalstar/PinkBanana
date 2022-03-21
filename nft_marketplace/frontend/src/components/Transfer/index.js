@@ -18,7 +18,6 @@ const Transfer = ({ className, onOk = null, onCancel = null}) =>
         if (m.index === regexForWallet.lastIndex) {
           regexForWallet.lastIndex++;
         }
-        console.log("matched :"+m[0]);
         if(m[0] === toAddr) 
         {
           correct = true;
